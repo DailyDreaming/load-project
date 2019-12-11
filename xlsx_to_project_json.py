@@ -130,7 +130,7 @@ def parse_project_data_from_xlsx(file):
     data.update(process_section(section=wb['Project - Publications'], project=True))
     data.update(process_section(section=wb['Project - Funders'], project=True))
     data.update(process_section(section=wb['Project - Contributors'], project=True))
-    print(json.dumps((process_section(section=wb['Cell suspension'], project=False)), indent=4))
+    # print(json.dumps((process_section(section=wb['Cell suspension'], project=False)), indent=4))
     return data
 
 
@@ -148,8 +148,9 @@ def main(argv=sys.argv[1:]):
     data = parse_project_data_from_xlsx(file=args.xlsx)
     project_json = create_project_json(data, uuid=args.uuid, version=timestamp())
 
-    with open('project_0.json', 'w') as f:
+    with open('bundle/project_0.json', 'w') as f:
         f.write(json.dumps(project_json, indent=4))
+    print('"bundle/project_0.json" successfully written.')
 
 
 if __name__ == "__main__":
