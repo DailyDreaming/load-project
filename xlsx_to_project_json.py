@@ -106,11 +106,11 @@ def create_project_json(data, uuid, version, verify=False):
     return template
 
 
-def process_section(section, verify=False):
+def process_section(section, project=True, verify=False):
     project_data = {}
     for i, row in enumerate(section.rows):
         if i == 3:
-            cells = [c.value[len('project.'):] for c in row if c.value]
+            cells = [c.value[len('project.'):] for c in row if c.value] if project else [c.value for c in row if c.value]
         if i == 4:
             assert row[0].value == 'FILL OUT INFORMATION BELOW THIS ROW', cells[0]
         if i == 5:
@@ -126,10 +126,11 @@ def process_section(section, verify=False):
 
 def parse_project_data_from_xlsx(file):
     wb = load_workbook(file)
-    data = process_section(section=wb['Project'])
-    data.update(process_section(section=wb['Project - Publications']))
-    data.update(process_section(section=wb['Project - Funders']))
-    data.update(process_section(section=wb['Project - Contributors']))
+    data = process_section(section=wb['Project'], project=True)
+    data.update(process_section(section=wb['Project - Publications'], project=True))
+    data.update(process_section(section=wb['Project - Funders'], project=True))
+    data.update(process_section(section=wb['Project - Contributors'], project=True))
+    print(json.dumps((process_section(section=wb['Cell suspension'], project=False)), indent=4))
     return data
 
 
