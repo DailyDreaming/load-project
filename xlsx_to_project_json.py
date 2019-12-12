@@ -1,6 +1,7 @@
 import json
 import sys
 import argparse
+import uuid
 from datetime import datetime
 
 from openpyxl import load_workbook
@@ -11,7 +12,7 @@ def timestamp():
 
 
 def create_project_json(data, uuid, version, verify=False):
-    template = {
+    project_json = {
       "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
       "schema_type": "project",
       "project_core": {
@@ -29,12 +30,12 @@ def create_project_json(data, uuid, version, verify=False):
     for field in optional_includes:
         if field in data:
             if data[field][0]:
-                template[field] = data[field]
+                project_json[field] = data[field]
 
     #### Contributors
     contributors = [i for i in data.get("contributors.name", []) if i]
     if contributors:
-        template['contributors'] = []
+        project_json['contributors'] = []
     for i in range(len(contributors)):
         persons_role = {}
         optional_includes = ["contributors.project_role.text",
@@ -66,12 +67,12 @@ def create_project_json(data, uuid, version, verify=False):
                 else:
                     person[field.split('.')[-1]] = data[field][i]
 
-        template['contributors'].append(person)
+        project_json['contributors'].append(person)
 
     #### Publications
     publications = [i for i in data.get("publications.title", []) if i]
     if publications:
-        template['publications'] = []
+        project_json['publications'] = []
     for i in range(len(publications)):
         publication = {"authors": data["publications.authors"][i].split('||'),
                        "title": data["publications.title"][i]}
@@ -84,21 +85,21 @@ def create_project_json(data, uuid, version, verify=False):
                     publication[field.split('.')[-1]] = int(data[field][i])
                 else:
                     publication[field.split('.')[-1]] = data[field][i]
-        template['publications'].append(publication)
+        project_json['publications'].append(publication)
 
     #### Funders
     grant_ids = [i for i in data.get("funders.grant_id", []) if i]
     if grant_ids:
-        template['funders'] = []
+        project_json['funders'] = []
     for i in range(len(grant_ids)):
         funder = {"grant_title": data["funders.grant_title"][i],
                   "grant_id": data["funders.grant_id"][i],
                   "organization": data["funders.organization"][i]}
-        template['funders'].append(funder)
+        project_json['funders'].append(funder)
 
     # TODO:  Determine if uuid is made special (from project name combo?).
     # TODO:  Check for previous version.
-    template["provenance"] = {
+    project_json["provenance"] = {
         "document_id": uuid,
         "submission_date": version,
         "update_date": version,
@@ -106,26 +107,44 @@ def create_project_json(data, uuid, version, verify=False):
         "schema_minor_version": 1
         }
     if verify:
-        print(json.dumps(template, indent=4))
-    return template
+        print(json.dumps(project_json, indent=4))
+    with open('bundle/project_0.json', 'w') as f:
+        f.write(json.dumps(project_json, indent=4))
+    print('"bundle/project_0.json" successfully written.')
 
 
-def create_cell_suspension_json(data):
-    template = {
-        "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
-        "schema_type": "biomaterial",
-        "estimated_cell_count": round(data['estimated_cell_count'][0]),  # TODO: read this directly from the CellxGene file
-    }
-    genus_species = []
-    for i, ontology_label in enumerate(data['genus_species.ontology_label']):
-        if data['selected_cell_type.text'][i] or data['genus_species.ontology_label'][i] or data['genus_species.ontology'][i]:
-            genus_species.append({
-                "text": data['selected_cell_type.text'][i],
-                "ontology_label": data["genus_species.ontology_label"][i],
-                "ontology": data["genus_species.ontology"][i],
-            })
-    template['genus_species'] = genus_species
-    return template
+def create_cell_suspension_jsons(data):
+    for i in range(len(data['biomaterial_core.biomaterial_id'])):
+        version = timestamp()
+        cell_suspension_json = {
+            "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
+            "schema_type": "biomaterial",
+            "estimated_cell_count": round(data['estimated_cell_count'][i]),
+            "biomaterial_core": {
+                "biomaterial_id": data['biomaterial_core.biomaterial_id'][i],
+                "biomaterial_description": data['biomaterial_core.biomaterial_description'][i],
+                "ncbi_taxon_id": [
+                    data['biomaterial_core.ncbi_taxon_id'][i]
+                ]
+            },
+            "genus_species": [
+                {
+                    "text": data['selected_cell_type.text'][i],
+                    "ontology_label": data["genus_species.ontology_label"][i],
+                    "ontology": data["genus_species.ontology"][i],
+                }
+            ],
+            "provenance": {
+                "document_id": str(uuid.uuid4()),
+                "submission_date": version,
+                "update_date": version,
+                "schema_major_version": 14,
+                "schema_minor_version": 1
+            }
+        }
+        with open(f'bundle/cell_suspension_{i}.json', 'w') as f:
+            f.write(json.dumps(cell_suspension_json, indent=4))
+        print(f'"bundle/cell_suspension_{i}.json" successfully written.')
 
 
 def is_known_divider(row_value, right_after_key_declaration):
@@ -194,17 +213,10 @@ def main(argv=sys.argv[1:]):
     args = parser.parse_args(argv)
     wb = load_workbook(args.xlsx)
     project_data = parse_project_data_from_xlsx(wb)
-    project_json = create_project_json(project_data, uuid=args.uuid, version=timestamp())
+    create_project_json(project_data, uuid=args.uuid, version=timestamp())
 
     cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
-    cell_suspension_json = create_cell_suspension_json(cell_suspension_data)
-
-    with open('bundle/project_0.json', 'w') as f:
-        f.write(json.dumps(project_json, indent=4))
-    print('"bundle/project_0.json" successfully written.')
-    with open('bundle/cell_suspension_0.json', 'w') as f:
-        f.write(json.dumps(cell_suspension_json, indent=4))
-    print('"bundle/cell_suspension_0.json" successfully written.')
+    create_cell_suspension_jsons(cell_suspension_data)
 
 
 if __name__ == "__main__":
