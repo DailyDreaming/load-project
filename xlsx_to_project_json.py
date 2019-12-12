@@ -44,11 +44,12 @@ def create_project_json(data, uuid, version, verify=False):
         for field in optional_includes:
             if data[field][i]:
                 persons_role[field.split('.')[-1]] = data[field][i]
+            else:
+                # We need default values to avoid key errors in Azul
+                persons_role[field.split('.')[-1]] = ''
 
-        person = {
-            "name": data["contributors.name"][i],
-            **({"project_role": persons_role} if persons_role else {})
-        }
+        person = {"name": data["contributors.name"][i],
+                  "project_role": persons_role}
         optional_includes = ["contributors.email",
                              "contributors.phone",
                              "contributors.institution",
@@ -131,7 +132,7 @@ def create_cell_suspension_jsons(data):
             },
             "genus_species": [
                 {
-                    # "text": data['selected_cell_type.text'][i],
+                    "text": data['selected_cell_type.text'][i],
                     "ontology_label": data["genus_species.ontology_label"][i],
                     "ontology": data["genus_species.ontology"][i],
                 }
