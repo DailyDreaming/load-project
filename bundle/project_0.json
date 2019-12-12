@@ -2,527 +2,158 @@
     "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
     "schema_type": "project",
     "project_core": {
-        "project_short_name": "SingleCellLiverLandscape",
-        "project_title": "Dissecting the human liver cellular landscape by single cell RNA-seq reveals novel intrahepatic monocyte/ macrophage populations",
-        "project_description": "The liver is the largest solid organ in the body and is critical for metabolic and immune functions. However, little is known about the cells that make up the human liver and its immune microenvironment. Here we report a map of the cellular landscape of the human liver using single-cell RNA sequencing. We provide the transcriptional profiles of 8444 parenchymal and non-parenchymal cells obtained from the fractionation of fresh hepatic tissue from five human livers. Using gene expression patterns, flow cytometry, and immunohistochemical examinations, we identify 20 discrete cell populations of hepatocytes, endothelial cells, cholangiocytes, hepatic stellate cells, B cells, conventional and non-conventional T cells, NK-like cells, and distinct intrahepatic monocyte/macrophage populations. Together, our study presents a comprehensive view of the human liver at single-cell resolution that outlines the characteristics of resident cells in the liver, and in particular provides a map of the human hepatic immune microenvironment."
+        "project_short_name": "HumanMousePancreas",
+        "project_title": "A Single-Cell Transcriptomic Map of the Human and Mouse Pancreas Reveals Inter- and Intra-cell Population Structure",
+        "project_description": "Although the function of the mammalian pancreas hinges on complex interactions of distinct cell types, gene expression profiles have primarily been described with bulk mixtures. Here we implemented a droplet-based, single-cell RNA-seq method to determine the transcriptomes of over 12,000 individual pancreatic cells from four human donors and two mouse strains. Cells could be divided into 15 clusters that matched previously characterized cell types: all endocrine cell types, including rare epsilon-cells; exocrine cell types; vascular cells; Schwann cells; quiescent and activated stellate cells; and four types of immune cells. We detected subpopulations of ductal cells with distinct expression profiles and validated their existence with immuno-histochemistry stains. Moreover, among human beta- cells, we detected heterogeneity in the regulation of genes relating to functional maturation and levels of ER stress. Finally, we deconvolved bulk gene expression samples using the single-cell data to detect disease-associated differential expression. Our dataset provides a resource for the discovery of novel cell type-specific transcription factors, signaling receptors, and medically relevant genes.\n"
     },
-    "supplementary_links": [
-        "https://github.com/BaderLab/HumanLiver"
-    ],
     "insdc_project_accessions": [
-        "SRP149989"
+        "SRP078321"
     ],
     "geo_series_accessions": [
-        "GSE115469"
+        "GSE84133"
     ],
     "insdc_study_accessions": [
-        "PRJNA475114"
+        "PRJNA328774"
     ],
     "contributors": [
         {
-            "name": "Sonya,A,MacParland",
-            "project_role": {
-                "text": "principal investigator",
-                "ontology": "EFO:0009736",
-                "ontology_label": "principal investigator"
-            },
-            "email": "sonya.macparland@uhnresearch.ca",
-            "institution": "University of Toronto",
-            "laboratory": "MacParland",
-            "country": "Canada",
+            "name": "Maayan,,Baron",
+            "project_role": {},
+            "institution": "Technion - Israel Institute of Technology",
+            "laboratory": "Faculty of Biology",
+            "address": "Haifa, 3200003",
+            "country": "Israel",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Adrian,,Veres",
+            "project_role": {},
+            "institution": "Harvard University",
+            "laboratory": "Department of Stem Cell and Regenerative Biology",
+            "address": "7 Divinity Ave Cambridge, MA 02138",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Samuel,L,Wolock",
+            "project_role": {},
+            "institution": "Harvard Medical School",
+            "laboratory": "Department of Systems Biology",
+            "address": "200 Longwood Ave Boston, MA 02115",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Aubrey,L,Faust",
+            "project_role": {},
+            "institution": "Harvard University",
+            "laboratory": "Department of Stem Cell and Regenerative Biology",
+            "address": "7 Divinity Ave Cambridge, MA 02138",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Renaud,,Gaujoux",
+            "project_role": {},
+            "institution": "Technion - Israel Institute of Technology",
+            "laboratory": "Department of Immunology, Faculty of Medicine",
+            "address": "Haifa, 3200003",
+            "country": "Israel",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Amedeo,,Vetere",
+            "project_role": {},
+            "institution": "Broad Institute",
+            "laboratory": "Center for the Science of Therapeutics",
+            "address": "Cambridge, MA 02142",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Jennifer,Hyoje,Ryu",
+            "project_role": {},
+            "institution": "Harvard University",
+            "laboratory": "Department of Stem Cell and Regenerative Biology",
+            "address": "7 Divinity Ave Cambridge, MA 02138",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Bridget,K,Wagner",
+            "project_role": {},
+            "institution": "Broad Institute",
+            "laboratory": "Center for the Science of Therapeutics",
+            "address": "Cambridge, MA 02142",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Shai,S,Shen-Orr",
+            "project_role": {},
+            "institution": "Technion - Israel Institute of Technology",
+            "laboratory": "Department of Immunology, Faculty of Medicine",
+            "address": "Haifa, 3200003",
+            "country": "Israel",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Allon,M,Klein",
+            "project_role": {},
+            "email": "allon_klein@hms.harvard.edu",
+            "institution": "Harvard Medical School",
+            "laboratory": "Department of Systems Biology",
+            "address": "200 Longwood Ave Boston, MA 02115",
+            "country": "USA",
             "corresponding_contributor": true
         },
         {
-            "name": "Jeff,C,Liu",
-            "project_role": {
-                "text": "computational scientist",
-                "ontology": "EFO:0009742",
-                "ontology_label": "clinician"
-            },
-            "email": "jeff.liu@utoronto.ca",
-            "institution": "University of Toronto",
-            "laboratory": "Bader",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Gary,D,Bader",
-            "project_role": {
-                "text": "principal investigator",
-                "ontology": "EFO:0009736",
-                "ontology_label": "principal investigator"
-            },
-            "email": "gary.bader@utoronto.ca ",
-            "institution": "University of Toronto",
-            "laboratory": "Bader",
-            "country": "Canada",
-            "corresponding_contributor": true,
-            "orcid_id": "0000-0003-0185-8861"
-        },
-        {
-            "name": "Ian,D,McGilvray",
-            "project_role": {
-                "text": "principal investigator",
-                "ontology": "EFO:0009736",
-                "ontology_label": "principal investigator"
-            },
-            "email": "ian.mcgilvray@uhn.ca",
-            "institution": "University Health Network",
-            "laboratory": "McGilvray",
-            "country": "Canada",
+            "name": "Douglas,A,Melton",
+            "project_role": {},
+            "email": "dmelton@harvard.edu",
+            "institution": "Harvard University",
+            "laboratory": "Department of Stem Cell and Regenerative Biology",
+            "address": "7 Divinity Ave Cambridge, MA 02138",
+            "country": "USA",
             "corresponding_contributor": true
         },
         {
-            "name": "Xue-Zhong,,Ma",
-            "project_role": {
-                "text": "microsurgeon",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "maxuezhong@hotmail.com ",
-            "institution": "University Health Network",
-            "laboratory": "McGilvray",
-            "country": "Canada",
-            "corresponding_contributor": false
+            "name": "Itai,,Yana",
+            "project_role": {},
+            "email": "itai.yanai@nyumc.org",
+            "institution": "Technion - Israel Institute of Technology",
+            "laboratory": "Faculty of Biology",
+            "address": "Haifa, 3200003",
+            "country": "Israel",
+            "corresponding_contributor": true
         },
         {
-            "name": "Brendan,T,Innes",
-            "project_role": {
-                "text": "computational scientist",
-                "ontology": "EFO:0009742",
-                "ontology_label": "clinician"
-            },
-            "email": "brendan.innes@mail.utoronto.ca",
-            "institution": "University of Toronto",
-            "laboratory": "Bader",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Agata,M,Bartczak",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "a.bartczak@gmail.com",
-            "institution": "University Health Network",
-            "laboratory": "McGilvray",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Blair,K,Gage",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "Blair.Gage@uhnresearch.ca",
-            "institution": "University Health Network",
-            "laboratory": "Keller",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Justin,,Manuel",
-            "project_role": {
-                "text": "microsurgeon",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "Justin.Manuel@uhnresearch.ca ",
-            "institution": "University Health Network",
-            "laboratory": "McGilvray",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Nicholas,,Khuu",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "Nicholas.Khuu@uhnresearch.ca",
-            "institution": "University Health Network",
-            "laboratory": "Winegarden",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Juan,,Echeverri",
-            "project_role": {
-                "text": "surgeon",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "Juanan27@me.com",
-            "institution": "University Health Network",
-            "laboratory": "Selzner",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Ivan,,Linares",
-            "project_role": {
-                "text": "surgeon",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "lin85ij@outlook.com",
-            "institution": "University Health Network",
-            "laboratory": "Selzner",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Rahul,,Gupta",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "ra.gupta@mail.utoronto.ca",
-            "institution": "University Health Network",
-            "laboratory": "MacParland",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Michael,L,Cheng",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "mly.cheng@mail.utoronto.ca",
-            "institution": "University Health Network",
-            "laboratory": "MacParland",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Lewis,Y,Liu",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "lewy.liu@mail.utoronto.ca",
-            "institution": "University Health Network",
-            "laboratory": "MacParland",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Damra,,Camat",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "damra.camat@mail.utoronto.ca",
-            "institution": "University Health Network",
-            "laboratory": "MacParland",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Sai,W,Chung",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "sai.chung@mail.utoronto.ca",
-            "institution": "University Health Network",
-            "laboratory": "MacParland",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Rebecca,K,Seliga",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "rkseliga@gmail.com",
-            "institution": "University Health Network",
-            "laboratory": "MacParland",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Zigong,,Shao",
-            "project_role": {
-                "text": "microsurgeon",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "zigong.shao@uhnresearch.ca",
-            "institution": "University Health Network",
-            "laboratory": "McGilvray",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Elizabeth,,Lee",
-            "project_role": {
-                "text": "Transplant Research Coordinator",
-                "ontology": "EFO:0009743",
-                "ontology_label": "administrator"
-            },
-            "email": "Elizabeth.Lee@uhn.ca",
-            "institution": "University Health Network",
-            "laboratory": "McGilvray",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Shinichiro,,Ogawa",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "Shinichiro.Ogawa@uhnresearch.ca",
-            "institution": "University Health Network",
-            "laboratory": "Keller",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Mina,,Ogawa",
-            "project_role": {
-                "text": "experimental scientist",
-                "ontology": "EFO:0009741",
-                "ontology_label": "experimental scientist"
-            },
-            "email": "Mina.Ogawa@uhnresearch.ca",
-            "institution": "University Health Network",
-            "laboratory": "Keller",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Michael,D,Wilson",
-            "project_role": {
-                "text": "co-investigator",
-                "ontology": "EFO:0009735",
-                "ontology_label": "co-investigator"
-            },
-            "email": "michael.wilson@sickkids.ca",
-            "institution": "Hospital for Sick Children",
-            "laboratory": "Wilson",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Jason,E,Fish",
-            "project_role": {
-                "text": "co-investigator",
-                "ontology": "EFO:0009735",
-                "ontology_label": "co-investigator"
-            },
-            "email": "jason.fish@utoronto.ca",
-            "institution": "University Health Network",
-            "laboratory": "Fish",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Markus,,Selzner",
-            "project_role": {
-                "text": "surgeon",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "markus.selzner@uhn.ca ",
-            "institution": "University Health Network",
-            "laboratory": "Selzner",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Anand,,Ghanekar",
-            "project_role": {
-                "text": "surgeon",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "anand.ghanekar@uhn.ca",
-            "institution": "University Health Network",
-            "laboratory": "Ghanekar",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "David,,Grant",
-            "project_role": {
-                "text": "surgeon",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "David.Grant@uhn.ca",
-            "institution": "University Health Network",
-            "laboratory": "Grant",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Paul,,Greig",
-            "project_role": {
-                "text": "surgeon",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "Paul.Greig@uhn.ca",
-            "institution": "University Health Network",
-            "laboratory": "Greig",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Gonzalo,,Sapisochin",
-            "project_role": {
-                "text": "surgeon",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "gonzalo.sapisochin@uhn.ca",
-            "institution": "University Health Network",
-            "laboratory": "Sapisochin",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Nazia,,Selzner",
-            "project_role": {
-                "text": "hepatologist",
-                "ontology": "EFO:0009740",
-                "ontology_label": "clinician"
-            },
-            "email": "Nazia.Selzner@uhn.ca",
-            "institution": "University Health Network",
-            "laboratory": "Selzner",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Neil,,Winegarden",
-            "project_role": {
-                "text": "co-investigator",
-                "ontology": "EFO:0009735",
-                "ontology_label": "co-investigator"
-            },
-            "email": "neil.winegarden@uhnresearch.ca",
-            "institution": "University Health Network",
-            "laboratory": "Winegarden",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Oyedele,,Adeyi",
-            "project_role": {
-                "text": "pathologist ",
-                "ontology": "EFO:0009738",
-                "ontology_label": "pathologist "
-            },
-            "email": "oyedele.adeyi@uhn.ca",
-            "institution": "University Health Network",
-            "laboratory": "Adeyi",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "Gordon,,Keller",
-            "project_role": {
-                "text": "co-investigator",
-                "ontology": "EFO:0009735",
-                "ontology_label": "co-investigator"
-            },
-            "email": "gordon.keller@uhnresearch.ca",
-            "institution": "University Health Network",
-            "laboratory": "Keller",
-            "country": "Canada",
-            "corresponding_contributor": false
-        },
-        {
-            "name": "William,G,Sullivan",
+            "name": "Mallory,Ann,Freeberg",
             "project_role": {
                 "text": "Human Cell Atlas wrangler",
                 "ontology": "EFO:0009737",
                 "ontology_label": "data curator"
             },
-            "email": "wisulliv@ucsc.edu",
-            "institution": "University of California Santa Cruz",
+            "email": "mfreeberg@ebi.ac.uk",
+            "institution": "EMBL-EBI",
             "laboratory": "Human Cell Atlas Data Coordination Platform",
-            "address": "1156 High St, Santa Cruz, CA 95064",
-            "country": "USA",
-            "corresponding_contributor": false
-        }
-    ],
-    "publications": [
-        {
-            "authors": [
-                "MacParland SA",
-                "Liu JC",
-                "Ma XZ",
-                "Innes BT",
-                "Bartczak AM",
-                "Gage BK",
-                "Manuel J",
-                "Khuu N",
-                "Echeverri J",
-                "Linares I",
-                "Gupta R",
-                "Cheng ML",
-                "Liu LY",
-                "Camat D",
-                "Chung SW",
-                "Seliga RK",
-                "Shao Z",
-                "Lee E",
-                "Ogawa S",
-                "Ogawa M",
-                "Wilson MD",
-                "Fish JE",
-                "Selzner M",
-                "Ghanekar A",
-                "Grant D",
-                "Greig P",
-                "Sapisochin G",
-                "Selzner N",
-                "Winegarden N",
-                "Adeyi O",
-                "Keller G",
-                "Bader GD",
-                "McGilvray ID"
-            ],
-            "title": "Single cell RNA sequencing of human liver reveals distinct intrahepatic macrophage populations",
-            "doi": "10.1038/s41467-018-06318-7",
-            "pmid": 30348985,
-            "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6197289/"
+            "address": "Wellcome Trust Genome Campus, Cambridge UK",
+            "country": "UK",
+            "corresponding_contributor": false,
+            "orcid_id": "0000-0003-2949-3921"
         }
     ],
     "funders": [
         {
-            "grant_title": "Medicine by Design",
-            "grant_id": "not provided",
-            "organization": "Canada First Research Excellence Fund (CFREF)"
-        },
-        {
-            "grant_title": "National Resource for Network Biology",
-            "grant_id": "P41 GM103504",
-            "organization": "NIH"
+            "grant_title": null,
+            "grant_id": "ASTF 474-2015",
+            "organization": "European Molecular Biology Organization"
         }
     ],
     "provenance": {
         "document_id": "4d6f6c96-2a83-43d8-8fe1-0f53bffd4674",
-        "submission_date": "2019-12-11T191628.195437Z",
-        "update_date": "2019-12-11T191628.195437Z",
+        "submission_date": "2019-12-12T040130.939576Z",
+        "update_date": "2019-12-12T040130.939576Z",
         "schema_major_version": 14,
         "schema_minor_version": 1
     }

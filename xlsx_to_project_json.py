@@ -31,9 +31,10 @@ def create_project_json(data, uuid, version, verify=False):
             template[field] = data[field]
 
     #### Contributors
-    if data.get("contributors.name", []):
+    contributors = [i for i in data.get("contributors.name", []) if i]
+    if contributors:
         template['contributors'] = []
-    for i in range(len(data.get("contributors.name", []))):
+    for i in range(len(contributors)):
         persons_role = {}
         optional_includes = ["contributors.project_role.text",
                              "contributors.project_role.ontology",
@@ -67,9 +68,10 @@ def create_project_json(data, uuid, version, verify=False):
         template['contributors'].append(person)
 
     #### Publications
-    if data.get("publications.title", []):
+    publications = [i for i in data.get("publications.title", []) if i]
+    if publications:
         template['publications'] = []
-    for i in range(len(data.get("publications.title", []))):
+    for i in range(len(publications)):
         publication = {"authors": data["publications.authors"][i].split('||'),
                        "title": data["publications.title"][i]}
         optional_includes = ["publications.doi",
@@ -84,9 +86,10 @@ def create_project_json(data, uuid, version, verify=False):
         template['publications'].append(publication)
 
     #### Funders
-    if data.get("funders.grant_title", []):
+    grant_ids = [i for i in data.get("funders.grant_id", []) if i]
+    if grant_ids:
         template['funders'] = []
-    for i in range(len(data.get("funders.grant_title", []))):
+    for i in range(len(grant_ids)):
         funder = {"grant_title": data["funders.grant_title"][i],
                   "grant_id": data["funders.grant_id"][i],
                   "organization": data["funders.organization"][i]}
@@ -127,10 +130,11 @@ def process_section(section, project=True, verify=False):
 def parse_project_data_from_xlsx(file):
     wb = load_workbook(file)
     data = process_section(section=wb['Project'], project=True)
-    data.update(process_section(section=wb['Project - Publications'], project=True))
-    data.update(process_section(section=wb['Project - Funders'], project=True))
-    data.update(process_section(section=wb['Project - Contributors'], project=True))
-    # print(json.dumps((process_section(section=wb['Cell suspension'], project=False)), indent=4))
+    for project_key in ['Project - Publications', 'Project - Funders', 'Project - Contributors']:
+        try:
+            data.update(process_section(section=wb[project_key], project=True))
+        except KeyError:
+            pass
     return data
 
 
@@ -145,7 +149,7 @@ def main(argv=sys.argv[1:]):
 
     args = parser.parse_args(argv)
 
-    data = parse_project_data_from_xlsx(file=args.xlsx)
+    data = parse_project_data_from_xlsx(file='/home/quokka/Downloads/GEOD-93593_HCA_Ontologies_July_2.xlsx')
     project_json = create_project_json(data, uuid=args.uuid, version=timestamp())
 
     with open('bundle/project_0.json', 'w') as f:
