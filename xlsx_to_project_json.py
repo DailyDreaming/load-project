@@ -27,8 +27,9 @@ def create_project_json(data, uuid, version, verify=False):
                          "insdc_study_accessions",
                          "biostudies_accessions"]
     for field in optional_includes:
-        if data[field][0]:
-            template[field] = data[field]
+        if field in data:
+            if data[field][0]:
+                template[field] = data[field]
 
     #### Contributors
     contributors = [i for i in data.get("contributors.name", []) if i]
@@ -113,31 +114,48 @@ def create_cell_suspension_json(data):
     template = {
         "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
         "schema_type": "biomaterial",
-        "estimated_cell_count": round(data['estimated_cell_count'][0]),
-        "genus_species": [
-            {
-                "text": data['selected_cell_type.text'][0],
-                "ontology_label": data["genus_species.ontology_label"][0],
-                "ontology": data["genus_species.ontology"][0],
-            }
-        ]
+        "estimated_cell_count": round(data['estimated_cell_count'][0]),  # TODO: read this directly from the CellxGene file
     }
+    genus_species = []
+    for i, ontology_label in enumerate(data['genus_species.ontology_label']):
+        if data['selected_cell_type.text'][i] or data['genus_species.ontology_label'][i] or data['genus_species.ontology'][i]:
+            genus_species.append({
+                "text": data['selected_cell_type.text'][i],
+                "ontology_label": data["genus_species.ontology_label"][i],
+                "ontology": data["genus_species.ontology"][i],
+            })
+    template['genus_species'] = genus_species
     return template
+
+
+def is_known_divider(row_value, right_after_key_declaration):
+    if 'BELOW THIS ROW' in row_value or 'below this line' in row_value:
+        return True
+    if right_after_key_declaration and not row_value:
+        return True
 
 
 def process_section(section, prefix='', verify=False):
     project_data = {}
+    header_section = True
+    right_after_key_declaration = False
+    cells = []
     for i, row in enumerate(section.rows):
-        if i == 3:
+
+        if not header_section:
+            for j, field in enumerate(cells):
+                if field in project_data:
+                    project_data[field].append(row[j].value)
+                else:
+                    project_data[field] = [row[j].value]
+
+        row_value = row[0].value or ''
+        if header_section and row_value.startswith(prefix):
             cells = [c.value[len(prefix):] if c.value.startswith(prefix) else c.value for c in row if c.value]
-        if i == 4:
-            assert row[0].value == 'FILL OUT INFORMATION BELOW THIS ROW', cells[0]
-        if i == 5:
-            for j, field in enumerate(cells):
-                project_data[field] = [row[j].value]
-        if i > 5:
-            for j, field in enumerate(cells):
-                project_data[field].append(row[j].value)
+            right_after_key_declaration = True
+
+        if is_known_divider(row_value, right_after_key_declaration):
+            header_section = False
     if verify:
         print(json.dumps(project_data, indent=4))
     return project_data
@@ -145,12 +163,18 @@ def process_section(section, prefix='', verify=False):
 
 def parse_project_data_from_xlsx(wb):
     data = process_section(section=wb['Project'], prefix='project.')
-    for project_key in ['Project - Publications', 'Project - Funders', 'Project - Contributors']:
+    for project_key in ['Project - Publications',
+                        'Project - Publication',
+                        'Project - Funders',
+                        'Project - Funder',
+                        'Project - Contributors',
+                        'Project - Contributor']:
         try:
             data.update(process_section(section=wb[project_key], prefix='project.'))
+            print(f'{project_key} found in the data.')
         except KeyError:
-            pass
-    return data
+            print(f'{project_key} not found in the data!')
+    return dict(data)
 
 
 def parse_cell_suspension_data_from_xlsx(wb):
@@ -164,7 +188,7 @@ def main(argv=sys.argv[1:]):
                         default="4d6f6c96-2a83-43d8-8fe1-0f53bffd4674",  # TODO: Delete this default (Liver Project).
                         help="The project UUID.")
     parser.add_argument("--xlsx", type=str,
-                        default='Gary_Bader_9_16.xlsx',  # TODO: Delete this default (Liver Project).
+                        default='projects/Gary_Bader_9_16.xlsx',  # TODO: Delete this default (Liver Project).
                         help="Path to an xlsx (excel) file.")
 
     args = parser.parse_args(argv)
