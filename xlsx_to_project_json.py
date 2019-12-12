@@ -11,7 +11,7 @@ def timestamp():
     return datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
 
-def create_project_json(data, uuid, version, verify=False):
+def create_project_json(data, uuid, version, output_dir, verify=False):
     project_json = {
       "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
       "schema_type": "project",
@@ -111,12 +111,12 @@ def create_project_json(data, uuid, version, verify=False):
         }
     if verify:
         print(json.dumps(project_json, indent=4))
-    with open('bundle/project_0.json', 'w') as f:
+    with open(f'{output_dir}/project_0.json', 'w') as f:
         f.write(json.dumps(project_json, indent=4))
-    print('"bundle/project_0.json" successfully written.')
+    print(f'"{output_dir}/project_0.json" successfully written.')
 
 
-def create_cell_suspension_jsons(data):
+def create_cell_suspension_jsons(data, output_dir):
     for i in range(len(data['biomaterial_core.biomaterial_id'])):
         version = timestamp()
         cell_suspension_json = {
@@ -145,9 +145,9 @@ def create_cell_suspension_jsons(data):
                 "schema_minor_version": 1
             }
         }
-        with open(f'bundle/cell_suspension_{i}.json', 'w') as f:
+        with open(f'{output_dir}/cell_suspension_{i}.json', 'w') as f:
             f.write(json.dumps(cell_suspension_json, indent=4))
-        print(f'"bundle/cell_suspension_{i}.json" successfully written.')
+        print(f'"{output_dir}/cell_suspension_{i}.json" successfully written.')
 
 
 def is_known_divider(row_value, right_after_key_declaration):
@@ -204,22 +204,29 @@ def parse_cell_suspension_data_from_xlsx(wb):
     return data
 
 
+def run(uuid, xlsx, output_dir):
+    wb = load_workbook(xlsx)
+    project_data = parse_project_data_from_xlsx(wb)
+    create_project_json(project_data, uuid=uuid, version=timestamp(), output_dir=output_dir)
+
+    # cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
+    # create_cell_suspension_jsons(cell_suspension_data, output_dir)
+
+
 def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser(description='Turn an xlsx file into a project.json file.')
     parser.add_argument("--uuid", type=str,
-                        default="4d6f6c96-2a83-43d8-8fe1-0f53bffd4674",  # TODO: Delete this default (Liver Project).
+                        default="4d6f6c96-2a83-43d8-8fe1-0f53bffd4674",  # TODO: Delete this.
                         help="The project UUID.")
     parser.add_argument("--xlsx", type=str,
-                        default='data/test_project_000.xlsx',  # TODO: Delete this default (Liver Project).
+                        default='data/test_project_000.xlsx',  # TODO: Delete this.
                         help="Path to an xlsx (excel) file.")
+    parser.add_argument("--output_dir", type=str,
+                        default='bundle',
+                        help="Path to an output directory.")
 
     args = parser.parse_args(argv)
-    wb = load_workbook(args.xlsx)
-    project_data = parse_project_data_from_xlsx(wb)
-    create_project_json(project_data, uuid=args.uuid, version=timestamp())
-
-    # cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
-    # create_cell_suspension_jsons(cell_suspension_data)
+    run(args.uuid, args.xlsx, args.output_dir)
 
 
 if __name__ == "__main__":
