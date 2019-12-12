@@ -106,11 +106,27 @@ def create_project_json(data, uuid, version, verify=False):
     return template
 
 
-def process_section(section, project=True, verify=False):
+def create_cell_suspension_json(data):
+    template = {
+        "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
+        "schema_type": "biomaterial",
+        "estimated_cell_count": round(data['estimated_cell_count'][0]),
+        "genus_species": [
+            {
+                "text": data['selected_cell_type.text'][0],
+                "ontology_label": data["genus_species.ontology_label"][0],
+                "ontology": data["genus_species.ontology"][0],
+            }
+        ]
+    }
+    return template
+
+
+def process_section(section, prefix='', verify=False):
     project_data = {}
     for i, row in enumerate(section.rows):
         if i == 3:
-            cells = [c.value[len('project.'):] for c in row if c.value] if project else [c.value for c in row if c.value]
+            cells = [c.value[len(prefix):] if c.value.startswith(prefix) else c.value for c in row if c.value]
         if i == 4:
             assert row[0].value == 'FILL OUT INFORMATION BELOW THIS ROW', cells[0]
         if i == 5:
@@ -124,13 +140,16 @@ def process_section(section, project=True, verify=False):
     return project_data
 
 
-def parse_project_data_from_xlsx(file):
-    wb = load_workbook(file)
-    data = process_section(section=wb['Project'], project=True)
-    data.update(process_section(section=wb['Project - Publications'], project=True))
-    data.update(process_section(section=wb['Project - Funders'], project=True))
-    data.update(process_section(section=wb['Project - Contributors'], project=True))
-    # print(json.dumps((process_section(section=wb['Cell suspension'], project=False)), indent=4))
+def parse_project_data_from_xlsx(wb):
+    data = process_section(section=wb['Project'], prefix='project.')
+    data.update(process_section(section=wb['Project - Publications'], prefix='project.'))
+    data.update(process_section(section=wb['Project - Funders'], prefix='project.'))
+    data.update(process_section(section=wb['Project - Contributors'], prefix='project.'))
+    return data
+
+
+def parse_cell_suspension_data_from_xlsx(wb):
+    data = process_section(section=wb['Cell suspension'], prefix='cell_suspension.')
     return data
 
 
@@ -144,13 +163,19 @@ def main(argv=sys.argv[1:]):
                         help="Path to an xlsx (excel) file.")
 
     args = parser.parse_args(argv)
+    wb = load_workbook(filename=args.xlsx)
+    project_data = parse_project_data_from_xlsx(wb)
+    project_json = create_project_json(project_data, uuid=args.uuid, version=timestamp())
 
-    data = parse_project_data_from_xlsx(file=args.xlsx)
-    project_json = create_project_json(data, uuid=args.uuid, version=timestamp())
+    cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
+    cell_suspension_json = create_cell_suspension_json(cell_suspension_data)
 
     with open('bundle/project_0.json', 'w') as f:
         f.write(json.dumps(project_json, indent=4))
     print('"bundle/project_0.json" successfully written.')
+    with open('bundle/cell_suspension_0.json', 'w') as f:
+        f.write(json.dumps(cell_suspension_json, indent=4))
+    print('"bundle/cell_suspension_0.json" successfully written.')
 
 
 if __name__ == "__main__":
