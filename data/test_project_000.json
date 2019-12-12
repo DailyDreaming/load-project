@@ -1,5 +1,5 @@
 {
-    "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
+    "describedBy": "https://schema.humancellatlas.org/type/project/14.0.0/project",
     "schema_type": "project",
     "project_core": {
         "project_short_name": "Single cell transcriptome analysis of human pancreas",
@@ -14,51 +14,6 @@
     ],
     "geo_series_accessions": [
         "GSE81547"
-    ],
-    "contributors": [
-        {
-            "name": "Martin, Enge",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
-            "email": "martin.enge@gmail.com",
-            "institution": "Stanford University",
-            "address": "Bioengineering, Stanford University, James H. Clark Center, 318 Campus Drive,, Stanford, CA, USA",
-            "country": "USA"
-        },
-        {
-            "name": "Laura,,Huerta",
-            "project_role": {
-                "text": "external curator",
-                "ontology": "EFO:0009737",
-                "ontology_label": "data curator"
-            },
-            "email": "lauhuema@ebi.ac.uk",
-            "institution": "EMBL-EBI",
-            "laboratory": "Molecular Atlas",
-            "address": "Wellcome Trust Genome Campus, Cambridge UK",
-            "country": "UK",
-            "corresponding_contributor": false,
-            "orcid_id": "0000-0002-8748-599X"
-        },
-        {
-            "name": "Matthew,,Green",
-            "project_role": {
-                "text": "Human Cell Atlas wrangler",
-                "ontology": "EFO:0009737",
-                "ontology_label": "data curator"
-            },
-            "email": "hewgreen@ebi.ac.uk",
-            "phone": "(+44) 122-349-4444",
-            "institution": "EMBL-EBI European Bioinformatics Institute",
-            "laboratory": "Human Cell Atlas Data Coordination Platform",
-            "address": "Wellcome Trust Genome Campus, Hinxton, Cambridge CB10 1SD",
-            "country": "UK",
-            "corresponding_contributor": false,
-            "orcid_id": "0000-0003-2771-9894"
-        }
     ],
     "publications": [
         {
@@ -79,37 +34,30 @@
     ],
     "funders": [
         {
-            "grant_title": null,
             "grant_id": "GC1R-06673",
             "organization": "Institute for Regenerative Medicine"
         },
         {
-            "grant_title": null,
             "grant_id": "U01-HL099999\u00a0and\u00a0U01-HL099995",
             "organization": "Center of Excellence for Stem Cell Genomics and NIH"
         },
         {
-            "grant_title": null,
             "grant_id": "UC4DK104211,\u00a0DK10261201, and\u00a0P30DK116074-01",
             "organization": "NIH"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Helmsley Charitable Trust"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "H.L. Snyder Foundation"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Elser Foundation"
         },
         {
-            "grant_title": null,
             "grant_id": "3-APF-2016-172-A-N",
             "organization": "JDRF"
         },
@@ -119,21 +67,57 @@
             "organization": "NIDDK"
         },
         {
-            "grant_title": null,
             "grant_id": "2015-00599",
             "organization": "Swedish Research Council"
         },
         {
-            "grant_title": null,
-            "grant_id": 2013.0391,
+            "grant_id": "2013.0391",
             "organization": "Wallenberg Research link at Stanford University"
         }
     ],
+    "contributors": [
+        {
+            "name": "Martin, Enge",
+            "email": "martin.enge@gmail.com",
+            "institution": "Stanford University",
+            "address": "Bioengineering, Stanford University, James H. Clark Center, 318 Campus Drive,, Stanford, CA, USA",
+            "country": "USA"
+        },
+        {
+            "name": "Laura,,Huerta",
+            "email": "lauhuema@ebi.ac.uk",
+            "institution": "EMBL-EBI",
+            "laboratory": "Molecular Atlas",
+            "address": "Wellcome Trust Genome Campus, Cambridge UK",
+            "country": "UK",
+            "project_role": {
+                "text": "external curator",
+                "ontology": "EFO:0009737",
+                "ontology_label": "data curator"
+            },
+            "orcid_id": "0000-0002-8748-599X",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Matthew,,Green",
+            "email": "hewgreen@ebi.ac.uk",
+            "phone": "(+44) 122-349-4444",
+            "institution": "EMBL-EBI European Bioinformatics Institute",
+            "laboratory": "Human Cell Atlas Data Coordination Platform",
+            "address": "Wellcome Trust Genome Campus, Hinxton, Cambridge CB10 1SD",
+            "country": "UK",
+            "project_role": {
+                "text": "Human Cell Atlas wrangler",
+                "ontology": "EFO:0009737",
+                "ontology_label": "data curator"
+            },
+            "orcid_id": "0000-0003-2771-9894",
+            "corresponding_contributor": false
+        }
+    ],
     "provenance": {
-        "document_id": "4d6f6c96-2a83-43d8-8fe1-0f53bffd4674",
-        "submission_date": "2019-12-12T231815.925491Z",
-        "update_date": "2019-12-12T231815.925491Z",
-        "schema_major_version": 14,
-        "schema_minor_version": 1
+        "document_id": "cddab57b-6868-4be4-806f-395ed9dd635a",
+        "submission_date": "2019-05-10T14:20:25.934Z",
+        "update_date": "2019-05-10T14:24:52.095Z"
     }
 }

@@ -210,7 +210,7 @@ def main(argv=sys.argv[1:]):
                         default="4d6f6c96-2a83-43d8-8fe1-0f53bffd4674",  # TODO: Delete this default (Liver Project).
                         help="The project UUID.")
     parser.add_argument("--xlsx", type=str,
-                        default='projects/Gary_Bader_9_16.xlsx',  # TODO: Delete this default (Liver Project).
+                        default='data/test_project_000.xlsx',  # TODO: Delete this default (Liver Project).
                         help="Path to an xlsx (excel) file.")
 
     args = parser.parse_args(argv)
@@ -218,8 +218,8 @@ def main(argv=sys.argv[1:]):
     project_data = parse_project_data_from_xlsx(wb)
     create_project_json(project_data, uuid=args.uuid, version=timestamp())
 
-    cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
-    create_cell_suspension_jsons(cell_suspension_data)
+    # cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
+    # create_cell_suspension_jsons(cell_suspension_data)
 
 
 if __name__ == "__main__":

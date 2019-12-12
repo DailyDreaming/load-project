@@ -1,0 +1,117 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/project/14.0.2/project",
+    "schema_type": "project",
+    "project_core": {
+        "project_short_name": "Tabula Muris",
+        "project_title": "Tabula Muris: Transcriptomic characterization of 20 organs and tissues from Mus musculus at single cell resolution",
+        "project_description": "We have created a compendium of single cell transcriptome data from the model\norganism Mus musculus comprising more than 100,000 cells from 20 organs and\ntissues. These data represent a new resource for cell biology, revealing gene\nexpression in poorly characterized cell populations and allowing for direct and\ncontrolled comparison of gene expression in cell types shared between tissues, such\nas T-lymphocytes and endothelial cells from distinct anatomical locations. Two\ndistinct technical approaches were used for most tissues: one approach, microfluidic\ndroplet-based 3\u2019-end counting, enabled the survey of thousands of cells at relatively\nlow coverage, while the other, FACS-based full length transcript analysis, enabled\ncharacterization of cell types with high sensitivity and coverage. The cumulative\ndata provide the foundation for an atlas of transcriptomic cell biology."
+    },
+    "supplementary_links": [
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Bladder.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Brain_Microglia.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Brain_Neurons.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Colon.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Fat.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Heart.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Kidney.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Liver.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Lung.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Mammary.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Marrow.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Muscle.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Pancreas.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_RAW.tar",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Skin.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Spleen.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Thymus.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Tongue.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_Trachea.tar.gz",
+        "ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE109nnn/GSE109774/suppl/GSE109774_list_of_SRR_accessions_and_raw_filenames.txt.gz"
+    ],
+    "insdc_project_accessions": [
+        "SRP131661"
+    ],
+    "geo_series_accessions": [
+        "GSE109774"
+    ],
+    "insdc_study_accessions": [
+        "PRJNA432002"
+    ],
+    "contributors": [
+        {
+            "name": "Spyros,,Darmanis",
+            "email": "spyros.darmanis@czbiohub.org",
+            "institution": "Biohub",
+            "laboratory": "Quake",
+            "address": "499 Illinois St San Francisco CA 94158",
+            "country": "USA",
+            "project_role": {
+                "text": "principal investigator",
+                "ontology": "EFO:0009736",
+                "ontology_label": "principal investigator"
+            },
+            "corresponding_contributor": true
+        },
+        {
+            "name": "Christopher,,Villarreal",
+            "email": "cjvillar@ucsc.edu",
+            "institution": "University of California at Santa Cruz",
+            "country": "USA",
+            "project_role": {
+                "text": "Human Cell Atlas wrangler",
+                "ontology": "EFO:0009737",
+                "ontology_label": "data curator"
+            },
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Pisco,,Angela",
+            "email": "angela.pisco@czbiohub.org",
+            "institution": "Biohub",
+            "address": "499 Illinois St San Francisco CA 94158",
+            "country": "USA",
+            "project_role": {
+                "text": "computational scientist",
+                "ontology": "EFO:0009742",
+                "ontology_label": "computational scientist"
+            },
+            "corresponding_contributor": true
+        }
+    ],
+    "publications": [
+        {
+            "authors": [
+                "The Tabula Muris Consortium, Quake SR,  Wyss-Coray T, Darmanis S"
+            ],
+            "title": "Transcriptomic characterization of 20 organs and tissues from mouse at single cell resolution creates a Tabula Muris",
+            "doi": "10.1101/237446",
+            "url": "https://www.biorxiv.org/content/early/2018/03/29/237446"
+        },
+        {
+            "authors": [
+                "The Tabula Muris Consortium, Quake SR,  Wyss-Coray T, Darmanis S"
+            ],
+            "title": "Single-cell transcriptomics of 20 mouse organs creates a Tabula Muris",
+            "doi": "10.1038/s41586-018-0590-4",
+            "pmid": 30283141,
+            "url": "https://www.nature.com/articles/s41586-018-0590-4"
+        }
+    ],
+    "funders": [
+        {
+            "grant_title": "NIH Grant",
+            "grant_id": "DP1-AG053015",
+            "organization": "National Institutes of Health (NIH)"
+        },
+        {
+            "grant_title": "Stanford Islet Research Core",
+            "grant_id": "P30-DK116074",
+            "organization": "Stanford Diabetes Research Center"
+        }
+    ],
+    "provenance": {
+        "document_id": "e0009214-c0a0-4a7b-96e2-d6a83e966ce0",
+        "submission_date": "2019-07-09T19:41:33.363Z",
+        "update_date": "2019-07-09T22:13:20.395Z"
+    }
+}
