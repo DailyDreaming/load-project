@@ -1,0 +1,36 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.0/cell_suspension",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "GSM2513710_C88",
+        "biomaterial_description": "Human healthy donor colon, stromal cell",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "biosamples_accession": "SAMN06467484"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "estimated_cell_count": 1,
+    "plate_based_sequencing": {
+        "plate_label": "C88",
+        "well_label": "20150702"
+    },
+    "selected_cell_types": [
+        {
+            "text": "stromal cell",
+            "ontology": "CL:0000499",
+            "ontology_label": "stromal cell"
+        }
+    ],
+    "provenance": {
+        "document_id": "94f56017-1257-46e7-ad22-9c0d974500f4",
+        "submission_date": "2019-07-26T14:44:16.111Z",
+        "update_date": "2019-07-26T14:44:51.156Z"
+    }
+}

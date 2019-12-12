@@ -1,0 +1,40 @@
+{
+    "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/13.1.0/cell_suspension",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "D54Dn25SKA03",
+        "biomaterial_name": "hESC-derived inhibitory interneurons",
+        "biomaterial_description": "hESC-derived inhibitory interneurons at day 54",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "genotype": "DCX-Citrine"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "selected_cell_types": [
+        {
+            "text": "inhibitory interneurons",
+            "ontology": "CL:0000498",
+            "ontology_label": "inhibitory interneuron"
+        }
+    ],
+    "timecourse": {
+        "value": "54",
+        "unit": {
+            "text": "day",
+            "ontology_label": "day",
+            "ontology": "UO:0000995"
+        }
+    },
+    "provenance": {
+        "document_id": "4d0148cb-bc4f-4955-a8c4-cf28a509beef",
+        "submission_date": "2019-05-14T18:05:06.275Z",
+        "update_date": "2019-05-14T18:10:04.479Z"
+    }
+}

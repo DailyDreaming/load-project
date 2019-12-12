@@ -1,0 +1,31 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.0/cell_suspension",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "M_ICR_pancreas_cells_batch1",
+        "biomaterial_description": "Mouse islets were isolated (and pooled) from five C57BL/6 and ICR mice by perfusion of the common bile duct with 0.8 mM Collagenase P (Roche), digestion of the pancreata with 0.8 mM Collagenase P (Roche) and purification of the islets by Histopaque gradient (Sigma) centrifugation.",
+        "ncbi_taxon_id": [
+            10090
+        ]
+    },
+    "genus_species": [
+        {
+            "text": "Mus musculus",
+            "ontology": "NCBITaxon:10090",
+            "ontology_label": "Mus musculus"
+        }
+    ],
+    "selected_cell_types": [
+        {
+            "text": "pancreatic PP cell",
+            "ontology": "CL:0002275",
+            "ontology_label": "pancreatic PP cell"
+        }
+    ],
+    "estimated_cell_count": 334,
+    "provenance": {
+        "document_id": "377ff09c-591d-48b9-a794-7215e3e1c288",
+        "submission_date": "2019-07-04T13:38:38.000Z",
+        "update_date": "2019-07-04T13:38:44.421Z"
+    }
+}

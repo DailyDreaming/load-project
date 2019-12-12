@@ -1,0 +1,28 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "O10.B000126.3_39_F.1.1_B000126_3_39_F_Skin_Telogen",
+        "biomaterial_description": "Telogen",
+        "ncbi_taxon_id": [
+            10090
+        ]
+    },
+    "genus_species": [
+        {
+            "text": "Mus musculus",
+            "ontology": "NCBITaxon:10090",
+            "ontology_label": "Mus musculus"
+        }
+    ],
+    "estimated_cell_count": 1,
+    "plate_based_sequencing": {
+        "plate_label": "B000126",
+        "well_label": "O10"
+    },
+    "provenance": {
+        "document_id": "c14b99ea-d8e2-4c84-9dc2-ce2245d8a743",
+        "submission_date": "2019-07-09T19:53:12.404Z",
+        "update_date": "2019-07-09T23:19:35.003Z"
+    }
+}

@@ -1,0 +1,37 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.0/cell_suspension",
+    "schema_type": "biomaterial",
+    "biomaterial_core": {
+        "biomaterial_id": "Single-cell_RNA-seq_Subject16_IL7Rlow_TEMRA_Cell108",
+        "biomaterial_name": "Single-cell_RNA-seq_Subject16_IL7Rlow_TEMRA_Cell108",
+        "biomaterial_description": "Single-cell_RNA-seq_Subject16_IL7Rlow_TEMRA_Cell108",
+        "ncbi_taxon_id": [
+            9606
+        ],
+        "insdc_sample_accession": "SRS2663105"
+    },
+    "genus_species": [
+        {
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
+        }
+    ],
+    "selected_cell_types": [
+        {
+            "text": "IL7R low TEMRA",
+            "ontology": "CL:0001062",
+            "ontology_label": "effector memory CD8-positive, alpha-beta T cell, terminally differentiated"
+        }
+    ],
+    "estimated_cell_count": 1,
+    "plate_based_sequencing": {
+        "plate_label": "not collected",
+        "well_quality": "OK"
+    },
+    "provenance": {
+        "document_id": "91f08484-d80b-470e-9e4a-d59065c3bd92",
+        "submission_date": "2019-05-16T13:57:43.940Z",
+        "update_date": "2019-05-16T15:02:27.078Z"
+    }
+}
