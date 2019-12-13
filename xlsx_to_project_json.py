@@ -13,7 +13,7 @@ def timestamp():
     return datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
 
-def create_project_json(data, uuid, version, verify=False):
+def create_project_json(data, namespace_uuid, version, verify=False):
     project_json = {
       "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
       "schema_type": "project",
@@ -111,10 +111,9 @@ def create_project_json(data, uuid, version, verify=False):
     if funders:
         project_json['funders'] = funders
 
-    # TODO:  Determine if uuid is made special (from project name combo?).
-    # TODO:  Check for previous version.
+    deterministic_uuid = uuid.uuid5(namespace_uuid, ''.join(project_json['geo_series_accessions']))
     project_json["provenance"] = {
-        "document_id": uuid,
+        "document_id": str(deterministic_uuid),
         "submission_date": version,
         "update_date": version,
         "schema_major_version": 14,
@@ -122,7 +121,7 @@ def create_project_json(data, uuid, version, verify=False):
         }
     if verify:
         print(json.dumps(project_json, indent=4))
-    return project_json
+    return project_json, deterministic_uuid
 
 
 def create_cell_suspension_jsons(data):
@@ -130,7 +129,7 @@ def create_cell_suspension_jsons(data):
     cell_suspension_json = {
         "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
         "schema_type": "biomaterial",
-        "estimated_cell_count": round(data['estimated_cell_count'][0]),
+        "estimated_cell_count": round(data.get('estimated_cell_count', [1])[0]),
         "biomaterial_core": {
             "biomaterial_id": data['biomaterial_core.biomaterial_id'][0],
             "biomaterial_description": data['biomaterial_core.biomaterial_description'][0],
@@ -140,7 +139,7 @@ def create_cell_suspension_jsons(data):
         },
         "genus_species": [
             {
-                 "text": data['genus_species.text'][0],
+                "text": data['genus_species.text'][0],
                 "ontology_label": data["genus_species.ontology_label"][0],
                 "ontology": data["genus_species.ontology"][0],
             }
@@ -222,23 +221,27 @@ def write_empty_links_file(output_dir):
     print(f'"{output_dir}/links.json" successfully written.')
 
 
-def add_matrix_file(accessions, matrix_dir, uuid_, out_dir):
+def add_matrix_file(accessions, matrix_dir, project_uuid, out_dir):
     for acc in accessions:
         p = Path(matrix_dir) / acc
         matching_files = [f for f in p.iterdir() if f.exists() and f.name.startswith(acc) and f.name.endswith('csv.gz')]
         print(f'Matching files: {matching_files}')
         # TODO: parameterize 'homo_sapiens' to allow for other species
-        matching_files[0].rename(Path(out_dir) / f'{uuid_}.homo_sapiens.csv.zip')
+        # matching_files[0].rename(Path(out_dir) / f'{project_uuid}.homo_sapiens.csv.zip')
 
 
-def run(uuid_, xlsx, output_dir, matrix_dir=None):
+# This is used to consistently generate project UUIDs
+namespace_uuid = uuid.UUID('0887968d-72ec-4c58-bd99-be55953aa462')
+
+
+def run(namepace_uuid, xlsx, output_dir, matrix_dir=None):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
     wb = load_workbook(xlsx)
 
     project_data = parse_project_data_from_xlsx(wb)
-    project_json = create_project_json(project_data, uuid=uuid_, version=timestamp())
+    project_json, project_uuid = create_project_json(project_data, namespace_uuid=namepace_uuid, version=timestamp())
     with open(f'{output_dir}/project_0.json', 'w') as f:
         f.write(json.dumps(project_json, indent=4))
     print(f'"{output_dir}/project_0.json" successfully written.')
@@ -252,7 +255,7 @@ def run(uuid_, xlsx, output_dir, matrix_dir=None):
     write_empty_links_file(output_dir)
 
     if matrix_dir:
-        add_matrix_file(project_json['geo_series_accessions'], matrix_dir, uuid_, output_dir)
+        add_matrix_file(project_json['geo_series_accessions'], matrix_dir, project_uuid, output_dir)
 
 
 def main(argv):
