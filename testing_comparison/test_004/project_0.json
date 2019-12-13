@@ -21,11 +21,6 @@
     "contributors": [
         {
             "name": "James,,Kinchen",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "email": "james.kinchen@stx.ox.ac.uk",
             "institution": "University of Oxford",
             "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
@@ -35,11 +30,6 @@
         },
         {
             "name": "Hannah,H,Chen",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
             "address": "Oxford OX3 9DS",
@@ -48,11 +38,6 @@
         },
         {
             "name": "Kaushal,,Parikh",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
             "address": "Oxford OX3 9DS",
@@ -61,11 +46,6 @@
         },
         {
             "name": "Agne,,Antanaviciute",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
             "address": "Oxford OX3 9DS",
@@ -74,11 +54,6 @@
         },
         {
             "name": "Marta,,Jagielowicz",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
             "address": "Oxford OX3 9DS",
@@ -87,11 +62,6 @@
         },
         {
             "name": "David,,Fawkner-Corbett",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
             "address": "Oxford OX3 9DS",
@@ -100,11 +70,6 @@
         },
         {
             "name": "Neil,,Ashley",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "Weatherall Institute of Molecular Medicine",
             "address": "Oxford OX3 9DS",
@@ -113,11 +78,6 @@
         },
         {
             "name": "Laura,,Cubitt",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "Wellcome Trust Centre for Human Genetics",
             "address": "Headington, Oxford OX3 7BN",
@@ -126,11 +86,6 @@
         },
         {
             "name": "Esther,,Mellado-Gomez",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "Wellcome Trust Centre for Human Genetics",
             "address": "Headington, Oxford OX3 7BN",
@@ -139,11 +94,6 @@
         },
         {
             "name": "Moustafa,,Attar",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "Wellcome Trust Centre for Human Genetics",
             "address": "Headington, Oxford OX3 7BN",
@@ -152,11 +102,6 @@
         },
         {
             "name": "Eshita,,Sharma",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "Wellcome Trust Centre for Human Genetics",
             "address": "Headington, Oxford OX3 7BN",
@@ -165,11 +110,6 @@
         },
         {
             "name": "Quin,,Wills",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "Novo Nordisk Research Centre Oxford",
             "address": "Oxford",
             "country": "UK",
@@ -177,11 +117,6 @@
         },
         {
             "name": "Rory,,Bowden",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "Wellcome Trust Centre for Human Genetics",
             "address": "Headington, Oxford OX3 7BN",
@@ -190,11 +125,6 @@
         },
         {
             "name": "Felix,C,Richter",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "Kennedy Institute of Rheumatology",
             "address": "Oxford",
@@ -203,11 +133,6 @@
         },
         {
             "name": "David,,Ahern",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "Kennedy Institute of Rheumatology",
             "address": "Oxford",
@@ -216,11 +141,6 @@
         },
         {
             "name": "Kamal,D,Puri",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "OncoResponse, Inc",
             "address": "Seattle, WA 98104",
             "country": "USA",
@@ -228,11 +148,6 @@
         },
         {
             "name": "Jill,,Henault",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "Celgene Corporation",
             "laboratory": "Translational Development",
             "address": "Cambridge, MA",
@@ -241,11 +156,6 @@
         },
         {
             "name": "Francois,,Gervais",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "Celgene Corporation",
             "laboratory": "Translational Development",
             "address": "Cambridge, MA",
@@ -254,11 +164,6 @@
         },
         {
             "name": "Hashem,,Koohy",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "University of Oxford",
             "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
             "address": "Oxford OX3 9DS",
@@ -267,11 +172,6 @@
         },
         {
             "name": "Alison,,Simmons",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "email": "alison.simmons@imm.ox.ac.uk",
             "institution": "University of Oxford",
             "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
@@ -307,60 +207,50 @@
             "organization": "Wellcome Investigator Award"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Crohn's and Colitis UK"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Lee Placito Medical Fund"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Medical Research Council (MRC)"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Abbvie"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Celgene"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Joint Royal College of Surgeons of England and British Association of Paediatric Surgeons Research Fellowship"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Wellcome Trust"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "NIHR Oxford Biomedical Research Centre"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Thames Valley Local Clinical Research Network (LCRN)"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Oxford Single Cell Consortium"
         }
     ],
     "provenance": {
-        "document_id": "c33e2904-a7ff-46c4-90d8-278a1b7f41e4",
-        "submission_date": "2019-12-13T000138.754723Z",
-        "update_date": "2019-12-13T000138.754723Z",
+        "document_id": "101a75f1-ff07-4abc-9f57-d2a6b673d827",
+        "submission_date": "2019-12-13T001552.751856Z",
+        "update_date": "2019-12-13T001552.751856Z",
         "schema_major_version": 14,
         "schema_minor_version": 1
     }

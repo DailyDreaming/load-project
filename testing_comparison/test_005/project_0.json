@@ -21,11 +21,6 @@
     "contributors": [
         {
             "name": "Pandurangan,,Vijayanand",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "email": "vijay@lji.org",
             "institution": "La Jolla Institute for Allergy and Immunology",
             "laboratory": "Division of Vaccine Discovery",
@@ -89,35 +84,30 @@
     ],
     "funders": [
         {
-            "grant_title": null,
             "grant_id": "U19AI118626",
             "organization": "National Institutes of Health (NIH)"
         },
         {
-            "grant_title": null,
             "grant_id": "U19AI118610",
             "organization": "National Institutes of Health (NIH)"
         },
         {
-            "grant_title": null,
             "grant_id": "R01HL114093",
             "organization": "National Institutes of Health (NIH)"
         },
         {
-            "grant_title": null,
             "grant_id": "R24AI108564",
             "organization": "National Institutes of Health (NIH)"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "William K. Bowes Jr. Foundation"
         }
     ],
     "provenance": {
-        "document_id": "b42548b2-d2a6-4744-9fbe-a4d3b0512bdc",
-        "submission_date": "2019-12-13T000139.286614Z",
-        "update_date": "2019-12-13T000139.286614Z",
+        "document_id": "812e3000-4c9c-4cd3-bb69-d104f3935c47",
+        "submission_date": "2019-12-13T001553.289538Z",
+        "update_date": "2019-12-13T001553.289538Z",
         "schema_major_version": 14,
         "schema_minor_version": 1
     }

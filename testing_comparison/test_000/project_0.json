@@ -18,11 +18,6 @@
     "contributors": [
         {
             "name": "Martin, Enge",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "email": "martin.enge@gmail.com",
             "institution": "Stanford University",
             "address": "Bioengineering, Stanford University, James H. Clark Center, 318 Campus Drive,, Stanford, CA, USA",
@@ -79,37 +74,30 @@
     ],
     "funders": [
         {
-            "grant_title": null,
             "grant_id": "GC1R-06673",
             "organization": "Institute for Regenerative Medicine"
         },
         {
-            "grant_title": null,
             "grant_id": "U01-HL099999\u00a0and\u00a0U01-HL099995",
             "organization": "Center of Excellence for Stem Cell Genomics and NIH"
         },
         {
-            "grant_title": null,
             "grant_id": "UC4DK104211,\u00a0DK10261201, and\u00a0P30DK116074-01",
             "organization": "NIH"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Helmsley Charitable Trust"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "H.L. Snyder Foundation"
         },
         {
-            "grant_title": null,
             "grant_id": "not provided",
             "organization": "Elser Foundation"
         },
         {
-            "grant_title": null,
             "grant_id": "3-APF-2016-172-A-N",
             "organization": "JDRF"
         },
@@ -119,20 +107,18 @@
             "organization": "NIDDK"
         },
         {
-            "grant_title": null,
             "grant_id": "2015-00599",
             "organization": "Swedish Research Council"
         },
         {
-            "grant_title": null,
             "grant_id": 2013.0391,
             "organization": "Wallenberg Research link at Stanford University"
         }
     ],
     "provenance": {
-        "document_id": "ec6b0d7b-1f66-4cb9-856a-e54f35f0e16e",
-        "submission_date": "2019-12-13T000135.880514Z",
-        "update_date": "2019-12-13T000135.880514Z",
+        "document_id": "c7bb5cd7-8386-476a-a6ee-897eccf50e01",
+        "submission_date": "2019-12-13T001549.883134Z",
+        "update_date": "2019-12-13T001549.883134Z",
         "schema_major_version": 14,
         "schema_minor_version": 1
     }

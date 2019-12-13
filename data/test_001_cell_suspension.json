@@ -1,28 +1,33 @@
 {
-    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
+    "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.3.0/cell_suspension",
     "schema_type": "biomaterial",
     "biomaterial_core": {
-        "biomaterial_id": "O10.B000126.3_39_F.1.1_B000126_3_39_F_Skin_Telogen",
-        "biomaterial_description": "Telogen",
+        "biomaterial_id": "P4TLH_TLH",
+        "biomaterial_name": "Patient 4 Total Liver Homogenate",
+        "biomaterial_description": "caudate lobe of the liver",
         "ncbi_taxon_id": [
-            10090
-        ]
+            9606
+        ],
+        "biosamples_accession": "SAMN09379682",
+        "insdc_sample_accession": "SRS3391632"
     },
     "genus_species": [
         {
-            "text": "Mus musculus",
-            "ontology": "NCBITaxon:10090",
-            "ontology_label": "Mus musculus"
+            "text": "Homo sapiens",
+            "ontology": "NCBITaxon:9606",
+            "ontology_label": "Homo sapiens"
         }
     ],
-    "estimated_cell_count": 1,
-    "plate_based_sequencing": {
-        "plate_label": "B000126",
-        "well_label": "O10"
+    "estimated_cell_count": 6000,
+    "cell_morphology": {
+        "percent_cell_viability": 90.0,
+        "cell_viability_method": "Trypan Blue"
     },
     "provenance": {
-        "document_id": "c14b99ea-d8e2-4c84-9dc2-ce2245d8a743",
-        "submission_date": "2019-07-09T19:53:12.404Z",
-        "update_date": "2019-07-09T23:19:35.003Z"
+        "document_id": "cc1dc31c-5e39-4fc5-89ae-0df7c1a5a7e8",
+        "submission_date": "2019-09-20T16:57:53.422Z",
+        "update_date": "2019-09-20T16:58:00.503Z",
+        "schema_major_version": 13,
+        "schema_minor_version": 3
     }
 }

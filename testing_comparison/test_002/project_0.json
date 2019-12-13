@@ -21,11 +21,6 @@
     "contributors": [
         {
             "name": "Jennie,,Close",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "email": "jenniec@alleninstitute.org",
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
@@ -33,253 +28,138 @@
         },
         {
             "name": "Zizhen,,Yao",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Boaz,,Levi",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Jeremy,,Miller",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Trygve,,Bakken",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Vilas,,Menon",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Jonathan,,Ting",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Abigail,,Wall",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Anne-Rachel,,Krogstag",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Elliot,,Thomsen",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Angel,,Nelson",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "John,,Mich",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Rebecca,,Hodge",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Soraya,,Shehata",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Ian,,Glass",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Susan,,Bort",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Nadiya,,Shapovalova",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Olivia,,Fong",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Kiet,,Ngo",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Joshua,,Grimley",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "John,,Phillips",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Carol,,Thompson",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Sharad,,Ramanathan",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
         },
         {
             "name": "Ed,,Lein",
-            "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
-            },
             "institution": "The Allen Institute for Brain Science",
             "address": "615 Westlake Ave N, Seattle, WA",
             "country": "USA"
@@ -362,9 +242,9 @@
         }
     ],
     "provenance": {
-        "document_id": "244d254c-2419-46f8-9fa6-bc1a7218cf7c",
-        "submission_date": "2019-12-13T000137.379745Z",
-        "update_date": "2019-12-13T000137.379745Z",
+        "document_id": "e51510a9-5136-4e6d-b9b5-d663b43b2bf0",
+        "submission_date": "2019-12-13T001551.365351Z",
+        "update_date": "2019-12-13T001551.365351Z",
         "schema_major_version": 14,
         "schema_minor_version": 1
     }

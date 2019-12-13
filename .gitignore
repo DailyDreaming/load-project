@@ -61,3 +61,7 @@ providers.tf
 variables.tf
 
 /smoketest-*.tmp
+
+
+venv
+v3nv

@@ -45,12 +45,10 @@ def create_project_json(data, uuid, version, output_dir, verify=False):
         for field in optional_includes:
             if data[field][i]:
                 persons_role[field.split('.')[-1]] = data[field][i]
-            else:
-                # We need default values to avoid key errors in Azul
-                persons_role[field.split('.')[-1]] = ''
 
-        person = {"name": data["contributors.name"][i],
-                  "project_role": persons_role}
+        person = {"name": data["contributors.name"][i]}
+        if persons_role:
+            person["project_role"] = persons_role
         optional_includes = ["contributors.email",
                              "contributors.phone",
                              "contributors.institution",
@@ -95,11 +93,19 @@ def create_project_json(data, uuid, version, output_dir, verify=False):
     grant_ids = [i for i in data.get("funders.grant_id", []) if i]
     if grant_ids:
         project_json['funders'] = []
+    funders = []
     for i in range(len(grant_ids)):
-        funder = {"grant_title": data["funders.grant_title"][i],
-                  "grant_id": data["funders.grant_id"][i],
-                  "organization": data["funders.organization"][i]}
-        project_json['funders'].append(funder)
+        funder = {}
+        if data["funders.grant_title"][i]:
+            funder['grant_title'] = data["funders.grant_title"][i]
+        if data["funders.grant_id"][i]:
+            funder['grant_id'] = data["funders.grant_id"][i]
+        if data["funders.organization"][i]:
+            funder['organization'] = data["funders.organization"][i]
+        if funder:
+            funders.append(funder)
+    if funders:
+        project_json['funders'] = funders
 
     # TODO:  Determine if uuid is made special (from project name combo?).
     # TODO:  Check for previous version.
