@@ -31,7 +31,6 @@ def create_project_json(data, uuid, version, output_dir, verify=False):
                          "array_express_accessions"]
     for field in optional_includes:
         if field in data:
-            print(data[field][0])
             if data[field][0]:
                 project_json[field] = data[field][0].split('||')
             if len(data[field]) > 1:
@@ -143,7 +142,7 @@ def create_cell_suspension_jsons(data, output_dir):
             },
             "genus_species": [
                 {
-                    "text": data['selected_cell_type.text'][i],
+                    "text": data['genus_species.text'][i],
                     "ontology_label": data["genus_species.ontology_label"][i],
                     "ontology": data["genus_species.ontology"][i],
                 }
