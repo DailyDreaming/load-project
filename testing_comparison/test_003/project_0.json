@@ -15,6 +15,9 @@
     "insdc_study_accessions": [
         "PRJNA328774"
     ],
+    "array_express_accessions": [
+        "E-GEOD-84133"
+    ],
     "contributors": [
         {
             "name": "Maayan,,Baron",
@@ -138,9 +141,9 @@
         }
     ],
     "provenance": {
-        "document_id": "bcdd7237-0731-451a-afda-9143a7cc4152",
-        "submission_date": "2019-12-13T001552.274211Z",
-        "update_date": "2019-12-13T001552.274211Z",
+        "document_id": "75c3ae7a-3ca9-445d-b852-5c0afaa23be8",
+        "submission_date": "2019-12-13T004332.490312Z",
+        "update_date": "2019-12-13T004332.490312Z",
         "schema_major_version": 14,
         "schema_minor_version": 1
     }

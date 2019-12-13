@@ -21,3 +21,11 @@ Parse the xlsx and include a project uuid:
 Upload to the DSS:
 
     python upload_to_dss.py
+
+
+**NOTE**:
+
+Edited the following fields in "data/test_004.xlsx":
+
+    publications.publication_url -> publications.url
+    publications.publication_title -> publications.title

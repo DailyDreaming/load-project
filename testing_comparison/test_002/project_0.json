@@ -18,6 +18,9 @@
     "insdc_study_accessions": [
         "PRJNA361254"
     ],
+    "array_express_accessions": [
+        "E-GEOD-93593"
+    ],
     "contributors": [
         {
             "name": "Jennie,,Close",
@@ -242,9 +245,9 @@
         }
     ],
     "provenance": {
-        "document_id": "e51510a9-5136-4e6d-b9b5-d663b43b2bf0",
-        "submission_date": "2019-12-13T001551.365351Z",
-        "update_date": "2019-12-13T001551.365351Z",
+        "document_id": "3a9a45f3-ed6c-4b1c-96bc-e967d8d40cc9",
+        "submission_date": "2019-12-13T004331.549887Z",
+        "update_date": "2019-12-13T004331.549887Z",
         "schema_major_version": 14,
         "schema_minor_version": 1
     }

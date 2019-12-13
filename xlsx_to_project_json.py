@@ -27,11 +27,15 @@ def create_project_json(data, uuid, version, output_dir, verify=False):
                          "insdc_project_accessions",
                          "geo_series_accessions",
                          "insdc_study_accessions",
-                         "biostudies_accessions"]
+                         "biostudies_accessions",
+                         "array_express_accessions"]
     for field in optional_includes:
         if field in data:
+            print(data[field][0])
             if data[field][0]:
-                project_json[field] = data[field]
+                project_json[field] = data[field][0].split('||')
+            if len(data[field]) > 1:
+                raise RuntimeError('This should never happen.')
 
     #### Contributors
     contributors = [i for i in data.get("contributors.name", []) if i]

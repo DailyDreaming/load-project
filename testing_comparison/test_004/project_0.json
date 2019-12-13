@@ -10,13 +10,22 @@
         "https://github.com/agneantanaviciute/colonmesenchymescrnaseq"
     ],
     "insdc_project_accessions": [
-        "SRP100786||SRP100793||SRP100795||SRP145547"
+        "SRP100786",
+        "SRP100793",
+        "SRP100795",
+        "SRP145547"
     ],
     "geo_series_accessions": [
-        "GSE95435||GSE95446||GSE95450||GSE114374"
+        "GSE95435",
+        "GSE95446",
+        "GSE95450",
+        "GSE114374"
     ],
     "insdc_study_accessions": [
-        "PRJNA377118||PRJNA377145||PRJNA377153||PRJNA471188"
+        "PRJNA377118",
+        "PRJNA377145",
+        "PRJNA377153",
+        "PRJNA471188"
     ],
     "contributors": [
         {
@@ -195,6 +204,36 @@
             "orcid_id": "0000-0003-2949-3921"
         }
     ],
+    "publications": [
+        {
+            "authors": [
+                "Kinchen J",
+                "Chen HH",
+                "Parikh K",
+                "Antanaviciute A",
+                "Jagielowicz M",
+                "Fawkner-Corbett D",
+                "Ashley N",
+                "Cubitt L",
+                "Mellado-Gomez E",
+                "Attar M",
+                "Sharma E",
+                "Wills Q",
+                "Bowden R",
+                "Richter FC",
+                "Ahern D",
+                "Puri KD",
+                "Henault J",
+                "Gervais F",
+                "Koohy H",
+                "Simmons A"
+            ],
+            "title": "Structural Remodeling of the Human Colonic Mesenchyme in Inflammatory Bowel Disease",
+            "doi": "10.1016/j.cell.2018.08.067",
+            "pmid": 30270042,
+            "url": "https://www.ncbi.nlm.nih.gov/pubmed/30270042"
+        }
+    ],
     "funders": [
         {
             "grant_title": "Re-define Crohn s at a molecular level to identify new biomarkers and therapies",
@@ -248,9 +287,9 @@
         }
     ],
     "provenance": {
-        "document_id": "101a75f1-ff07-4abc-9f57-d2a6b673d827",
-        "submission_date": "2019-12-13T001552.751856Z",
-        "update_date": "2019-12-13T001552.751856Z",
+        "document_id": "ca49d2bf-d84a-47be-b5c1-43d649f897ac",
+        "submission_date": "2019-12-13T004332.844538Z",
+        "update_date": "2019-12-13T004332.844538Z",
         "schema_major_version": 14,
         "schema_minor_version": 1
     }
