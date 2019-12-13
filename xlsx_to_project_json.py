@@ -4,6 +4,7 @@ import sys
 import argparse
 import uuid
 from datetime import datetime
+from pathlib import Path
 
 from openpyxl import load_workbook
 
@@ -12,7 +13,7 @@ def timestamp():
     return datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
 
-def create_project_json(data, uuid, version, output_dir, verify=False):
+def create_project_json(data, uuid, version, verify=False):
     project_json = {
       "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
       "schema_type": "project",
@@ -122,12 +123,10 @@ def create_project_json(data, uuid, version, output_dir, verify=False):
         }
     if verify:
         print(json.dumps(project_json, indent=4))
-    with open(f'{output_dir}/project_0.json', 'w') as f:
-        f.write(json.dumps(project_json, indent=4))
-    print(f'"{output_dir}/project_0.json" successfully written.')
+    return project_json
 
 
-def create_cell_suspension_jsons(data, output_dir):
+def create_cell_suspension_jsons(data):
     version = timestamp()
     cell_suspension_json = {
         "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
@@ -155,9 +154,7 @@ def create_cell_suspension_jsons(data, output_dir):
             "schema_minor_version": 3
         }
     }
-    with open(f'{output_dir}/cell_suspension_0.json', 'w') as f:
-        f.write(json.dumps(cell_suspension_json, indent=4))
-    print(f'"{output_dir}/cell_suspension_0.json" successfully written.')
+    return cell_suspension_json
 
 
 def is_known_divider(row_value, right_after_key_declaration):
@@ -226,19 +223,37 @@ def write_empty_links_file(output_dir):
     print(f'"{output_dir}/links.json" successfully written.')
 
 
-def run(uuid_, xlsx, output_dir):
+def add_matrix_file(accessions, matrix_dir, uuid_, out_dir):
+    for acc in accessions:
+        p = Path(matrix_dir) / acc
+        matching_files = [f for f in p.iterdir() if f.exists() and f.name.startswith(acc) and f.name.endswith('csv.gz')]
+        print(f'Matching files: {matching_files}')
+        # TODO: parameterize 'homo_sapiens' to allow for other species
+        matching_files[0].rename(Path(out_dir) / f'{uuid_}.homo_sapiens.csv.zip')
+
+
+def run(uuid_, xlsx, output_dir, matrix_dir=None):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
     wb = load_workbook(xlsx)
 
     project_data = parse_project_data_from_xlsx(wb)
-    create_project_json(project_data, uuid=uuid_, version=timestamp(), output_dir=output_dir)
+    project_json = create_project_json(project_data, uuid=uuid_, version=timestamp())
+    with open(f'{output_dir}/project_0.json', 'w') as f:
+        f.write(json.dumps(project_json, indent=4))
+    print(f'"{output_dir}/project_0.json" successfully written.')
 
     cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
-    create_cell_suspension_jsons(cell_suspension_data, output_dir)
+    cell_json = create_cell_suspension_jsons(cell_suspension_data)
+    with open(f'{output_dir}/cell_suspension_0.json', 'w') as f:
+        f.write(json.dumps(cell_json, indent=4))
+    print(f'"{output_dir}/cell_suspension_0.json" successfully written.')
 
     write_empty_links_file(output_dir)
+
+    if matrix_dir:
+        add_matrix_file(project_json['geo_series_accessions'], matrix_dir, uuid_, output_dir)
 
 
 def main(argv):
@@ -252,9 +267,11 @@ def main(argv):
     parser.add_argument("--output_dir", type=str,
                         default='bundle',
                         help="Path to an output directory.")
+    parser.add_argument("--matrix_dir", type=str,
+                        help="Path to a directory with the")
 
     args = parser.parse_args(argv)
-    run(args.uuid, args.xlsx, args.output_dir)
+    run(args.uuid, args.xlsx, args.output_dir, args.matrix_dir)
 
 
 if __name__ == "__main__":
