@@ -2,31 +2,46 @@
     "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
     "schema_type": "project",
     "project_core": {
-        "project_short_name": "Single cell transcriptome analysis of human pancreas",
-        "project_title": "Single cell transcriptome analysis of human pancreas reveals transcriptional signatures of aging and somatic mutation patterns.",
-        "project_description": "As organisms age, cells accumulate genetic and epigenetic changes that eventually lead to impaired organ function or catastrophic failure such as cancer. Here we describe a single-cell transcriptome analysis of 2544 human pancreas cells from donors, spanning six decades of life. We find that islet cells from older donors have increased levels of disorder as measured both by noise in the transcriptome and by the number of cells which display inappropriate hormone expression, revealing a transcriptional instability associated with aging. By analyzing the spectrum of somatic mutations in single cells from previously-healthy donors, we find a specific age-dependent mutational signature characterized by C to A and C to G transversions, indicators of oxidative stress, which is absent in single cells from human brain tissue or in a tumor cell line. Cells carrying a high load of such mutations also express higher levels of stress and senescence markers, including FOS, JUN, and the cytoplasmic superoxide dismutase SOD1, markers previously linked to pancreatic diseases with substantial age-dependent risk, such as type 2 diabetes mellitus and adenocarcinoma. Thus, our single-cell approach unveils gene expression changes and somatic mutations acquired in aging human tissue, and identifies molecular pathways induced by these genetic changes that could influence human disease. Also, our results demonstrate the feasibility of using single-cell RNA-seq data from primary cells to derive meaningful insights into the genetic processes that operate on aging human tissue and to determine which molecular mechanisms are coordinated with these processes. Examination of single cells from primary human pancreas tissue"
+        "project_short_name": "CD4+ cytotoxic T lymphocytes",
+        "project_title": "Precursors of human CD4+ cytotoxic T lymphocytes identified by single-cell transcriptome analysis",
+        "project_description": "CD4+ cytotoxic T lymphocytes (CD4-CTLs) have been reported to play a protective role in several viral infections. However, little is known in humans about the biology of CD4-CTL generation, their functional properties, heterogeneity and clonal diversity, especially in relation to other well-described CD4+ memory T cell subsets. We performed single-cell RNA-seq in over 9000 cells to unravel CD4-CTL heterogeneity, transcriptional profile and clonality in humans. The single-cell differential gene expression analysis, revealed a spectrum of known transcripts, including several linked to cytotoxic and co-stimulatory function, and transcripts of unknown cytotoxicity-related function that are expressed at higher levels in the TEMRA subset, which is highly enriched for CD4-CTLs, compared to cells in the central and effector memory subsets (TCM, TEM). Simultaneous T cells antigen receptor (TCR) analysis in single-cells and bulk subsets revealed that CD4-TEMRA cells show marked clonal expansion compared to TCM and TEM cells and that the majority of CD4-TEMRA were dengue virus (DENV)-specific in subjects with previous DENV infection. The profile of CD4-TEMRA was highly heterogeneous across subjects, with four distinct clusters identified by the single-cell analysis. Most importantly, we identified distinct clusters of CD4-CTL effector and precursor cells in the TEMRA subset; the precursor cells shared TCR clonotypes with CD4-CTL effectors and were distinguished by high expression of the interleukin-7 receptor. Our identification of a CD4-CTL precursor population may allow further investigation of how CD4-CTLs arise in humans and thus could provide insights into the mechanisms that may be utilized to generate durable and effective CD4-CTL immunity."
     },
     "supplementary_links": [
-        "https://www.ebi.ac.uk/gxa/sc/experiments/E-GEOD-81547/Results"
+        "https://www.ebi.ac.uk/gxa/sc/experiments/E-GEOD-106540/Results"
     ],
     "insdc_project_accessions": [
-        "SRP075496"
+        "SRP124157"
     ],
     "geo_series_accessions": [
-        "GSE81547"
+        "GSE106540"
+    ],
+    "insdc_study_accessions": [
+        "PRJNA417191"
     ],
     "contributors": [
         {
-            "name": "Martin, Enge",
+            "name": "Pandurangan,,Vijayanand",
+            "email": "vijay@lji.org",
+            "institution": "La Jolla Institute for Allergy and Immunology",
+            "laboratory": "Division of Vaccine Discovery",
+            "address": "La Jolla, CA 92037",
+            "country": "USA",
+            "corresponding_contributor": true
+        },
+        {
+            "name": "Mallory,Ann,Freeberg",
             "project_role": {
-                "text": "",
-                "ontology": "",
-                "ontology_label": ""
+                "text": "Human Cell Atlas wrangler",
+                "ontology": "EFO:0009737",
+                "ontology_label": "data curator"
             },
-            "email": "martin.enge@gmail.com",
-            "institution": "Stanford University",
-            "address": "Bioengineering, Stanford University, James H. Clark Center, 318 Campus Drive,, Stanford, CA, USA",
-            "country": "USA"
+            "email": "mfreeberg@ebi.ac.uk",
+            "institution": "EMBL-EBI",
+            "laboratory": "Human Cell Atlas Data Coordination Platform",
+            "address": "Wellcome Trust Genome Campus, Cambridge UK",
+            "country": "UK",
+            "corresponding_contributor": false,
+            "orcid_id": "0000-0003-2949-3921"
         },
         {
             "name": "Laura,,Huerta",
@@ -42,97 +57,57 @@
             "country": "UK",
             "corresponding_contributor": false,
             "orcid_id": "0000-0002-8748-599X"
-        },
-        {
-            "name": "Matthew,,Green",
-            "project_role": {
-                "text": "Human Cell Atlas wrangler",
-                "ontology": "EFO:0009737",
-                "ontology_label": "data curator"
-            },
-            "email": "hewgreen@ebi.ac.uk",
-            "phone": "(+44) 122-349-4444",
-            "institution": "EMBL-EBI European Bioinformatics Institute",
-            "laboratory": "Human Cell Atlas Data Coordination Platform",
-            "address": "Wellcome Trust Genome Campus, Hinxton, Cambridge CB10 1SD",
-            "country": "UK",
-            "corresponding_contributor": false,
-            "orcid_id": "0000-0003-2771-9894"
         }
     ],
     "publications": [
         {
             "authors": [
-                "Enge M",
-                "Arda HE",
-                "Mignardi M",
-                "Beausang J",
-                "Bottino R",
-                "Kim SK",
-                "Quake SR"
+                "Patil VS",
+                "Madrigal A",
+                "Schmiedel BJ",
+                "Clarke J",
+                "ORourke P",
+                "Harris E",
+                "de Silva AD",
+                "Harris E",
+                "Peters B",
+                "Seumois G",
+                "Weiskopf D",
+                "Sette A",
+                "Vijayanand P"
             ],
-            "title": "Single-Cell Analysis of Human Pancreas Reveals Transcriptional Signatures of Aging and Somatic Mutation Patterns.",
-            "doi": "10.1016/j.cell.2017.09.004",
-            "pmid": 28965763,
-            "url": "https://www.ncbi.nlm.nih.gov/pubmed/28965763"
+            "title": "Precursors of human CD4+ cytotoxic T lymphocytes identified by single-cell transcriptome analysis.",
+            "doi": "10.1126/sciimmunol.aan8664",
+            "pmid": 29352091,
+            "url": "http://immunology.sciencemag.org/content/3/19/eaan8664.long"
         }
     ],
     "funders": [
         {
-            "grant_title": null,
-            "grant_id": "GC1R-06673",
-            "organization": "Institute for Regenerative Medicine"
+            "grant_id": "U19AI118626",
+            "organization": "National Institutes of Health (NIH)"
         },
         {
-            "grant_title": null,
-            "grant_id": "U01-HL099999\u00a0and\u00a0U01-HL099995",
-            "organization": "Center of Excellence for Stem Cell Genomics and NIH"
+            "grant_id": "U19AI118610",
+            "organization": "National Institutes of Health (NIH)"
         },
         {
-            "grant_title": null,
-            "grant_id": "UC4DK104211,\u00a0DK10261201, and\u00a0P30DK116074-01",
-            "organization": "NIH"
+            "grant_id": "R01HL114093",
+            "organization": "National Institutes of Health (NIH)"
         },
         {
-            "grant_title": null,
+            "grant_id": "R24AI108564",
+            "organization": "National Institutes of Health (NIH)"
+        },
+        {
             "grant_id": "not provided",
-            "organization": "Helmsley Charitable Trust"
-        },
-        {
-            "grant_title": null,
-            "grant_id": "not provided",
-            "organization": "H.L. Snyder Foundation"
-        },
-        {
-            "grant_title": null,
-            "grant_id": "not provided",
-            "organization": "Elser Foundation"
-        },
-        {
-            "grant_title": null,
-            "grant_id": "3-APF-2016-172-A-N",
-            "organization": "JDRF"
-        },
-        {
-            "grant_title": "NIDDK\u00a0training grant to the\u00a0Endocrinology\u00a0Division",
-            "grant_id": "5T32DK007217-39",
-            "organization": "NIDDK"
-        },
-        {
-            "grant_title": null,
-            "grant_id": "2015-00599",
-            "organization": "Swedish Research Council"
-        },
-        {
-            "grant_title": null,
-            "grant_id": 2013.0391,
-            "organization": "Wallenberg Research link at Stanford University"
+            "organization": "William K. Bowes Jr. Foundation"
         }
     ],
     "provenance": {
-        "document_id": "4d6f6c96-2a83-43d8-8fe1-0f53bffd4674",
-        "submission_date": "2019-12-12T231815.925491Z",
-        "update_date": "2019-12-12T231815.925491Z",
+        "document_id": "90bd6933-40c0-48d4-8d76-778c103bf545",
+        "submission_date": "2019-12-13T010108.269704Z",
+        "update_date": "2019-12-13T010108.269704Z",
         "schema_major_version": 14,
         "schema_minor_version": 1
     }
