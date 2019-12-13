@@ -128,37 +128,36 @@ def create_project_json(data, uuid, version, output_dir, verify=False):
 
 
 def create_cell_suspension_jsons(data, output_dir):
-    for i in range(len(data['biomaterial_core.biomaterial_id'])):
-        version = timestamp()
-        cell_suspension_json = {
-            "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
-            "schema_type": "biomaterial",
-            "estimated_cell_count": round(data['estimated_cell_count'][i]),
-            "biomaterial_core": {
-                "biomaterial_id": data['biomaterial_core.biomaterial_id'][i],
-                "biomaterial_description": data['biomaterial_core.biomaterial_description'][i],
-                "ncbi_taxon_id": [
-                    data['biomaterial_core.ncbi_taxon_id'][i]
-                ]
-            },
-            "genus_species": [
-                {
-                    "text": data['selected_cell_type.text'][i],
-                    "ontology_label": data["genus_species.ontology_label"][i],
-                    "ontology": data["genus_species.ontology"][i],
-                }
-            ],
-            "provenance": {
-                "document_id": str(uuid.uuid4()),
-                "submission_date": version,
-                "update_date": version,
-                "schema_major_version": 14,
-                "schema_minor_version": 1
+    version = timestamp()
+    cell_suspension_json = {
+        "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
+        "schema_type": "biomaterial",
+        "estimated_cell_count": round(data['estimated_cell_count'][0]),
+        "biomaterial_core": {
+            "biomaterial_id": data['biomaterial_core.biomaterial_id'][0],
+            "biomaterial_description": data['biomaterial_core.biomaterial_description'][0],
+            "ncbi_taxon_id": [
+                data['biomaterial_core.ncbi_taxon_id'][0]
+            ]
+        },
+        "genus_species": [
+            {
+                # "text": data['selected_cell_type.text'][0],
+                "ontology_label": data["genus_species.ontology_label"][0],
+                "ontology": data["genus_species.ontology"][0],
             }
+        ],
+        "provenance": {
+            "document_id": str(uuid.uuid4()),
+            "submission_date": version,
+            "update_date": version,
+            "schema_major_version": 13,
+            "schema_minor_version": 3
         }
-        with open(f'{output_dir}/cell_suspension_{i}.json', 'w') as f:
-            f.write(json.dumps(cell_suspension_json, indent=4))
-        print(f'"{output_dir}/cell_suspension_{i}.json" successfully written.')
+    }
+    with open(f'{output_dir}/cell_suspension_0.json', 'w') as f:
+        f.write(json.dumps(cell_suspension_json, indent=4))
+    print(f'"{output_dir}/cell_suspension_0.json" successfully written.')
 
 
 def is_known_divider(row_value, right_after_key_declaration):
@@ -223,8 +222,8 @@ def run(uuid, xlsx, output_dir):
     project_data = parse_project_data_from_xlsx(wb)
     create_project_json(project_data, uuid=uuid, version=timestamp(), output_dir=output_dir)
 
-    # cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
-    # create_cell_suspension_jsons(cell_suspension_data, output_dir)
+    cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
+    create_cell_suspension_jsons(cell_suspension_data, output_dir)
 
 
 def main(argv=sys.argv[1:]):
