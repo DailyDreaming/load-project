@@ -1,8 +1,8 @@
 # load-project
 
-This will take an xlsx file and generate a `project_o.json` suitable for uploading to the DSS.
+This will take an xlsx file and generate a `project_0.json` suitable for uploading to the DSS.
 
-This will then upload the `project_o.json` and a (mostly) empty `links.json` which will populate a new project in 
+This will then upload the `project_0.json` and a (mostly) empty `links.json` which will populate a new project in 
 the browser.
 
 Source a new environment and install dependencies:
