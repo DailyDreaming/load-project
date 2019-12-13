@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import argparse
 import uuid
@@ -205,6 +206,9 @@ def parse_cell_suspension_data_from_xlsx(wb):
 
 
 def run(uuid, xlsx, output_dir):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
     wb = load_workbook(xlsx)
     project_data = parse_project_data_from_xlsx(wb)
     create_project_json(project_data, uuid=uuid, version=timestamp(), output_dir=output_dir)

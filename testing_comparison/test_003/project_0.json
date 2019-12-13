@@ -1,0 +1,208 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
+    "schema_type": "project",
+    "project_core": {
+        "project_short_name": "HumanMousePancreas",
+        "project_title": "A Single-Cell Transcriptomic Map of the Human and Mouse Pancreas Reveals Inter- and Intra-cell Population Structure",
+        "project_description": "Although the function of the mammalian pancreas hinges on complex interactions of distinct cell types, gene expression profiles have primarily been described with bulk mixtures. Here we implemented a droplet-based, single-cell RNA-seq method to determine the transcriptomes of over 12,000 individual pancreatic cells from four human donors and two mouse strains. Cells could be divided into 15 clusters that matched previously characterized cell types: all endocrine cell types, including rare epsilon-cells; exocrine cell types; vascular cells; Schwann cells; quiescent and activated stellate cells; and four types of immune cells. We detected subpopulations of ductal cells with distinct expression profiles and validated their existence with immuno-histochemistry stains. Moreover, among human beta- cells, we detected heterogeneity in the regulation of genes relating to functional maturation and levels of ER stress. Finally, we deconvolved bulk gene expression samples using the single-cell data to detect disease-associated differential expression. Our dataset provides a resource for the discovery of novel cell type-specific transcription factors, signaling receptors, and medically relevant genes.\n"
+    },
+    "insdc_project_accessions": [
+        "SRP078321"
+    ],
+    "geo_series_accessions": [
+        "GSE84133"
+    ],
+    "insdc_study_accessions": [
+        "PRJNA328774"
+    ],
+    "contributors": [
+        {
+            "name": "Maayan,,Baron",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Technion - Israel Institute of Technology",
+            "laboratory": "Faculty of Biology",
+            "address": "Haifa, 3200003",
+            "country": "Israel",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Adrian,,Veres",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Harvard University",
+            "laboratory": "Department of Stem Cell and Regenerative Biology",
+            "address": "7 Divinity Ave Cambridge, MA 02138",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Samuel,L,Wolock",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Harvard Medical School",
+            "laboratory": "Department of Systems Biology",
+            "address": "200 Longwood Ave Boston, MA 02115",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Aubrey,L,Faust",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Harvard University",
+            "laboratory": "Department of Stem Cell and Regenerative Biology",
+            "address": "7 Divinity Ave Cambridge, MA 02138",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Renaud,,Gaujoux",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Technion - Israel Institute of Technology",
+            "laboratory": "Department of Immunology, Faculty of Medicine",
+            "address": "Haifa, 3200003",
+            "country": "Israel",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Amedeo,,Vetere",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Broad Institute",
+            "laboratory": "Center for the Science of Therapeutics",
+            "address": "Cambridge, MA 02142",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Jennifer,Hyoje,Ryu",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Harvard University",
+            "laboratory": "Department of Stem Cell and Regenerative Biology",
+            "address": "7 Divinity Ave Cambridge, MA 02138",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Bridget,K,Wagner",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Broad Institute",
+            "laboratory": "Center for the Science of Therapeutics",
+            "address": "Cambridge, MA 02142",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Shai,S,Shen-Orr",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Technion - Israel Institute of Technology",
+            "laboratory": "Department of Immunology, Faculty of Medicine",
+            "address": "Haifa, 3200003",
+            "country": "Israel",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Allon,M,Klein",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "email": "allon_klein@hms.harvard.edu",
+            "institution": "Harvard Medical School",
+            "laboratory": "Department of Systems Biology",
+            "address": "200 Longwood Ave Boston, MA 02115",
+            "country": "USA",
+            "corresponding_contributor": true
+        },
+        {
+            "name": "Douglas,A,Melton",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "email": "dmelton@harvard.edu",
+            "institution": "Harvard University",
+            "laboratory": "Department of Stem Cell and Regenerative Biology",
+            "address": "7 Divinity Ave Cambridge, MA 02138",
+            "country": "USA",
+            "corresponding_contributor": true
+        },
+        {
+            "name": "Itai,,Yana",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "email": "itai.yanai@nyumc.org",
+            "institution": "Technion - Israel Institute of Technology",
+            "laboratory": "Faculty of Biology",
+            "address": "Haifa, 3200003",
+            "country": "Israel",
+            "corresponding_contributor": true
+        },
+        {
+            "name": "Mallory,Ann,Freeberg",
+            "project_role": {
+                "text": "Human Cell Atlas wrangler",
+                "ontology": "EFO:0009737",
+                "ontology_label": "data curator"
+            },
+            "email": "mfreeberg@ebi.ac.uk",
+            "institution": "EMBL-EBI",
+            "laboratory": "Human Cell Atlas Data Coordination Platform",
+            "address": "Wellcome Trust Genome Campus, Cambridge UK",
+            "country": "UK",
+            "corresponding_contributor": false,
+            "orcid_id": "0000-0003-2949-3921"
+        }
+    ],
+    "funders": [
+        {
+            "grant_title": null,
+            "grant_id": "ASTF 474-2015",
+            "organization": "European Molecular Biology Organization"
+        }
+    ],
+    "provenance": {
+        "document_id": "1dfd3dac-2013-45e0-b29e-f1f3f76cdaf1",
+        "submission_date": "2019-12-13T000138.283736Z",
+        "update_date": "2019-12-13T000138.283736Z",
+        "schema_major_version": 14,
+        "schema_minor_version": 1
+    }
+}

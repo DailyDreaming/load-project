@@ -1,0 +1,367 @@
+{
+    "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
+    "schema_type": "project",
+    "project_core": {
+        "project_short_name": "HumanColonicMesenchymeIBD",
+        "project_title": "Structural Remodeling of the Human Colonic Mesenchyme in Inflammatory Bowel Disease",
+        "project_description": "Intestinal mesenchymal cells play essential roles in epithelial homeostasis, matrix remodeling, immunity, and inflammation. But the extent of heterogeneity within the colonic mesenchyme in these processes remains unknown. Using unbiased single-cell profiling of over 16,500 colonic mesenchymal cells, we reveal four subsets of fibroblasts expressing divergent transcriptional regulators and functional pathways, in addition to pericytes and myofibroblasts. We identified a niche population located in proximity to epithelial crypts expressing SOX6, F3 (CD142), and WNT genes essential for colonic epithelial stem cell function. In colitis, we observed dysregulation of this niche and emergence of an activated mesenchymal population. This subset expressed TNF superfamily member 14 (TNFSF14), fibroblastic reticular cell-associated genes, IL-33, and Lysyl oxidases. Further, it induced factors that impaired epithelial proliferation and maturation and contributed to oxidative stress and disease severity in vivo. Our work defines how the colonic mesenchyme remodels to fuel inflammation and barrier dysfunction in IBD.\n"
+    },
+    "supplementary_links": [
+        "https://github.com/agneantanaviciute/colonmesenchymescrnaseq"
+    ],
+    "insdc_project_accessions": [
+        "SRP100786||SRP100793||SRP100795||SRP145547"
+    ],
+    "geo_series_accessions": [
+        "GSE95435||GSE95446||GSE95450||GSE114374"
+    ],
+    "insdc_study_accessions": [
+        "PRJNA377118||PRJNA377145||PRJNA377153||PRJNA471188"
+    ],
+    "contributors": [
+        {
+            "name": "James,,Kinchen",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "email": "james.kinchen@stx.ox.ac.uk",
+            "institution": "University of Oxford",
+            "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
+            "address": "Oxford OX3 9DS",
+            "country": "UK",
+            "corresponding_contributor": true
+        },
+        {
+            "name": "Hannah,H,Chen",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
+            "address": "Oxford OX3 9DS",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Kaushal,,Parikh",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
+            "address": "Oxford OX3 9DS",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Agne,,Antanaviciute",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
+            "address": "Oxford OX3 9DS",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Marta,,Jagielowicz",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
+            "address": "Oxford OX3 9DS",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "David,,Fawkner-Corbett",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
+            "address": "Oxford OX3 9DS",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Neil,,Ashley",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "Weatherall Institute of Molecular Medicine",
+            "address": "Oxford OX3 9DS",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Laura,,Cubitt",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "Wellcome Trust Centre for Human Genetics",
+            "address": "Headington, Oxford OX3 7BN",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Esther,,Mellado-Gomez",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "Wellcome Trust Centre for Human Genetics",
+            "address": "Headington, Oxford OX3 7BN",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Moustafa,,Attar",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "Wellcome Trust Centre for Human Genetics",
+            "address": "Headington, Oxford OX3 7BN",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Eshita,,Sharma",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "Wellcome Trust Centre for Human Genetics",
+            "address": "Headington, Oxford OX3 7BN",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Quin,,Wills",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Novo Nordisk Research Centre Oxford",
+            "address": "Oxford",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Rory,,Bowden",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "Wellcome Trust Centre for Human Genetics",
+            "address": "Headington, Oxford OX3 7BN",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Felix,C,Richter",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "Kennedy Institute of Rheumatology",
+            "address": "Oxford",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "David,,Ahern",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "Kennedy Institute of Rheumatology",
+            "address": "Oxford",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Kamal,D,Puri",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "OncoResponse, Inc",
+            "address": "Seattle, WA 98104",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Jill,,Henault",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Celgene Corporation",
+            "laboratory": "Translational Development",
+            "address": "Cambridge, MA",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Francois,,Gervais",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "Celgene Corporation",
+            "laboratory": "Translational Development",
+            "address": "Cambridge, MA",
+            "country": "USA",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Hashem,,Koohy",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "institution": "University of Oxford",
+            "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
+            "address": "Oxford OX3 9DS",
+            "country": "UK",
+            "corresponding_contributor": false
+        },
+        {
+            "name": "Alison,,Simmons",
+            "project_role": {
+                "text": "",
+                "ontology": "",
+                "ontology_label": ""
+            },
+            "email": "alison.simmons@imm.ox.ac.uk",
+            "institution": "University of Oxford",
+            "laboratory": "MRC Human Immunology Unit, MRC Weatherall Institute of Molecular Medicine",
+            "address": "Oxford OX3 9DS",
+            "country": "UK",
+            "corresponding_contributor": true
+        },
+        {
+            "name": "Mallory,Ann,Freeberg",
+            "project_role": {
+                "text": "Human Cell Atlas wrangler",
+                "ontology": "EFO:0009737",
+                "ontology_label": "data curator"
+            },
+            "email": "mfreeberg@ebi.ac.uk",
+            "institution": "EMBL-EBI",
+            "laboratory": "Human Cell Atlas Data Coordination Platform",
+            "address": "Wellcome Trust Genome Campus, Cambridge UK",
+            "country": "UK",
+            "corresponding_contributor": false,
+            "orcid_id": "0000-0003-2949-3921"
+        }
+    ],
+    "funders": [
+        {
+            "grant_title": "Re-define Crohn s at a molecular level to identify new biomarkers and therapies",
+            "grant_id": "NIHR-RP-R3-12-026",
+            "organization": "National Institutes for Health Research (NIHR) Research Professorship"
+        },
+        {
+            "grant_title": "The function of NOD2 in health and in Crohn's disease.",
+            "grant_id": "102974/Z/13/Z",
+            "organization": "Wellcome Investigator Award"
+        },
+        {
+            "grant_title": null,
+            "grant_id": "not provided",
+            "organization": "Crohn's and Colitis UK"
+        },
+        {
+            "grant_title": null,
+            "grant_id": "not provided",
+            "organization": "Lee Placito Medical Fund"
+        },
+        {
+            "grant_title": null,
+            "grant_id": "not provided",
+            "organization": "Medical Research Council (MRC)"
+        },
+        {
+            "grant_title": null,
+            "grant_id": "not provided",
+            "organization": "Abbvie"
+        },
+        {
+            "grant_title": null,
+            "grant_id": "not provided",
+            "organization": "Celgene"
+        },
+        {
+            "grant_title": null,
+            "grant_id": "not provided",
+            "organization": "Joint Royal College of Surgeons of England and British Association of Paediatric Surgeons Research Fellowship"
+        },
+        {
+            "grant_title": null,
+            "grant_id": "not provided",
+            "organization": "Wellcome Trust"
+        },
+        {
+            "grant_title": null,
+            "grant_id": "not provided",
+            "organization": "NIHR Oxford Biomedical Research Centre"
+        },
+        {
+            "grant_title": null,
+            "grant_id": "not provided",
+            "organization": "Thames Valley Local Clinical Research Network (LCRN)"
+        },
+        {
+            "grant_title": null,
+            "grant_id": "not provided",
+            "organization": "Oxford Single Cell Consortium"
+        }
+    ],
+    "provenance": {
+        "document_id": "c33e2904-a7ff-46c4-90d8-278a1b7f41e4",
+        "submission_date": "2019-12-13T000138.754723Z",
+        "update_date": "2019-12-13T000138.754723Z",
+        "schema_major_version": 14,
+        "schema_minor_version": 1
+    }
+}
