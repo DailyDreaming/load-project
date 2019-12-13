@@ -214,19 +214,34 @@ def parse_cell_suspension_data_from_xlsx(wb):
     return data
 
 
-def run(uuid, xlsx, output_dir):
+def write_empty_links_file(output_dir):
+    links = {
+        'describedBy': 'https://schema.humancellatlas.org/system/1.1.5/links',
+        'schema_type': 'link_bundle',
+        'schema_version': '1.1.5',
+        'links': []
+    }
+    with open(f'{output_dir}/links.json', 'w') as f:
+        f.write(json.dumps(links, indent=4))
+    print(f'"{output_dir}/links.json" successfully written.')
+
+
+def run(uuid_, xlsx, output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
     wb = load_workbook(xlsx)
+
     project_data = parse_project_data_from_xlsx(wb)
-    create_project_json(project_data, uuid=uuid, version=timestamp(), output_dir=output_dir)
+    create_project_json(project_data, uuid=uuid_, version=timestamp(), output_dir=output_dir)
 
     cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
     create_cell_suspension_jsons(cell_suspension_data, output_dir)
 
+    write_empty_links_file(output_dir)
 
-def main(argv=sys.argv[1:]):
+
+def main(argv):
     parser = argparse.ArgumentParser(description='Turn an xlsx file into a project.json file.')
     parser.add_argument("--uuid", type=str,
                         default="4d6f6c96-2a83-43d8-8fe1-0f53bffd4674",  # TODO: Delete this.
@@ -243,4 +258,4 @@ def main(argv=sys.argv[1:]):
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
