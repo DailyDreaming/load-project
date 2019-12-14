@@ -4,7 +4,8 @@ import sys
 import argparse
 import uuid
 from datetime import datetime
-from pathlib import Path
+
+from download_geo_matrix import download_supplementary_files, extract_rename_and_zip
 
 from openpyxl import load_workbook
 
@@ -23,7 +24,7 @@ def create_project_json(data, namespace_uuid, version, verify=False):
         "project_description": data["project_core.project_description"][0]
       }
     }
-    #### Links and Accessions
+    # Links and Accessions
     optional_includes = ["supplementary_links",
                          "insdc_project_accessions",
                          "geo_series_accessions",
@@ -37,7 +38,7 @@ def create_project_json(data, namespace_uuid, version, verify=False):
             if len(data[field]) > 1:
                 raise RuntimeError('This should never happen.')
 
-    #### Contributors
+    # Contributors
     contributors = [i for i in data.get("contributors.name", []) if i]
     if contributors:
         project_json['contributors'] = []
@@ -75,7 +76,7 @@ def create_project_json(data, namespace_uuid, version, verify=False):
 
         project_json['contributors'].append(person)
 
-    #### Publications
+    # Publications
     publications = [i for i in data.get("publications.title", []) if i]
     if publications:
         project_json['publications'] = []
@@ -93,7 +94,7 @@ def create_project_json(data, namespace_uuid, version, verify=False):
                     publication[field.split('.')[-1]] = data[field][i]
         project_json['publications'].append(publication)
 
-    #### Funders
+    # Funders
     grant_ids = [i for i in data.get("funders.grant_id", []) if i]
     if grant_ids:
         project_json['funders'] = []
@@ -221,20 +222,31 @@ def write_empty_links_file(output_dir):
     print(f'"{output_dir}/links.json" successfully written.')
 
 
-def add_matrix_file(accessions, matrix_dir, project_uuid, out_dir):
+def add_matrix_file(accessions, project_uuid, out_dir):
     for acc in accessions:
-        p = Path(matrix_dir) / acc
-        matching_files = [f for f in p.iterdir() if f.exists() and f.name.startswith(acc) and f.name.endswith('csv.gz')]
-        print(f'Matching files: {matching_files}')
-        # TODO: parameterize 'homo_sapiens' to allow for other species
-        # matching_files[0].rename(Path(out_dir) / f'{project_uuid}.homo_sapiens.csv.zip')
+        download_dir = download_supplementary_files(acc)
+        if download_dir:
+            matching_files = []
+            for ext in ('csv.gz', 'tsv.gz', 'txt.gz', '.gz'):
+                matching_files = [f for f in sorted(os.listdir(download_dir)) if f.startswith(acc) and f.endswith(ext)]
+                if matching_files:
+                    break
+            print(f'Matching files: {matching_files}')
+
+            zip_files = extract_rename_and_zip(download_dir, matching_files, project_uuid)
+
+            if len(zip_files) > 0:
+                # move the zip file to the correct location
+                file = zip_files[0]
+                if not os.path.isfile(f'{out_dir}/{file}'):
+                    os.rename(f'{download_dir}/{file}', f'{out_dir}/{file}')
 
 
 # This is used to consistently generate project UUIDs
 namespace_uuid = uuid.UUID('0887968d-72ec-4c58-bd99-be55953aa462')
 
 
-def run(namepace_uuid, xlsx, output_dir, matrix_dir=None):
+def run(namepace_uuid, xlsx, output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
@@ -254,8 +266,7 @@ def run(namepace_uuid, xlsx, output_dir, matrix_dir=None):
 
     write_empty_links_file(output_dir)
 
-    if matrix_dir:
-        add_matrix_file(project_json['geo_series_accessions'], matrix_dir, project_uuid, output_dir)
+    add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
 
 
 def main(argv):
@@ -269,11 +280,9 @@ def main(argv):
     parser.add_argument("--output_dir", type=str,
                         default='bundle',
                         help="Path to an output directory.")
-    parser.add_argument("--matrix_dir", type=str,
-                        help="Path to a directory with the")
 
     args = parser.parse_args(argv)
-    run(args.uuid, args.xlsx, args.output_dir, args.matrix_dir)
+    run(args.uuid, args.xlsx, args.output_dir)
 
 
 if __name__ == "__main__":
