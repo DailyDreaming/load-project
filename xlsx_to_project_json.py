@@ -223,28 +223,20 @@ def write_empty_links_file(output_dir):
 
 
 def add_matrix_file(accessions, project_uuid, out_dir):
-    matching_files = []
     for acc in accessions:
         download_dir = download_supplementary_files(acc)
         if download_dir:
             matching_files = [f for f in sorted(os.listdir(download_dir)) if f.startswith(acc) and f.endswith('.gz')]
             if matching_files:
+                print(f'Matching files found for {acc}: {matching_files}')
+                zip_files = extract_rename_and_zip(download_dir, matching_files, project_uuid)
+                if zip_files:
+                    # move the zip file to the correct location
+                    file = zip_files[0]
+                    if not os.path.isfile(f'{out_dir}/{file}'):
+                        os.rename(f'{download_dir}/{file}', f'{out_dir}/{file}')
                 break
-        if matching_files:
-            break
-        print(f'Matching files: {matching_files}')
-
-    zip_files = extract_rename_and_zip(download_dir, matching_files, project_uuid)
-
-    if len(zip_files) > 0:
-        # move the zip file to the correct location
-        file = zip_files[0]
-        if not os.path.isfile(f'{out_dir}/{file}'):
-            os.rename(f'{download_dir}/{file}', f'{out_dir}/{file}')
-
-
-# This is used to consistently generate project UUIDs
-namespace_uuid = uuid.UUID('0887968d-72ec-4c58-bd99-be55953aa462')
+        print(f'No matching files found for {acc}')
 
 
 def run(namepace_uuid, xlsx, output_dir):
