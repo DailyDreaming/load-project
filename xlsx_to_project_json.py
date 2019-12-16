@@ -5,7 +5,11 @@ import argparse
 import uuid
 from datetime import datetime
 
-from download_geo_matrix import download_supplementary_files, extract_rename_and_zip
+from download_geo_matrix import (
+    download_supplementary_files,
+    extract_rename_and_zip,
+    extract_tar_files
+)
 
 from openpyxl import load_workbook
 
@@ -214,6 +218,7 @@ def add_matrix_file(accessions, project_uuid, out_dir):
     for acc in accessions:
         download_dir = download_supplementary_files(acc)
         if download_dir:
+            extract_tar_files(download_dir)
             matching_files = [f for f in sorted(os.listdir(download_dir)) if f.startswith(acc) and f.endswith('.gz')]
             if matching_files:
                 print(f'Matching files found for {acc}: {matching_files}')

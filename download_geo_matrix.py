@@ -6,6 +6,7 @@ import re
 import requests
 import shutil
 import sys
+import tarfile
 import time
 from typing import MutableMapping, Sequence
 import uuid
@@ -32,6 +33,9 @@ def main(argv):
 
 
 def download_supplementary_files(accession_id):
+    """
+    Scrape web page for given accession id and download all supplementary files
+    """
     logging.info('---')
     logging.info('Accession: %s', accession_id)
 
@@ -127,6 +131,17 @@ def download_file(url: str, path: str) -> dict:
         logging.warning('Download canceled ...')
         os.remove(path)
         return {}
+
+
+def extract_tar_files(folder: str):
+    """
+    Searches for all '.tar' files in given folder and extracts them in their current location
+    """
+    tar_files = [f for f in sorted(os.listdir(folder)) if f.endswith('.tar')]
+    for file in tar_files:
+        tar = tarfile.open(f'{folder}/{file}')
+        tar.extractall(path=folder)
+        tar.close()
 
 
 def extract_rename_and_zip(folder: str, files: Sequence[str], uuid: str) -> Sequence[str]:
