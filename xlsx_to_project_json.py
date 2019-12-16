@@ -210,18 +210,6 @@ def parse_cell_suspension_data_from_xlsx(wb):
     return data
 
 
-def write_empty_links_file(output_dir):
-    links = {
-        'describedBy': 'https://schema.humancellatlas.org/system/1.1.5/links',
-        'schema_type': 'link_bundle',
-        'schema_version': '1.1.5',
-        'links': []
-    }
-    with open(f'{output_dir}/links.json', 'w') as f:
-        f.write(json.dumps(links, indent=4))
-    print(f'"{output_dir}/links.json" successfully written.')
-
-
 def add_matrix_file(accessions, project_uuid, out_dir):
     for acc in accessions:
         download_dir = download_supplementary_files(acc)
@@ -239,25 +227,44 @@ def add_matrix_file(accessions, project_uuid, out_dir):
         print(f'No matching files found for {acc}')
 
 
-def run(namepace_uuid, xlsx, output_dir):
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-
-    wb = load_workbook(xlsx)
-
+def generate_project_json(wb, namepace_uuid, output_dir):
     project_data = parse_project_data_from_xlsx(wb)
     project_json, project_uuid = create_project_json(project_data, namespace_uuid=namepace_uuid, version=timestamp())
     with open(f'{output_dir}/project_0.json', 'w') as f:
         f.write(json.dumps(project_json, indent=4))
     print(f'"{output_dir}/project_0.json" successfully written.')
+    return project_json, project_uuid
 
+
+def generate_cell_suspension_json(wb, output_dir):
     cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
     cell_json = create_cell_suspension_jsons(cell_suspension_data)
     with open(f'{output_dir}/cell_suspension_0.json', 'w') as f:
         f.write(json.dumps(cell_json, indent=4))
     print(f'"{output_dir}/cell_suspension_0.json" successfully written.')
 
-    write_empty_links_file(output_dir)
+
+def generate_links_json(output_dir):
+    links = {
+        'describedBy': 'https://schema.humancellatlas.org/system/1.1.5/links',
+        'schema_type': 'link_bundle',
+        'schema_version': '1.1.5',
+        'links': []
+    }
+    with open(f'{output_dir}/links.json', 'w') as f:
+        f.write(json.dumps(links, indent=4))
+    print(f'"{output_dir}/links.json" successfully written.')
+
+
+def run(namepace_uuid, xlsx, output_dir):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+    wb = load_workbook(xlsx)
+
+    project_json, project_uuid = generate_project_json(wb, namepace_uuid, output_dir)
+    generate_cell_suspension_json(wb, output_dir)
+    generate_links_json(output_dir)
 
     add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
 
