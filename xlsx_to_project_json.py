@@ -227,10 +227,9 @@ def add_matrix_file(accessions, project_uuid, out_dir):
     for acc in accessions:
         download_dir = download_supplementary_files(acc)
         if download_dir:
-            for ext in ('csv.gz', 'tsv.gz', 'txt.gz', '.gz'):
-                matching_files.update([f for f in sorted(os.listdir(download_dir)) if f.startswith(acc) and f.endswith(ext)])
-                if matching_files:
-                    break
+            matching_files = [f for f in sorted(os.listdir(download_dir)) if f.startswith(acc) and f.endswith('.gz')]
+            if matching_files:
+                break
         if matching_files:
             break
         print(f'Matching files: {matching_files}')
