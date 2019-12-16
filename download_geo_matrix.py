@@ -32,12 +32,12 @@ def main(argv):
 
 
 def download_supplementary_files(accession_id):
+    logging.info('---')
+    logging.info('Accession: %s', accession_id)
 
     source = furl.furl(source_url_template)
     save_file_path = f'accessions/{accession_id}'
 
-    logging.info('---')
-    logging.info('Accession: %s', accession_id)
     page = requests.get(source_url_template + accession_id)
 
     if 'Supplementary file' not in page.text:

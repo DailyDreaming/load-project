@@ -112,7 +112,7 @@ def create_project_json(data, namespace_uuid, version, verify=False):
     if funders:
         project_json['funders'] = funders
 
-    deterministic_uuid = uuid.uuid5(namespace_uuid, ''.join(project_json['geo_series_accessions']))
+    deterministic_uuid = uuid.uuid5(uuid.UUID(namespace_uuid), ''.join(project_json['geo_series_accessions']))
     project_json["provenance"] = {
         "document_id": str(deterministic_uuid),
         "submission_date": version,
