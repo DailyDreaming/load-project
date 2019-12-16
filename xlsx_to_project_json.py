@@ -223,23 +223,25 @@ def write_empty_links_file(output_dir):
 
 
 def add_matrix_file(accessions, project_uuid, out_dir):
+    matching_files = []
     for acc in accessions:
         download_dir = download_supplementary_files(acc)
         if download_dir:
-            matching_files = []
             for ext in ('csv.gz', 'tsv.gz', 'txt.gz', '.gz'):
-                matching_files = [f for f in sorted(os.listdir(download_dir)) if f.startswith(acc) and f.endswith(ext)]
+                matching_files.update([f for f in sorted(os.listdir(download_dir)) if f.startswith(acc) and f.endswith(ext)])
                 if matching_files:
                     break
-            print(f'Matching files: {matching_files}')
+        if matching_files:
+            break
+        print(f'Matching files: {matching_files}')
 
-            zip_files = extract_rename_and_zip(download_dir, matching_files, project_uuid)
+    zip_files = extract_rename_and_zip(download_dir, matching_files, project_uuid)
 
-            if len(zip_files) > 0:
-                # move the zip file to the correct location
-                file = zip_files[0]
-                if not os.path.isfile(f'{out_dir}/{file}'):
-                    os.rename(f'{download_dir}/{file}', f'{out_dir}/{file}')
+    if len(zip_files) > 0:
+        # move the zip file to the correct location
+        file = zip_files[0]
+        if not os.path.isfile(f'{out_dir}/{file}'):
+            os.rename(f'{download_dir}/{file}', f'{out_dir}/{file}')
 
 
 # This is used to consistently generate project UUIDs
