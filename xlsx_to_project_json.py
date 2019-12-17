@@ -276,9 +276,13 @@ def run(namepace_uuid, xlsx, output_dir):
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Turn an xlsx file into a project.json file.')
-    parser.add_argument("--uuid", type=str,
-                        default="4d6f6c96-2a83-43d8-8fe1-0f53bffd4674",  # TODO: Delete this.
-                        help="The project UUID.")
+    parser.add_argument("--namespace_uuid", type=str,
+                        # This is used to consistently generate project UUIDs
+                        default=str(uuid.UUID('0887968d-72ec-4c58-bd99-be55953aa462')),
+                        help="Probably this shouldn't ever be specified. We want to use the same, default, namespace "
+                             "UUID so that the bundle UUID and project UUIDs are the same. This will prevent us from "
+                             "needing to clear what's in the DSS. New bundles will overwrite their outdated "
+                             "predecessors.")
     parser.add_argument("--xlsx", type=str,
                         default='data/test_project_000.xlsx',  # TODO: Delete this.
                         help="Path to an xlsx (excel) file.")
