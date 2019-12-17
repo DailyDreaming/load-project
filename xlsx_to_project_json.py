@@ -129,12 +129,18 @@ def create_project_json(data, namespace_uuid, version, verify=False):
     return project_json, deterministic_uuid
 
 
+def get_cell_count_from_matrix_file():
+    # TODO: Fill this in.
+    return 1
+
+
 def create_cell_suspension_jsons(data):
     version = timestamp()
+    print(data)
     cell_suspension_json = {
         "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
         "schema_type": "biomaterial",
-        "estimated_cell_count": round(data.get('estimated_cell_count', [1])[0]),
+        "estimated_cell_count": get_cell_count_from_matrix_file(),
         "biomaterial_core": {
             "biomaterial_id": data['biomaterial_core.biomaterial_id'][0],
             "biomaterial_description": data['biomaterial_core.biomaterial_description'][0],
@@ -193,24 +199,42 @@ def process_section(section, prefix='', verify=False):
     return project_data
 
 
+def get_harmonized_project_sections(wb, section_keywords):
+    """The excel fields change randomly and very slightly for no reason so we only look for key words."""
+    project_data = {}
+    for key in wb:
+        for section in section_keywords:
+            if section in key.title.lower():
+                print(str(key.title))
+                print(wb[str(key.title)])
+                project_data[section] = wb[str(key.title)]
+    return project_data
+
+
 def parse_project_data_from_xlsx(wb):
     data = process_section(section=wb['Project'], prefix='project.')
-    for project_key in ['Project - Publications',
-                        'Project - Publication',
-                        'Project - Funders',
-                        'Project - Funder',
-                        'Project - Contributors',
-                        'Project - Contributor']:
+
+    section_keywords = ['publication', 'funder', 'contributor']
+    project_sections = get_harmonized_project_sections(wb, section_keywords)
+    for project_key in section_keywords:
         try:
-            data.update(process_section(section=wb[project_key], prefix='project.'))
-            print(f'{project_key} found in the data.')
+            data.update(process_section(section=project_sections[project_key], prefix='project.'))
         except KeyError:
             print(f'{project_key} not found in the data!')
-    return dict(data)
+    return data
 
 
 def parse_cell_suspension_data_from_xlsx(wb):
-    data = process_section(section=wb['Cell suspension'], prefix='cell_suspension.')
+    data = {}
+    section_keywords = ['suspension']
+    for i in wb:
+        print(i.title)
+    project_sections = get_harmonized_project_sections(wb, section_keywords)
+    for project_key in section_keywords:
+        try:
+            data.update(process_section(section=project_sections[project_key], prefix='cell_suspension.'))
+        except KeyError:
+            print(f'{project_key} not found in the data!')
     return data
 
 
@@ -243,6 +267,7 @@ def generate_project_json(wb, namepace_uuid, output_dir):
 
 def generate_cell_suspension_json(wb, output_dir):
     cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
+    print(cell_suspension_data)
     cell_json = create_cell_suspension_jsons(cell_suspension_data)
     with open(f'{output_dir}/cell_suspension_0.json', 'w') as f:
         f.write(json.dumps(cell_json, indent=4))
@@ -264,14 +289,13 @@ def generate_links_json(output_dir):
 def run(namepace_uuid, xlsx, output_dir):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
-
     wb = load_workbook(xlsx)
 
     project_json, project_uuid = generate_project_json(wb, namepace_uuid, output_dir)
     generate_cell_suspension_json(wb, output_dir)
     generate_links_json(output_dir)
 
-    add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
+    # add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
 
 
 def main(argv):

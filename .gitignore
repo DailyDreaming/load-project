@@ -62,6 +62,8 @@ variables.tf
 
 /smoketest-*.tmp
 
-
-venv
-v3nv
+.~lock.*
+accessions/
+testing_comparison/
+venv/
+v3nv/
