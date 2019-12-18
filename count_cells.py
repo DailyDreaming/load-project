@@ -184,9 +184,8 @@ Cell counts expected:
      GSE81608: 1600
      GSE97104: 35016
      GSE99795: 147
-    GSE110154: 1860
-    GSE116237: 674  # 20
-    GSE124494: 33257
+    GSE116237: 674
+    GSE124494: 33257  # 20
     GSE130606: 7924
 
     GSE118127: h5 files that need parsing

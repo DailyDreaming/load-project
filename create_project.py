@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import argparse
+import copy
 from typing import Sequence
 import uuid
 from datetime import datetime
@@ -26,7 +27,7 @@ def timestamp():
     return datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
 
-def generate_project_uuid(geo_accessions: Sequence[str]) -> uuid.UUID:
+def generate_project_uuid(geo_accessions: Sequence[str]) -> str:
     """
     Deterministically generate a project UUID based on a series of GEO accession
     numbers.
@@ -36,7 +37,19 @@ def generate_project_uuid(geo_accessions: Sequence[str]) -> uuid.UUID:
     # It's essential that this is a hardcoded constant so that other scripts can
     # deterministically derive the same HCA UUIDs from GEO accessions.
     namespace_uuid = uuid.UUID('296e1002-1c99-4877-bb7f-bb6a3b752638')
-    return uuid.uuid5(namespace_uuid, ''.join(sorted(geo_accessions)))
+    return str(uuid.uuid5(namespace_uuid, ''.join(sorted(geo_accessions))))
+
+
+def generate_file_uuid(bundle_uuid: str, file_name: str) -> str:
+    """Deterministically generate a file UUID based on the parent bundle uuid and its file name."""
+    namespace_uuid = uuid.UUID(bundle_uuid)
+    return str(uuid.uuid5(namespace_uuid, file_name))
+
+
+def get_cell_counts():
+    with open('cell_counts.json', 'r') as f:
+        cell_counts = json.loads(f.read())
+    return cell_counts
 
 
 def create_project_json(data, version, verify=False):
@@ -137,9 +150,9 @@ def create_project_json(data, version, verify=False):
     if funders:
         project_json['funders'] = funders
 
-    deterministic_uuid = generate_project_uuid(project_json['geo_series_accessions'])
+    project_uuid = generate_project_uuid(project_json['geo_series_accessions'])
     project_json["provenance"] = {
-        "document_id": str(deterministic_uuid),
+        "document_id": str(project_uuid),
         "submission_date": version,
         "update_date": version,
         "schema_major_version": 14,
@@ -147,10 +160,10 @@ def create_project_json(data, version, verify=False):
         }
     if verify:
         print(json.dumps(project_json, indent=4))
-    return project_json, deterministic_uuid
+    return project_json, project_uuid
 
 
-def create_cell_suspension_jsons(data, cell_count, i=0):
+def create_cell_suspension_jsons(data, cell_count, file_uuid, i=0):
     version = timestamp()
     cell_suspension_json = {
         "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
@@ -169,7 +182,7 @@ def create_cell_suspension_jsons(data, cell_count, i=0):
             }
         ],
         "provenance": {
-            "document_id": str(uuid.uuid4()),  # TODO: Whyyyyy???
+            "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
             "update_date": version,
             "schema_major_version": 13,
@@ -179,7 +192,7 @@ def create_cell_suspension_jsons(data, cell_count, i=0):
     return cell_suspension_json
 
 
-def create_specimen_from_organism_json(data, i=0):
+def create_specimen_from_organism_json(data, file_uuid, i=0):
     version = timestamp()
     specimen_from_organism_json = {
         "describedBy": "https://schema.humancellatlas.org/type/biomaterial/10.2.0/specimen_from_organism",
@@ -223,7 +236,7 @@ def create_specimen_from_organism_json(data, i=0):
             "storage_method": data['preservation_storage.storage_method'][i]
         }
     specimen_from_organism_json["provenance"] = {
-            "document_id": str(uuid.uuid4()),  # TODO: Whyyyyy???
+            "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
             "update_date": version,
             "schema_major_version": 13,
@@ -243,7 +256,7 @@ def parse_ncbi_taxon_ids(ids):
         raise RuntimeError('This should never happen.')
 
 
-def create_donor_organism_json(data, i=0):
+def create_donor_organism_json(data, file_uuid, i=0):
     version = timestamp()
     donor_organism_json = {
         "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/15.3.0/donor_organism",
@@ -281,26 +294,26 @@ def create_donor_organism_json(data, i=0):
             }
         ]
     if 'organism_age' in data:
-        donor_organism_json['organism_age'] = data['organism_age'][i]
+        donor_organism_json['organism_age'] = str(data['organism_age'][i])
     if 'organism_age_unit.text' in data:
         donor_organism_json['organism_age_unit'] = {
-            "text": data['organism_age_unit.text'][i],
+            "text": str(data['organism_age_unit.text'][i]),
             "ontology": data['organism_age_unit.ontology'][i],
             "ontology_label": data['organism_age_unit.ontology_label'][i]
         }
     if 'human_specific.body_mass_index' in data:
         donor_organism_json['human_specific'] = {
-            "body_mass_index": data['human_specific.body_mass_index'][i],
+            "body_mass_index": str(data['human_specific.body_mass_index'][i]),
             "ethnicity": [
                 {
-                    "text": data['human_specific.ethnicity.text'][i],
+                    "text": str(data['human_specific.ethnicity.text'][i]),
                     "ontology": data['human_specific.ethnicity.ontology'][i],
                     "ontology_label": data['human_specific.ethnicity.ontology_label'][i]
                 }
             ]
         }
     donor_organism_json["provenance"] = {
-            "document_id": str(uuid.uuid4()),  # TODO: Whyyyyy???
+            "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
             "update_date": version,
             "schema_major_version": 13,
@@ -431,20 +444,26 @@ def generate_project_json(wb, output_dir):
     return project_json, project_uuid
 
 
-def generate_cell_suspension_json(wb, output_dir, cell_count):
+def generate_cell_suspension_json(wb, output_dir, cell_count, bundle_uuid):
+    file_name = 'cell_suspension_0.json'
     cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
-    cell_json = create_cell_suspension_jsons(cell_suspension_data, cell_count)
-    with open(f'{output_dir}/cell_suspension_0.json', 'w') as f:
+    cell_json = create_cell_suspension_jsons(data=cell_suspension_data,
+                                             cell_count=cell_count,
+                                             file_uuid=generate_file_uuid(bundle_uuid, file_name))
+    with open(f'{output_dir}/{file_name}', 'w') as f:
         f.write(json.dumps(cell_json, indent=4))
-    print(f'"{output_dir}/cell_suspension_0.json" successfully written.')
+    print(f'"{output_dir}/{file_name}" successfully written.')
 
 
-def generate_specimen_from_organism_json(wb, output_dir):
+def generate_specimen_from_organism_json(wb, output_dir, bundle_uuid):
+    file_name = 'specimen_from_organism_0.json'
     specimen_from_organism_data = parse_specimen_from_organism_data_from_xlsx(wb)
-    specimen_from_organism_json = create_specimen_from_organism_json(specimen_from_organism_data)
-    with open(f'{output_dir}/specimen_from_organism_0.json', 'w') as f:
+    specimen_from_organism_json = create_specimen_from_organism_json(
+        data=specimen_from_organism_data,
+        file_uuid=generate_file_uuid(bundle_uuid, file_name))
+    with open(f'{output_dir}/{file_name}', 'w') as f:
         f.write(json.dumps(specimen_from_organism_json, indent=4))
-    print(f'"{output_dir}/specimen_from_organism_0.json" successfully written.')
+    print(f'"{output_dir}/{file_name}" successfully written.')
 
 
 def generate_links_json(output_dir):
@@ -459,18 +478,21 @@ def generate_links_json(output_dir):
     print(f'"{output_dir}/links.json" successfully written.')
 
 
-def generate_donor_organism_jsons(wb, output_dir):
+def generate_donor_organism_jsons(wb, output_dir, bundle_uuid):
     donor_organism_data = parse_donor_organism_data_from_xlsx(wb)
     donors = [donor for donor in donor_organism_data['biomaterial_core.biomaterial_id'] if donor]
     for donor_number in range(len(donors)):
-        generate_donor_organism_json(donor_organism_data, output_dir, donor_number)
+        generate_donor_organism_json(donor_organism_data, output_dir, donor_number, bundle_uuid)
 
 
-def generate_donor_organism_json(data, output_dir, donor_number):
-    donor_organism_json = create_donor_organism_json(data, donor_number)
-    with open(f'{output_dir}/donor_organism_{donor_number}.json', 'w') as f:
+def generate_donor_organism_json(data, output_dir, donor_number, bundle_uuid):
+    file_name = f'donor_organism_{donor_number}.json'
+    donor_organism_json = create_donor_organism_json(data=data,
+                                                     file_uuid=generate_file_uuid(bundle_uuid, file_name),
+                                                     i=donor_number)
+    with open(f'{output_dir}/{file_name}', 'w') as f:
         f.write(json.dumps(donor_organism_json, indent=4))
-    print(f'"{output_dir}/donor_organism_{donor_number}.json" successfully written.')
+    print(f'"{output_dir}/{file_name}" successfully written.')
 
 
 def run(xlsx, output_dir, upload=False):
@@ -479,10 +501,26 @@ def run(xlsx, output_dir, upload=False):
     wb = load_workbook(xlsx)
 
     project_json, project_uuid = generate_project_json(wb, output_dir)
-    cell_count = 1  # add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
-    generate_cell_suspension_json(wb, output_dir, cell_count)
-    generate_specimen_from_organism_json(wb, output_dir)
-    generate_donor_organism_jsons(wb, output_dir)
+    bundle_uuid = copy.deepcopy(project_uuid)
+
+    cell_counts = get_cell_counts()
+    cell_count = 1  # the default if not found
+    for accession in project_json['geo_series_accessions']:
+        if accession in cell_counts:
+            cell_count = cell_counts[accession]
+
+
+    # add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
+    generate_cell_suspension_json(wb=wb,
+                                  output_dir=output_dir,
+                                  cell_count=cell_count,
+                                  bundle_uuid=bundle_uuid)
+    generate_specimen_from_organism_json(wb=wb,
+                                         output_dir=output_dir,
+                                         bundle_uuid=bundle_uuid)
+    generate_donor_organism_jsons(wb=wb,
+                                  output_dir=output_dir,
+                                  bundle_uuid=bundle_uuid)
     generate_links_json(output_dir)
 
     if upload:
@@ -491,7 +529,10 @@ def run(xlsx, output_dir, upload=False):
         hca_config["DSSClient"].swagger_url = f"https://dss.dev.data.humancellatlas.org/v1/swagger.json"
         dss = DSSClient(config=hca_config)
 
-        response = dss.upload(src_dir=output_dir, replica='aws', staging_bucket='lon-test-data')
+        response = dss.upload(src_dir=output_dir,
+                              replica='aws',
+                              staging_bucket='lon-test-data',
+                              bundle_uuid=bundle_uuid)
         print(f'Successful upload.  Bundle information is:\n{json.dumps(response, indent=4)}')
 
 
