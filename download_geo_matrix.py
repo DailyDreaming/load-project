@@ -41,14 +41,13 @@ def download_supplementary_files(accession_id, namespace_uuid):
     logging.info('Accession: %s', accession_id)
     deterministic_uuid = uuid.uuid5(namespace_uuid, accession_id)
 
-    projects_subdirectory = f'{deterministic_uuid}/geo'
-    save_file_path = f'projects/{projects_subdirectory}'
+    save_file_path = f'projects/{deterministic_uuid}/geo'
     if not os.path.exists(save_file_path):
         os.makedirs(save_file_path, exist_ok=True)
     file_link_path = f'projects/{accession_id}'
     if os.path.lexists(file_link_path):
         os.remove(file_link_path)
-    os.symlink(projects_subdirectory, file_link_path)
+    os.symlink(str(deterministic_uuid), file_link_path)
 
     source = furl.furl(source_url_template)
 
