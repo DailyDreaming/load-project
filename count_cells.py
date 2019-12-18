@@ -7,16 +7,43 @@ I don't see much need to?  This should probably be only done once?
 It's a decent record though if anyone finds fault with the cell number and wants to see how it was determined.
 """
 
+already_seen = ['GSE81547',
+                'GSE81904',
+                'GSE84133',
+                'GSE93593',
+                'GSE95435',
+                'GSE106540',
+                'GSE107585',
+                'GSE115469',
+                'GSE124472',
+                'GSE110154',
+                'GSE44183',
+                'GSE75367',
+                'GSE75659',
+                'GSE75688',
+                'GSE81383',
+                'GSE81608',
+                'GSE97104',
+                'GSE99795',
+                'GSE110154',
+                'GSE116237',
+                'GSE124494']
 
-def count_cells_in_file_headers(paths, delimiter):
+skip_headers = ['gene_id', 'gene_name', 'gene_type', '""', 'A-6', 'gene.id']
+
+
+def count_cells_in_file_headers(paths, delimiter, line_number=0):
     """Some files have thousands of delimited fields on the first line for each cell."""
     cell_count = 0
+    current_line_number = 0
     for path in paths:
         with open(path, 'r') as file:
             for line in file:
-                # only return the first line for each file, which should be the header
-                cell_count += len([l for l in line.split(delimiter) if l.strip() and l.strip() not in ['""', 'A-6']])
-                break
+                if current_line_number == line_number:
+                    # only return the relevant header line for the file, which may not be the first line
+                    cell_count += len([l for l in line.split(delimiter) if l.strip() and l.strip() not in skip_headers])
+                    break
+                current_line_number += 1
     return cell_count
 
 
@@ -60,12 +87,14 @@ def cell_counts(accession_code):
         elif accession_code == 'GSE106540':
             count = count_cells_in_file_headers(paths=['accessions/GSE106540/GSE106540_SC_raw_counts.txt'],
                                                 delimiter='\t')
+            # GSE107585
         elif accession_code == 'GSE107585':
             count = count_cells_in_file_headers(paths=['accessions/GSE107585/GSE107585_Mouse_kidney_single_cell_datamatrix.txt'],
                                                 delimiter='\t')
         elif accession_code == 'GSE115469':
             count = count_cells_in_file_headers(paths=['accessions/GSE115469/GSE115469_Data.csv'],
                                                 delimiter=',')
+            # GSE124472
         elif accession_code == 'GSE124472':
             count = lines_in_files(paths=['accessions/GSE124472/GSM3534656_H17w_Z1_raw_counts/barcodes.tsv',
                                           'accessions/GSE124472/GSM3534657_H17w_Z2_raw_counts/barcodes.tsv',
@@ -76,6 +105,50 @@ def cell_counts(accession_code):
                                           'accessions/GSE124472/GSM3534662_HuOrg_D28_1_raw_counts/barcodes.tsv',
                                           'accessions/GSE124472/GSM3534663_HuOrg_D28_2_raw_counts/barcodes.tsv'],
                                    header_prefix='thereisnoheaderprefixforthis >.>')
+        elif accession_code == 'GSE110154':
+            count = count_files(dir_path="accessions/GSE110154", suffix='.csv.gz')
+        elif accession_code == 'GSE44183':
+            count = count_cells_in_file_headers(paths=['accessions/GSE44183/GSE44183_human_expression_mat.txt',
+                                                       'accessions/GSE44183/GSE44183_mouse_expression_mat.txt'],
+                                                delimiter='\t')
+        elif accession_code == 'GSE75367':
+            count = count_cells_in_file_headers(paths=['accessions/GSE75367/GSE75367_readCounts.txt'],
+                                                delimiter='\t')
+        elif accession_code == 'GSE75659':
+            count = count_files(dir_path="accessions/GSE75659", suffix='.txt.gz')
+        elif accession_code == 'GSE75688':
+            count = count_cells_in_file_headers(paths=['accessions/GSE75688/GSE75688_GEO_processed_Breast_Cancer_raw_TPM_matrix.txt'],
+                                                delimiter='\t')
+        elif accession_code == 'GSE81383':
+            count = count_cells_in_file_headers(paths=['accessions/GSE81383/GSE81383_data_melanoma_scRNAseq_BT_Mel.txt'],
+                                                delimiter='\t')
+        elif accession_code == 'GSE81608':
+            count = count_cells_in_file_headers(paths=['accessions/GSE81608/GSE81608_human_islets_rpkm.txt'],
+                                                delimiter='\t')
+        elif accession_code == 'GSE97104':
+            count = count_cells_in_file_headers(paths=['accessions/GSE97104/GSE97104_all_umi.mtx.txt'],
+                                                delimiter='\t',
+                                                line_number=3)
+        elif accession_code == 'GSE97104':
+            count = count_cells_in_file_headers(paths=['accessions/GSE97104/GSE97104_all_umi.mtx.txt'],
+                                                delimiter='\t',
+                                                line_number=3)
+        elif accession_code == 'GSE99795':
+            count = count_cells_in_file_headers(paths=['accessions/GSE99795/GSE99795_raw.txt'],
+                                                delimiter='\t') - 8  # header has one massive first category
+        elif accession_code == 'GSE110154':
+            count = count_files(dir_path="accessions/GSE110154", suffix='.csv.gz')
+        elif accession_code == 'GSE116237':
+            count = count_cells_in_file_headers(paths=['accessions/GSE116237/GSE116237_scRNAseq_expressionMatrix.txt'],
+                                                delimiter=',')
+        elif accession_code == 'GSE124494':
+            count = lines_in_files(paths=['accessions/GSE124494/GSM3535276_AXLN1_barcodes.tsv',
+                                          'accessions/GSE124494/GSM3535277_AXLN2_barcodes.tsv',
+                                          'accessions/GSE124494/GSM3535278_AXLN3_barcodes.tsv',
+                                          'accessions/GSE124494/GSM3535279_AXLN4_barcodes.tsv',
+                                          'accessions/GSE124494/GSM3535280_HNLN1_barcodes.tsv',
+                                          'accessions/GSE124494/GSM3535281_HNLN2_barcodes.tsv'],
+                                   header_prefix='thereisnoheaderprefixforthis >.>')
         else:
             count = 'Accession Not Found In Parser List.'
         print(f'{accession_code}: {count}')
@@ -83,7 +156,7 @@ def cell_counts(accession_code):
         print(f'{accession_code}: {e}')
 
 
-for i in ['GSE81547', 'GSE81904', 'GSE84133', 'GSE93593', 'GSE95435', 'GSE106540', 'GSE107585', 'GSE115469', 'GSE124472']:
+for i in already_seen:
     cell_counts(accession_code=i)
 
 print("""
@@ -98,4 +171,15 @@ Cell counts expected:
     GSE107585: 43745
     GSE115469: 8444
     GSE124472: 22687
+    GSE110154: 1860  # 10
+     GSE44183: 48
+     GSE75367: 74
+     GSE75659: 1318
+     GSE75688: 563
+     GSE81383: 307
+     GSE81608: 1600
+     GSE97104: 35016
+     GSE99795: 147
+    GSE110154: 1860
+    GSE116237: 674  # 20
     """)
