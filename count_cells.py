@@ -27,7 +27,10 @@ already_seen = ['GSE81547',
                 'GSE99795',
                 'GSE110154',
                 'GSE116237',
-                'GSE124494']
+                'GSE124494',
+                'GSE130606',
+                'GSE118127',
+                'GSE135889']
 
 skip_headers = ['gene_id', 'gene_name', 'gene_type', '""', 'A-6', 'gene.id']
 
@@ -145,6 +148,11 @@ def cell_counts(accession_code):
                                           'accessions/GSE124494/GSM3535280_HNLN1_barcodes.tsv',
                                           'accessions/GSE124494/GSM3535281_HNLN2_barcodes.tsv'],
                                    header_prefix='thereisnoheaderprefixforthis >.>')
+        elif accession_code == 'GSE130606':
+            count = lines_in_files(paths=['accessions/GSE130606/GSE130606_barcodes.tsv'],
+                                   header_prefix='thereisnoheaderprefixforthis >.>')
+        elif accession_code in ('GSE118127', 'GSE135889'):
+            count = 'Accession Has Special Problems.'
         else:
             count = 'Accession Not Found In Parser List.'
         print(f'{accession_code}: {count}')
@@ -179,4 +187,8 @@ Cell counts expected:
     GSE110154: 1860
     GSE116237: 674  # 20
     GSE124494: 33257
+    GSE130606: 7924
+
+    GSE118127: h5 files that need parsing
+    GSE135889: No Supplementary Files
     """)
