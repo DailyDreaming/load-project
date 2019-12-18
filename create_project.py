@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import argparse
+from typing import Sequence
 import uuid
 from datetime import datetime
 
@@ -24,7 +25,20 @@ def timestamp():
     return datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
 
-def create_project_json(data, namespace_uuid, version, verify=False):
+def generate_project_uuid(geo_accessions: Sequence[str]) -> uuid.UUID:
+    """
+    Deterministically generate a project UUID based on a series of GEO accession
+    numbers.
+    """
+    # Chosen to match https://github.com/DailyDreaming/load-project/pull/6/files#diff-909893068c9afb3ccbb8ea268955eb7dR30
+    # at the suggestion of Daniel Sotirhos.
+    # It's essential that this is a hardcoded constant so that other scripts can
+    # deterministically derive the same HCA UUIDs from GEO accessions.
+    namespace_uuid = uuid.UUID('296e1002-1c99-4877-bb7f-bb6a3b752638')
+    return uuid.uuid5(namespace_uuid, ''.join(sorted(geo_accessions)))
+
+
+def create_project_json(data, version, verify=False):
     project_json = {
       "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
       "schema_type": "project",
@@ -122,7 +136,7 @@ def create_project_json(data, namespace_uuid, version, verify=False):
     if funders:
         project_json['funders'] = funders
 
-    deterministic_uuid = uuid.uuid5(uuid.UUID(namespace_uuid), ''.join(project_json['geo_series_accessions']))
+    deterministic_uuid = generate_project_uuid(project_json['geo_series_accessions'])
     project_json["provenance"] = {
         "document_id": str(deterministic_uuid),
         "submission_date": version,
@@ -407,9 +421,9 @@ def add_matrix_file(accessions, project_uuid, out_dir):
         print(f'No matching files found for {acc}')
 
 
-def generate_project_json(wb, namepace_uuid, output_dir):
+def generate_project_json(wb, output_dir):
     project_data = parse_project_data_from_xlsx(wb)
-    project_json, project_uuid = create_project_json(project_data, namespace_uuid=namepace_uuid, version=timestamp())
+    project_json, project_uuid = create_project_json(project_data, version=timestamp())
     with open(f'{output_dir}/project_0.json', 'w') as f:
         f.write(json.dumps(project_json, indent=4))
     print(f'"{output_dir}/project_0.json" successfully written.')
@@ -458,12 +472,12 @@ def generate_donor_organism_json(data, output_dir, donor_number):
     print(f'"{output_dir}/donor_organism_{donor_number}.json" successfully written.')
 
 
-def run(namepace_uuid, xlsx, output_dir, upload=False):
+def run(xlsx, output_dir, upload=False):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
     wb = load_workbook(xlsx)
 
-    project_json, project_uuid = generate_project_json(wb, namepace_uuid, output_dir)
+    project_json, project_uuid = generate_project_json(wb, output_dir)
     cell_count = 1  # add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
     generate_cell_suspension_json(wb, output_dir, cell_count)
     generate_specimen_from_organism_json(wb, output_dir)
@@ -483,9 +497,6 @@ def run(namepace_uuid, xlsx, output_dir, upload=False):
 def main(argv):
     parser = argparse.ArgumentParser(description='Turn an xlsx file into the json files necessary for a complete '
                                                  'bundle to be uploaded into the DSS and serve as a minimal project.')
-    parser.add_argument("--uuid", type=str,
-                        help="The project UUID.  "
-                             "Example: '4d6f6c96-2a83-43d8-8fe1-0f53bffd4674'")
     parser.add_argument("--xlsx", type=str,
                         help="Path to an xlsx (excel) file.  "
                              "Example: 'data/test_project_000.xlsx'")
@@ -497,7 +508,7 @@ def main(argv):
                         help="Whether or not one should upload this data as a bundle to the data-store.")
 
     args = parser.parse_args(argv)
-    run(args.uuid, args.xlsx, args.output_dir, args.upload)
+    run(args.xlsx, args.output_dir, args.upload)
 
 
 if __name__ == "__main__":
