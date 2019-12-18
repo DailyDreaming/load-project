@@ -1,19 +1,50 @@
 import os
 
 from uuid import uuid4
-from xlsx_to_project_json import run
+from create_project import run
 
+"""
+Running this will parse all excel files into bundles output into the folder: 'testing_comparison'.
 
-# # This script only tests parsing (NO uploading done) so the uuid doesn't matter.
-# namespace_uuid = '0887968d-72ec-4c58-bd99-be55953aa462'
+This is currently set to loop over two sets of excel files.
+
+One is the set of 6 original project excel files in "data".  These have project_0.json and cell_suspension_0.json 
+files included that were downloaded from dss prod to check against.
+
+The second is the set of 71 raw excel files with no comparison in the dss yet (these need to be checked).  These 
+also have slightly different formatting (all seem to be missing a "funders" section... and a few are missing the
+"publications" section).
+
+Editing 'upload=False' to 'upload=True' with upload to dss dev if you are credentialed to do so.
+Otherwise it will just parse the excel files and generate all of the matrix and json files necessary for upload.
+"""
+
+# uuid only doesn't matter if "upload=False" and useful for testing the parser portion only.
+
+"""6 ORIGINAL DATASETS (ALREADY IN THE DSS)"""
+# These are the original excel files provided that currently exist in dss prod
+# and we have finished examples to compare against.
+for project in range(6):
+    print(f'\nProject: test_00{project}')
+    run(str(uuid4()),
+        xlsx=f'data/test_00{project}.xlsx',
+        output_dir=f'testing_comparison/test_00{project}',
+        upload=False)
+
+"""71 RAW DATASETS (STATUS NOT PARSED)"""
+# Downloaded from a spreadsheet of spreadsheets and assumed to be (mostly) complete projects.
+# These inputs were provided with the labels "finished" or "full".
+# Differences assumed are inferred from skimming over the files.
+# I chose to use the inputs which end in ".0.xlsx" ("finished") rather than the normal ".xlsx" extension ("full").
 #
-# for i in range(6):
-#     print(f'\nProject: {i}')
-#     run(str(uuid4()), xlsx=f'data/test_00{i}.xlsx', output_dir=f'testing_comparison/test_00{i}')
+# These are missing fields such as the "funders" section (as opposed to the 6 excel files above).
+# Not sure of other differences yet.
+src_dir = 'raw_excel_inputs'
+projects = [f for f in os.listdir(src_dir) if os.path.isfile(os.path.join(src_dir, f)) and f.endswith('.0.xlsx')]
 
-mypath = 'raw_excel_inputs'
-j = [f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f)) and f.endswith('.0.xlsx')]
-
-for i in j:
-    print(f'\nProject: {i}')
-    run(str(uuid4()), xlsx=f'raw_excel_inputs/{i}', output_dir=f'testing_comparison/{i[:-5]}', upload=True)
+for project in projects:
+    print(f'\nProject: {project}')
+    run(str(uuid4()),
+        xlsx=f'raw_excel_inputs/{project}',
+        output_dir=f'testing_comparison/{project[:-5]}',
+        upload=False)

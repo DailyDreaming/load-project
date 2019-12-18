@@ -17,6 +17,9 @@ from download_geo_matrix import (
 from openpyxl import load_workbook
 
 
+# TODO: Consolidate similar functions and clean up code.
+
+
 def timestamp():
     return datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
 
@@ -132,35 +135,163 @@ def create_project_json(data, namespace_uuid, version, verify=False):
     return project_json, deterministic_uuid
 
 
-def create_cell_suspension_jsons(data, cell_count):
+def create_cell_suspension_jsons(data, cell_count, i=0):
     version = timestamp()
     cell_suspension_json = {
         "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
         "schema_type": "biomaterial",
         "estimated_cell_count": cell_count,
         "biomaterial_core": {
-            "biomaterial_id": data['biomaterial_core.biomaterial_id'][0],
-            "biomaterial_description": data['biomaterial_core.biomaterial_description'][0],
-            "ncbi_taxon_id": [
-                data['biomaterial_core.ncbi_taxon_id'][0]
-            ]
+            "biomaterial_id": data['biomaterial_core.biomaterial_id'][i],
+            "biomaterial_description": data['biomaterial_core.biomaterial_description'][i],
+            "ncbi_taxon_id": parse_ncbi_taxon_ids(data['biomaterial_core.ncbi_taxon_id'][i])
         },
         "genus_species": [
             {
-                "text": data['genus_species.text'][0],
-                "ontology_label": data["genus_species.ontology_label"][0],
-                "ontology": data["genus_species.ontology"][0],
+                "text": data['genus_species.text'][i],
+                "ontology_label": data["genus_species.ontology_label"][i],
+                "ontology": data["genus_species.ontology"][i],
             }
         ],
         "provenance": {
-            "document_id": str(uuid.uuid4()),
-            "submission_date": version,
+            "document_id": str(uuid.uuid4()),  # TODO: Whyyyyy???
+            "submission_date": version,  # TODO: Fetch from DSS if it exists
             "update_date": version,
             "schema_major_version": 13,
             "schema_minor_version": 3
         }
     }
     return cell_suspension_json
+
+
+def create_specimen_from_organism_json(data, i=0):
+    version = timestamp()
+    specimen_from_organism_json = {
+        "describedBy": "https://schema.humancellatlas.org/type/biomaterial/10.2.0/specimen_from_organism",
+        "schema_type": "biomaterial",
+        "biomaterial_core": {
+            "biomaterial_id": data['biomaterial_core.biomaterial_id'][i],
+            "biomaterial_description": data['biomaterial_core.biomaterial_description'][i],
+            "ncbi_taxon_id": parse_ncbi_taxon_ids(data['biomaterial_core.ncbi_taxon_id'][i])
+        },
+        "genus_species": [
+            {
+                "text": data['genus_species.text'][i],
+                "ontology_label": data["genus_species.ontology_label"][i],
+                "ontology": data["genus_species.ontology"][i],
+            }
+        ],
+        "organ": {
+            "text": data['organ.text'][i],
+            "ontology": data['organ.ontology'][i],
+            "ontology_label": data['organ.ontology_label'][i]
+        },
+        "organ_parts": [
+            {
+                "text": data['organ_parts.text'][i],
+                "ontology": data['organ_parts.ontology'][i],
+                "ontology_label": data['organ_parts.ontology_label'][i]
+            }
+        ]
+    }
+    if 'diseases.text' in data:
+        specimen_from_organism_json['diseases'] = [
+            {
+                "text": data['diseases.text'][i],
+                "ontology": data['diseases.ontology'][i],
+                "ontology_label": data['diseases.ontology_label'][i]
+            }
+        ]
+    if 'preservation_storage.preservation_method' in data:
+        specimen_from_organism_json['preservation_storage'] = {
+            "preservation_method": data['preservation_storage.preservation_method'][i],
+            "storage_method": data['preservation_storage.storage_method'][i]
+        }
+    specimen_from_organism_json["provenance"] = {
+            "document_id": str(uuid.uuid4()),  # TODO: Whyyyyy???
+            "submission_date": version,  # TODO: Fetch from DSS if it exists
+            "update_date": version,
+            "schema_major_version": 13,
+            "schema_minor_version": 3
+        }
+    return specimen_from_organism_json
+
+
+def parse_ncbi_taxon_ids(ids):
+    if isinstance(ids, int):
+        return [ids]
+    elif isinstance(ids, float):
+        return [int(ids)]
+    elif isinstance(ids, str):
+        return [int(i) for i in ids.split(',') if i.strip()]
+    else:
+        raise RuntimeError('This should never happen.')
+
+
+def create_donor_organism_json(data, i=0):
+    version = timestamp()
+    donor_organism_json = {
+        "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/15.3.0/donor_organism",
+        "schema_type": "biomaterial",
+        "biomaterial_core": {
+            "biomaterial_id": data['biomaterial_core.biomaterial_id'][i],
+            "biomaterial_name": data['biomaterial_core.biomaterial_name'][i],
+            "biomaterial_description": data['biomaterial_core.biomaterial_description'][i],
+            "ncbi_taxon_id": parse_ncbi_taxon_ids(data['biomaterial_core.ncbi_taxon_id'][i])
+        },
+        "genus_species": [
+            {
+                "text": data['genus_species.text'][i],
+                "ontology_label": data["genus_species.ontology_label"][i],
+                "ontology": data["genus_species.ontology"][i],
+            }
+        ],
+        "is_living": data['is_living'][i],
+        "sex": data['sex'][i]
+    }
+    if 'diseases.text' in data:
+        donor_organism_json['diseases'] = [
+            {
+                "text": data['diseases.text'][i],
+                "ontology": data['diseases.ontology'][i],
+                "ontology_label": data['diseases.ontology_label'][i]
+            }
+        ]
+    if 'development_stage.text' in data:
+        donor_organism_json['development_stage'] = [
+            {
+                "text": data['development_stage.text'][i],
+                "ontology": data['development_stage.ontology'][i],
+                "ontology_label": data['development_stage.ontology_label'][i]
+            }
+        ]
+    if 'organism_age' in data:
+        donor_organism_json['organism_age'] = data['organism_age'][i]
+    if 'organism_age_unit.text' in data:
+        donor_organism_json['organism_age_unit'] = {
+            "text": data['organism_age_unit.text'][i],
+            "ontology": data['organism_age_unit.ontology'][i],
+            "ontology_label": data['organism_age_unit.ontology_label'][i]
+        }
+    if 'human_specific.body_mass_index' in data:
+        donor_organism_json['human_specific'] = {
+            "body_mass_index": data['human_specific.body_mass_index'][i],
+            "ethnicity": [
+                {
+                    "text": data['human_specific.ethnicity.text'][i],
+                    "ontology": data['human_specific.ethnicity.ontology'][i],
+                    "ontology_label": data['human_specific.ethnicity.ontology_label'][i]
+                }
+            ]
+        }
+    donor_organism_json["provenance"] = {
+            "document_id": str(uuid.uuid4()),  # TODO: Whyyyyy???
+            "submission_date": version,  # TODO: Fetch from DSS if it exists
+            "update_date": version,
+            "schema_major_version": 13,
+            "schema_minor_version": 3
+        }
+    return donor_organism_json
 
 
 def is_known_divider(row_value, right_after_key_declaration):
@@ -215,19 +346,46 @@ def parse_project_data_from_xlsx(wb):
         try:
             data.update(process_section(section=project_sections[project_key], prefix='project.'))
         except KeyError:
-            print(f'{project_key} not found in the data!')
+            print(f'{project_key} section not found in the data!')
     return data
 
 
 def parse_cell_suspension_data_from_xlsx(wb):
     data = {}
+
     section_keywords = ['suspension']
     project_sections = get_harmonized_project_sections(wb, section_keywords)
     for project_key in section_keywords:
         try:
             data.update(process_section(section=project_sections[project_key], prefix='cell_suspension.'))
         except KeyError:
-            print(f'{project_key} not found in the data!')
+            print(f'{project_key} section not found in the data!')
+    return data
+
+
+def parse_specimen_from_organism_data_from_xlsx(wb):
+    data = {}
+
+    section_keywords = ['specimen']
+    project_sections = get_harmonized_project_sections(wb, section_keywords)
+    for project_key in section_keywords:
+        try:
+            data.update(process_section(section=project_sections[project_key], prefix='specimen_from_organism.'))
+        except KeyError:
+            print(f'{project_key} section not found in the data!')
+    return data
+
+
+def parse_donor_organism_data_from_xlsx(wb):
+    data = {}
+
+    section_keywords = ['donor']
+    project_sections = get_harmonized_project_sections(wb, section_keywords)
+    for project_key in section_keywords:
+        try:
+            data.update(process_section(section=project_sections[project_key], prefix='donor_organism.'))
+        except KeyError:
+            print(f'{project_key} section not found in the data!')
     return data
 
 
@@ -266,6 +424,14 @@ def generate_cell_suspension_json(wb, output_dir, cell_count):
     print(f'"{output_dir}/cell_suspension_0.json" successfully written.')
 
 
+def generate_specimen_from_organism_json(wb, output_dir):
+    specimen_from_organism_data = parse_specimen_from_organism_data_from_xlsx(wb)
+    specimen_from_organism_json = create_specimen_from_organism_json(specimen_from_organism_data)
+    with open(f'{output_dir}/specimen_from_organism_0.json', 'w') as f:
+        f.write(json.dumps(specimen_from_organism_json, indent=4))
+    print(f'"{output_dir}/specimen_from_organism_0.json" successfully written.')
+
+
 def generate_links_json(output_dir):
     links = {
         'describedBy': 'https://schema.humancellatlas.org/system/1.1.5/links',
@@ -278,14 +444,30 @@ def generate_links_json(output_dir):
     print(f'"{output_dir}/links.json" successfully written.')
 
 
+def generate_donor_organism_jsons(wb, output_dir):
+    donor_organism_data = parse_donor_organism_data_from_xlsx(wb)
+    donors = [donor for donor in donor_organism_data['biomaterial_core.biomaterial_id'] if donor]
+    for donor_number in range(len(donors)):
+        generate_donor_organism_json(donor_organism_data, output_dir, donor_number)
+
+
+def generate_donor_organism_json(data, output_dir, donor_number):
+    donor_organism_json = create_donor_organism_json(data, donor_number)
+    with open(f'{output_dir}/donor_organism_{donor_number}.json', 'w') as f:
+        f.write(json.dumps(donor_organism_json, indent=4))
+    print(f'"{output_dir}/donor_organism_{donor_number}.json" successfully written.')
+
+
 def run(namepace_uuid, xlsx, output_dir, upload=False):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
     wb = load_workbook(xlsx)
 
     project_json, project_uuid = generate_project_json(wb, namepace_uuid, output_dir)
-    cell_count = 1 #  add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
+    cell_count = 1  # add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
     generate_cell_suspension_json(wb, output_dir, cell_count)
+    generate_specimen_from_organism_json(wb, output_dir)
+    generate_donor_organism_jsons(wb, output_dir)
     generate_links_json(output_dir)
 
     if upload:
@@ -299,13 +481,14 @@ def run(namepace_uuid, xlsx, output_dir, upload=False):
 
 
 def main(argv):
-    parser = argparse.ArgumentParser(description='Turn an xlsx file into a project.json file.')
+    parser = argparse.ArgumentParser(description='Turn an xlsx file into the json files necessary for a complete '
+                                                 'bundle to be uploaded into the DSS and serve as a minimal project.')
     parser.add_argument("--uuid", type=str,
-                        default='4d6f6c96-2a83-43d8-8fe1-0f53bffd4674',  # TODO: Delete this.
-                        help='The project UUID.')
+                        help="The project UUID.  "
+                             "Example: '4d6f6c96-2a83-43d8-8fe1-0f53bffd4674'")
     parser.add_argument("--xlsx", type=str,
-                        default='data/test_project_000.xlsx',  # TODO: Delete this.
-                        help="Path to an xlsx (excel) file.")
+                        help="Path to an xlsx (excel) file.  "
+                             "Example: 'data/test_project_000.xlsx'")
     parser.add_argument("--output_dir", type=str,
                         default='bundle',
                         help="Path to an output directory.")

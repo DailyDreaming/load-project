@@ -1,8 +1,15 @@
 import os
 
+"""
+Although this parser can be rerun to reproduce the cell counts given,
+I don't see much need to?  This should probably be only done once?
+
+It's a decent record though if anyone finds fault with the cell number and wants to see how it was determined.
+"""
+
 
 def count_cells_in_file_headers(paths, delimiter):
-    """"""
+    """Some files have thousands of delimited fields on the first line for each cell."""
     cell_count = 0
     for path in paths:
         with open(path, 'r') as file:
@@ -14,7 +21,7 @@ def count_cells_in_file_headers(paths, delimiter):
 
 
 def lines_in_files(paths, header_prefix):
-    """"""
+    """Counts lines in files that have one line per cell."""
     cell_count = 0
     for path in paths:
         with open(path, 'r') as file:
@@ -92,4 +99,3 @@ Cell counts expected:
     GSE115469: 8444
     GSE124472: 22687
     """)
-
