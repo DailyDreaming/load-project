@@ -5,6 +5,9 @@ import argparse
 import uuid
 from datetime import datetime
 
+from hca import HCAConfig
+from hca.dss import DSSClient
+
 from download_geo_matrix import (
     download_supplementary_files,
     extract_rename_and_zip,
@@ -129,18 +132,12 @@ def create_project_json(data, namespace_uuid, version, verify=False):
     return project_json, deterministic_uuid
 
 
-def get_cell_count_from_matrix_file():
-    # TODO: Fill this in.
-    return 1
-
-
-def create_cell_suspension_jsons(data):
+def create_cell_suspension_jsons(data, cell_count):
     version = timestamp()
-    print(data)
     cell_suspension_json = {
         "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
         "schema_type": "biomaterial",
-        "estimated_cell_count": get_cell_count_from_matrix_file(),
+        "estimated_cell_count": cell_count,
         "biomaterial_core": {
             "biomaterial_id": data['biomaterial_core.biomaterial_id'][0],
             "biomaterial_description": data['biomaterial_core.biomaterial_description'][0],
@@ -205,8 +202,6 @@ def get_harmonized_project_sections(wb, section_keywords):
     for key in wb:
         for section in section_keywords:
             if section in key.title.lower():
-                print(str(key.title))
-                print(wb[str(key.title)])
                 project_data[section] = wb[str(key.title)]
     return project_data
 
@@ -227,8 +222,6 @@ def parse_project_data_from_xlsx(wb):
 def parse_cell_suspension_data_from_xlsx(wb):
     data = {}
     section_keywords = ['suspension']
-    for i in wb:
-        print(i.title)
     project_sections = get_harmonized_project_sections(wb, section_keywords)
     for project_key in section_keywords:
         try:
@@ -265,10 +258,9 @@ def generate_project_json(wb, namepace_uuid, output_dir):
     return project_json, project_uuid
 
 
-def generate_cell_suspension_json(wb, output_dir):
+def generate_cell_suspension_json(wb, output_dir, cell_count):
     cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
-    print(cell_suspension_data)
-    cell_json = create_cell_suspension_jsons(cell_suspension_data)
+    cell_json = create_cell_suspension_jsons(cell_suspension_data, cell_count)
     with open(f'{output_dir}/cell_suspension_0.json', 'w') as f:
         f.write(json.dumps(cell_json, indent=4))
     print(f'"{output_dir}/cell_suspension_0.json" successfully written.')
@@ -286,16 +278,24 @@ def generate_links_json(output_dir):
     print(f'"{output_dir}/links.json" successfully written.')
 
 
-def run(namepace_uuid, xlsx, output_dir):
+def run(namepace_uuid, xlsx, output_dir, upload=False):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
     wb = load_workbook(xlsx)
 
     project_json, project_uuid = generate_project_json(wb, namepace_uuid, output_dir)
-    generate_cell_suspension_json(wb, output_dir)
+    cell_count = 1 #  add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
+    generate_cell_suspension_json(wb, output_dir, cell_count)
     generate_links_json(output_dir)
 
-    # add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
+    if upload:
+        hca_config = HCAConfig()
+
+        hca_config["DSSClient"].swagger_url = f"https://dss.dev.data.humancellatlas.org/v1/swagger.json"
+        dss = DSSClient(config=hca_config)
+
+        response = dss.upload(src_dir=output_dir, replica='aws', staging_bucket='lon-test-data')
+        print(f'Successful upload.  Bundle information is:\n{json.dumps(response, indent=4)}')
 
 
 def main(argv):
@@ -309,9 +309,12 @@ def main(argv):
     parser.add_argument("--output_dir", type=str,
                         default='bundle',
                         help="Path to an output directory.")
+    parser.add_argument("--upload", type=bool,
+                        default=False,
+                        help="Whether or not one should upload this data as a bundle to the data-store.")
 
     args = parser.parse_args(argv)
-    run(args.uuid, args.xlsx, args.output_dir)
+    run(args.uuid, args.xlsx, args.output_dir, args.upload)
 
 
 if __name__ == "__main__":
