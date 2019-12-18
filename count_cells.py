@@ -129,10 +129,6 @@ def cell_counts(accession_code):
             count = count_cells_in_file_headers(paths=['accessions/GSE97104/GSE97104_all_umi.mtx.txt'],
                                                 delimiter='\t',
                                                 line_number=3)
-        elif accession_code == 'GSE97104':
-            count = count_cells_in_file_headers(paths=['accessions/GSE97104/GSE97104_all_umi.mtx.txt'],
-                                                delimiter='\t',
-                                                line_number=3)
         elif accession_code == 'GSE99795':
             count = count_cells_in_file_headers(paths=['accessions/GSE99795/GSE99795_raw.txt'],
                                                 delimiter='\t') - 8  # header has one massive first category
@@ -182,4 +178,5 @@ Cell counts expected:
      GSE99795: 147
     GSE110154: 1860
     GSE116237: 674  # 20
+    GSE124494: 33257
     """)
