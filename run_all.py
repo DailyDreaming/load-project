@@ -19,15 +19,12 @@ Editing 'upload=False' to 'upload=True' with upload to dss dev if you are creden
 Otherwise it will just parse the excel files and generate all of the matrix and json files necessary for upload.
 """
 
-# uuid only doesn't matter if "upload=False" and useful for testing the parser portion only.
-
 """6 ORIGINAL DATASETS (ALREADY IN THE DSS)"""
 # These are the original excel files provided that currently exist in dss prod
 # and we have finished examples to compare against.
 for project in range(6):
     print(f'\nProject: test_00{project}')
-    run(str(uuid4()),
-        xlsx=f'data/test_00{project}.xlsx',
+    run(xlsx=f'data/test_00{project}.xlsx',
         output_dir=f'testing_comparison/test_00{project}',
         upload=False)
 
@@ -44,7 +41,6 @@ projects = [f for f in os.listdir(src_dir) if os.path.isfile(os.path.join(src_di
 
 for project in projects:
     print(f'\nProject: {project}')
-    run(str(uuid4()),
-        xlsx=f'raw_excel_inputs/{project}',
+    run(xlsx=f'raw_excel_inputs/{project}',
         output_dir=f'testing_comparison/{project[:-5]}',
         upload=False)
