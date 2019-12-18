@@ -19,6 +19,7 @@ from openpyxl import load_workbook
 
 
 # TODO: Consolidate similar functions and clean up code.
+# TODO: Make file uuid deterministic based on bundle uuid and file name
 
 
 def timestamp():
