@@ -27,7 +27,7 @@ def main(argv):
     args = parser.parse_args(argv)
 
     accessions = args.accessions.split(',')
-    namespace_uuid = uuid.uuid4()
+    namespace_uuid = uuid.UUID('296e1002-1c99-4877-bb7f-bb6a3b752638')
 
     for acc in accessions:
         download_supplementary_files(acc, namespace_uuid)
@@ -41,7 +41,7 @@ def download_supplementary_files(accession_id, namespace_uuid):
     logging.info('Accession: %s', accession_id)
     deterministic_uuid = uuid.uuid5(namespace_uuid, accession_id)
     source = furl.furl(source_url_template)
-    save_file_path = f'project/{deterministic_uuid}/geo'
+    save_file_path = f'projects/{deterministic_uuid}/geo'
 
     page = requests.get(source_url_template + accession_id)
 
