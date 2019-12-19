@@ -16,8 +16,6 @@ from download_geo_matrix import (
     extract_tar_files
 )
 
-from geo_namespace import deterministic_uuid
-
 from openpyxl import load_workbook
 
 
@@ -31,20 +29,20 @@ def timestamp():
 
 def generate_project_uuid(geo_accessions: Sequence[str]) -> str:
     """
-    Deterministically generate a project UUID based on a series of GEO accession
-    numbers.
+    Deterministically generate a project UUID based on one or more GEO accession ids.
     """
-    # Chosen to match https://github.com/DailyDreaming/load-project/pull/6/files#diff-909893068c9afb3ccbb8ea268955eb7dR30
-    # at the suggestion of Daniel Sotirhos.
-    # It's essential that this is a hardcoded constant so that other scripts can
-    # deterministically derive the same HCA UUIDs from GEO accessions.
-    return deterministic_uuid(''.join(sorted(geo_accessions)))
+    if isinstance(geo_accessions, str):
+        geo_accessions = [geo_accessions]
+    namespace_uuid = uuid.UUID('296e1002-1c99-4877-bb7f-bb6a3b752638')
+    return str(uuid.uuid5(namespace_uuid, ''.join(sorted(geo_accessions))))
 
 
 def generate_file_uuid(bundle_uuid: str, file_name: str) -> str:
-    """Deterministically generate a file UUID based on the parent bundle uuid and its file name."""
-    namespace_uuid = uuid.UUID(bundle_uuid)
-    return str(uuid.uuid5(namespace_uuid, file_name))
+    """
+    Deterministically generate a file UUID based on the parent bundle uuid and its file name.
+    """
+    namespace_uuid = uuid.UUID('4c52e3d0-ffe5-4b4d-a4d0-cb6a6f372b31')
+    return str(uuid.uuid5(namespace_uuid, bundle_uuid + file_name))
 
 
 def get_cell_counts():

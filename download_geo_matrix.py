@@ -12,7 +12,7 @@ from typing import MutableMapping, Sequence
 import uuid
 import zipfile
 
-from geo_namespace import deterministic_uuid
+from create_project import generate_project_uuid
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -40,7 +40,7 @@ def download_supplementary_files(accession_id):
     """
     logging.info('---')
     logging.info('Accession: %s', accession_id)
-    project_uuid = deterministic_uuid(accession_id)
+    project_uuid = generate_project_uuid([accession_id])
 
     save_file_path = f'projects/{project_uuid}/geo'
     if not os.path.exists(save_file_path):
