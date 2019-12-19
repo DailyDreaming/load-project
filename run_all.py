@@ -28,7 +28,7 @@ for project in range(6):
     print(f'\nProject: test_00{project}')
     run(xlsx=f'data/test_00{project}.xlsx',
         output_dir=f'testing_comparison/test_00{project}',
-        upload=True)
+        upload=False)
 
 """71 RAW DATASETS (STATUS NOT PARSED)"""
 # Downloaded from a spreadsheet of spreadsheets and assumed to be (mostly) complete projects.
@@ -46,4 +46,4 @@ for i, project in enumerate(projects):
           f'===========================================================')
     run(xlsx=f'raw_excel_inputs/{project}',
         output_dir=f'testing_comparison/{project[:-5]}',
-        upload=True)
+        upload=False)
