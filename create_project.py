@@ -392,7 +392,7 @@ def create_donor_organism_json(data, file_uuid, i=0):
         use_list=True
     )
     if ethnicity:
-        donor_organism_json['human_specific'].update(ethnicity)
+        donor_organism_json.get('human_specific', {}).update(ethnicity)
     donor_organism_json["provenance"] = {
             "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
