@@ -16,6 +16,8 @@ from download_geo_matrix import (
     extract_tar_files
 )
 
+from geo_namespace import deterministic_uuid
+
 from openpyxl import load_workbook
 
 
@@ -36,8 +38,7 @@ def generate_project_uuid(geo_accessions: Sequence[str]) -> str:
     # at the suggestion of Daniel Sotirhos.
     # It's essential that this is a hardcoded constant so that other scripts can
     # deterministically derive the same HCA UUIDs from GEO accessions.
-    namespace_uuid = uuid.UUID('296e1002-1c99-4877-bb7f-bb6a3b752638')
-    return str(uuid.uuid5(namespace_uuid, ''.join(sorted(geo_accessions))))
+    return deterministic_uuid(''.join(sorted(geo_accessions)))
 
 
 def generate_file_uuid(bundle_uuid: str, file_name: str) -> str:
