@@ -186,7 +186,7 @@ def create_cell_suspension_jsons(data, cell_count, file_uuid, i=0):
             "submission_date": version,  # TODO: Fetch from DSS if it exists
             "update_date": version,
             "schema_major_version": 13,
-            "schema_minor_version": 3
+            "schema_minor_version": 1
         }
     }
     return cell_suspension_json
@@ -238,9 +238,7 @@ def create_specimen_from_organism_json(data, file_uuid, i=0):
     specimen_from_organism_json["provenance"] = {
             "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
-            "update_date": version,
-            "schema_major_version": 13,
-            "schema_minor_version": 3
+            "update_date": version
         }
     return specimen_from_organism_json
 
@@ -315,9 +313,7 @@ def create_donor_organism_json(data, file_uuid, i=0):
     donor_organism_json["provenance"] = {
             "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
-            "update_date": version,
-            "schema_major_version": 13,
-            "schema_minor_version": 3
+            "update_date": version
         }
     return donor_organism_json
 
@@ -509,8 +505,8 @@ def run(xlsx, output_dir, upload=False):
         if accession in cell_counts:
             cell_count = cell_counts[accession]
 
-
     # add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
+
     generate_cell_suspension_json(wb=wb,
                                   output_dir=output_dir,
                                   cell_count=cell_count,
