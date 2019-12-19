@@ -14,9 +14,12 @@ Editing 'upload=False' to 'upload=True' with upload to dss dev if you are creden
 Otherwise it will just parse the excel files and generate all of the matrix and json files necessary for upload.
 """
 import os
+import shutil
 
 from create_project import run
 
+if os.path.exists('testing_comparison/'):
+    shutil.rmtree('testing_comparison/')
 
 """6 ORIGINAL DATASETS (ALREADY IN THE DSS)"""
 # These are the original excel files provided that currently exist in dss prod
@@ -25,7 +28,7 @@ for project in range(6):
     print(f'\nProject: test_00{project}')
     run(xlsx=f'data/test_00{project}.xlsx',
         output_dir=f'testing_comparison/test_00{project}',
-        upload=False)
+        upload=True)
 
 """71 RAW DATASETS (STATUS NOT PARSED)"""
 # Downloaded from a spreadsheet of spreadsheets and assumed to be (mostly) complete projects.
@@ -43,4 +46,4 @@ for i, project in enumerate(projects):
           f'===========================================================')
     run(xlsx=f'raw_excel_inputs/{project}',
         output_dir=f'testing_comparison/{project[:-5]}',
-        upload=False)
+        upload=True)

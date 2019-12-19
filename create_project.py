@@ -166,81 +166,143 @@ def create_project_json(data, version, verify=False):
 def create_cell_suspension_jsons(data, cell_count, file_uuid, i=0):
     version = timestamp()
     cell_suspension_json = {
-        "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.1/cell_suspension",
-        "schema_type": "biomaterial",
-        "estimated_cell_count": cell_count,
-        "biomaterial_core": {
-            "biomaterial_id": data['biomaterial_core.biomaterial_id'][i],
-            "biomaterial_description": data['biomaterial_core.biomaterial_description'][i],
-            "ncbi_taxon_id": parse_ncbi_taxon_ids(data['biomaterial_core.ncbi_taxon_id'][i])
-        },
-        "genus_species": [
-            {
-                "text": data['genus_species.text'][i],
-                "ontology_label": data["genus_species.ontology_label"][i],
-                "ontology": data["genus_species.ontology"][i],
-            }
-        ],
-        "provenance": {
-            "document_id": file_uuid,
-            "submission_date": version,  # TODO: Fetch from DSS if it exists
-            "update_date": version,
-            "schema_major_version": 13,
-            "schema_minor_version": 3
-        }
+        "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.0/cell_suspension",
+        "schema_type": "biomaterial"
+    }
+
+    cell_suspension_json.update(fill_sections(data=data,
+                                              as_list=['genus_species',
+                                                       'selected_cell_types'],
+                                              keys={
+                                                  'biomaterial_core':
+                                                      ['biomaterial_id',
+                                                       'biomaterial_name',
+                                                       'biomaterial_description',
+                                                       'ncbi_taxon_id',
+                                                       'biosamples_accession',
+                                                       'insdc_sample_accession',
+                                                       'genotype'],
+                                                  'genus_species':
+                                                      ['text',
+                                                       'ontology',
+                                                       'ontology_label'],
+                                                  'cell_morphology':
+                                                      ['percent_cell_viability',
+                                                       'cell_viability_method'],
+                                                  'selected_cell_types':
+                                                      ['text',
+                                                       'ontology',
+                                                       'ontology_label'],
+                                              },
+                                              i=i))
+    cell_suspension_json['estimated_cell_count'] = cell_count
+
+    cell_suspension_json["provenance"] = {
+        "document_id": str(file_uuid),
+        "submission_date": version,  # TODO: Fetch from DSS if it exists
+        "update_date": version
     }
     return cell_suspension_json
+
+
+def fill_sections(data, keys, i, as_list=[]):
+    # TODO: Add types
+    # TODO: Handle lists intelligently
+    document = {}
+    for primary_key, secondary_keys in keys.items():
+        if secondary_keys:
+            document.update(conditionally_create_subdict(data,
+                                                         primary_key=primary_key,
+                                                         secondary_keys=secondary_keys,
+                                                         i=i,
+                                                         use_list=bool(primary_key in as_list)))
+        else:
+            if primary_key in data:
+                if data[primary_key][i]:
+                    if primary_key == 'organism_age':
+                        document[primary_key] = str(data[primary_key][i])
+                    else:
+                        document[primary_key] = data[primary_key][i]
+    return document
+
+
+def conditionally_create_subdict(data, primary_key, secondary_keys, i, use_list=False):
+    prime_dictionary = {}
+    sub_dictionary = {}
+    for key in secondary_keys:
+        if f'{primary_key}.{key}' in data:
+            if len([j for j in data[f'{primary_key}.{key}'] if j]) > 0:
+                if key == 'ncbi_taxon_id':
+                    sub_dictionary[key] = parse_ncbi_taxon_ids(data[f'{primary_key}.{key}'][i])
+                else:
+                    sub_dictionary[key] = data[f'{primary_key}.{key}'][i]
+    if sub_dictionary:
+        prime_dictionary[primary_key.split('.')[-1]] = [sub_dictionary] if use_list else sub_dictionary
+    return prime_dictionary
 
 
 def create_specimen_from_organism_json(data, file_uuid, i=0):
     version = timestamp()
     specimen_from_organism_json = {
         "describedBy": "https://schema.humancellatlas.org/type/biomaterial/10.2.0/specimen_from_organism",
-        "schema_type": "biomaterial",
-        "biomaterial_core": {
-            "biomaterial_id": data['biomaterial_core.biomaterial_id'][i],
-            "biomaterial_description": data['biomaterial_core.biomaterial_description'][i],
-            "ncbi_taxon_id": parse_ncbi_taxon_ids(data['biomaterial_core.ncbi_taxon_id'][i])
-        },
-        "genus_species": [
-            {
-                "text": data['genus_species.text'][i],
-                "ontology_label": data["genus_species.ontology_label"][i],
-                "ontology": data["genus_species.ontology"][i],
-            }
-        ],
-        "organ": {
-            "text": data['organ.text'][i],
-            "ontology": data['organ.ontology'][i],
-            "ontology_label": data['organ.ontology_label'][i]
-        },
-        "organ_parts": [
-            {
-                "text": data['organ_parts.text'][i],
-                "ontology": data['organ_parts.ontology'][i],
-                "ontology_label": data['organ_parts.ontology_label'][i]
-            }
-        ]
+        "schema_type": "biomaterial"
     }
-    if 'diseases.text' in data:
-        specimen_from_organism_json['diseases'] = [
-            {
-                "text": data['diseases.text'][i],
-                "ontology": data['diseases.ontology'][i],
-                "ontology_label": data['diseases.ontology_label'][i]
-            }
-        ]
-    if 'preservation_storage.preservation_method' in data:
-        specimen_from_organism_json['preservation_storage'] = {
-            "preservation_method": data['preservation_storage.preservation_method'][i],
-            "storage_method": data['preservation_storage.storage_method'][i]
-        }
+    specimen_from_organism_json.update(
+        fill_sections(
+            data=data,
+            as_list=[
+                'genus_species',
+                'organ_parts',
+                'diseases'
+            ],
+            keys={
+                'biomaterial_core':
+                    [
+                        'biomaterial_id',
+                        'biomaterial_name',
+                        'biomaterial_description',
+                        'ncbi_taxon_id',
+                        'biosamples_accession',
+                        'insdc_sample_accession',
+                        'genotype'
+                    ],
+                'genus_species':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'organ':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'organ_parts':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'diseases':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'preservation_storage':
+                    [
+                        'preservation_method',
+                        'storage_method'
+                    ]
+            },
+            i=i
+        )
+    )
     specimen_from_organism_json["provenance"] = {
             "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
-            "update_date": version,
-            "schema_major_version": 13,
-            "schema_minor_version": 3
+            "update_date": version
         }
     return specimen_from_organism_json
 
@@ -259,65 +321,82 @@ def parse_ncbi_taxon_ids(ids):
 def create_donor_organism_json(data, file_uuid, i=0):
     version = timestamp()
     donor_organism_json = {
-        "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/15.3.0/donor_organism",
-        "schema_type": "biomaterial",
-        "biomaterial_core": {
-            "biomaterial_id": data['biomaterial_core.biomaterial_id'][i],
-            "biomaterial_name": data['biomaterial_core.biomaterial_name'][i],
-            "biomaterial_description": data['biomaterial_core.biomaterial_description'][i],
-            "ncbi_taxon_id": parse_ncbi_taxon_ids(data['biomaterial_core.ncbi_taxon_id'][i])
-        },
-        "genus_species": [
-            {
-                "text": data['genus_species.text'][i],
-                "ontology_label": data["genus_species.ontology_label"][i],
-                "ontology": data["genus_species.ontology"][i],
-            }
-        ],
-        "is_living": data['is_living'][i],
-        "sex": data['sex'][i]
+        "describedBy": "https://schema.humancellatlas.org/type/biomaterial/15.3.0/donor_organism",
+        "schema_type": "biomaterial"
     }
-    if 'diseases.text' in data:
-        donor_organism_json['diseases'] = [
-            {
-                "text": data['diseases.text'][i],
-                "ontology": data['diseases.ontology'][i],
-                "ontology_label": data['diseases.ontology_label'][i]
-            }
-        ]
-    if 'development_stage.text' in data:
-        donor_organism_json['development_stage'] = [
-            {
-                "text": data['development_stage.text'][i],
-                "ontology": data['development_stage.ontology'][i],
-                "ontology_label": data['development_stage.ontology_label'][i]
-            }
-        ]
-    if 'organism_age' in data:
-        donor_organism_json['organism_age'] = str(data['organism_age'][i])
-    if 'organism_age_unit.text' in data:
-        donor_organism_json['organism_age_unit'] = {
-            "text": str(data['organism_age_unit.text'][i]),
-            "ontology": data['organism_age_unit.ontology'][i],
-            "ontology_label": data['organism_age_unit.ontology_label'][i]
-        }
-    if 'human_specific.body_mass_index' in data:
-        donor_organism_json['human_specific'] = {
-            "body_mass_index": str(data['human_specific.body_mass_index'][i]),
-            "ethnicity": [
-                {
-                    "text": str(data['human_specific.ethnicity.text'][i]),
-                    "ontology": data['human_specific.ethnicity.ontology'][i],
-                    "ontology_label": data['human_specific.ethnicity.ontology_label'][i]
-                }
-            ]
-        }
+    donor_organism_json.update(
+        fill_sections(
+            data=data,
+            as_list=[
+                'genus_species',
+                'diseases'
+            ],
+            keys={
+                'biomaterial_core':
+                    [
+                        'biomaterial_id',
+                        'biomaterial_name',
+                        'biomaterial_description',
+                        'ncbi_taxon_id',
+                        'biosamples_accession',
+                        'insdc_sample_accession',
+                        'genotype'],
+                'genus_species':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'is_living': [],
+                'sex': [],
+                'diseases':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'organism_age': [],
+                'organism_age_unit':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'human_specific':
+                    [
+                        'body_mass_index'
+                    ],
+                'death':
+                    [
+                        'cause_of_death'
+                    ],
+                'development_stage':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ]
+            },
+            i=i
+        )
+    )
+    ethnicity = conditionally_create_subdict(
+        data=data,
+        primary_key='human_specific.ethnicity',
+        secondary_keys=[
+            'text',
+            'ontology',
+            'ontology_label'
+        ],
+        i=i,
+        use_list=True
+    )
+    if ethnicity:
+        donor_organism_json['human_specific'].update(ethnicity)
     donor_organism_json["provenance"] = {
             "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
-            "update_date": version,
-            "schema_major_version": 13,
-            "schema_minor_version": 3
+            "update_date": version
         }
     return donor_organism_json
 
