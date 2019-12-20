@@ -10,14 +10,6 @@ from datetime import datetime
 from hca import HCAConfig
 from hca.dss import DSSClient
 
-from download_geo_matrix import (
-    download_supplementary_files,
-    extract_rename_and_zip,
-    extract_tar_files
-)
-
-from geo_namespace import deterministic_uuid
-
 from openpyxl import load_workbook
 
 
@@ -31,26 +23,30 @@ def timestamp():
 
 def generate_project_uuid(geo_accessions: Sequence[str]) -> str:
     """
-    Deterministically generate a project UUID based on a series of GEO accession
-    numbers.
+    Deterministically generate a project UUID based on one or more GEO accession ids.
     """
-    # Chosen to match https://github.com/DailyDreaming/load-project/pull/6/files#diff-909893068c9afb3ccbb8ea268955eb7dR30
-    # at the suggestion of Daniel Sotirhos.
-    # It's essential that this is a hardcoded constant so that other scripts can
-    # deterministically derive the same HCA UUIDs from GEO accessions.
-    return str(deterministic_uuid(''.join(sorted(geo_accessions))))
+    if isinstance(geo_accessions, str):
+        geo_accessions = [geo_accessions]
+    namespace_uuid = uuid.UUID('296e1002-1c99-4877-bb7f-bb6a3b752638')
+    return str(uuid.uuid5(namespace_uuid, ''.join(sorted(geo_accessions))))
 
 
 def generate_file_uuid(bundle_uuid: str, file_name: str) -> str:
-    """Deterministically generate a file UUID based on the parent bundle uuid and its file name."""
-    namespace_uuid = uuid.UUID(bundle_uuid)
-    return str(uuid.uuid5(namespace_uuid, file_name))
+    """
+    Deterministically generate a file UUID based on the parent bundle uuid and its file name.
+    """
+    namespace_uuid = uuid.UUID('4c52e3d0-ffe5-4b4d-a4d0-cb6a6f372b31')
+    return str(uuid.uuid5(namespace_uuid, bundle_uuid + file_name))
 
 
 def get_cell_counts():
     with open('cell_counts.json', 'r') as f:
         cell_counts = json.loads(f.read())
     return cell_counts
+
+
+def get_accession_excel_filenames(src_dir):
+    return [f for f in os.listdir(src_dir) if os.path.isfile(os.path.join(src_dir, f)) and f.endswith('.0.xlsx')]
 
 
 def create_project_json(data, version, verify=False):
@@ -625,24 +621,6 @@ def parse_donor_organism_data_from_xlsx(wb):
     return data
 
 
-def add_matrix_file(accessions, project_uuid, out_dir):
-    for acc in accessions:
-        download_dir = download_supplementary_files(acc)
-        if download_dir:
-            extract_tar_files(download_dir)
-            matching_files = [f for f in sorted(os.listdir(download_dir)) if f.startswith(acc) and f.endswith('.gz')]
-            if matching_files:
-                print(f'Matching files found for {acc}: {matching_files}')
-                zip_files = extract_rename_and_zip(download_dir, matching_files, project_uuid)
-                if zip_files:
-                    # move the zip file to the correct location
-                    file = zip_files[0]
-                    if not os.path.isfile(f'{out_dir}/{file}'):
-                        os.rename(f'{download_dir}/{file}', f'{out_dir}/{file}')
-                break
-        print(f'No matching files found for {acc}')
-
-
 def write_project_json(project_json, output_dir):
     with open(f'{output_dir}/project_0.json', 'w') as f:
         f.write(json.dumps(project_json, indent=4))
@@ -796,7 +774,6 @@ def run(xlsx, output_dir=None, upload=False):
         if accession in cell_counts:
             cell_count = cell_counts[accession]
 
-    # add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
     generate_cell_suspension_json(wb=wb,
                                   output_dir=output_dir,
                                   cell_count=cell_count,

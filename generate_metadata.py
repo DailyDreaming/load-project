@@ -16,7 +16,10 @@ Otherwise it will just parse the excel files and generate all of the matrix and 
 import os
 import shutil
 
-from create_project import run
+from create_project import (
+    get_accession_excel_filenames,
+    run
+)
 
 # if os.path.exists('projects/'):
 #     shutil.rmtree('projects/')
@@ -39,11 +42,11 @@ for project in range(6):
 # These are missing fields such as the "funders" section (as opposed to the 6 excel files above).
 # Not sure of other differences yet.
 src_dir = 'raw_excel_inputs'
-projects = [f for f in os.listdir(src_dir) if os.path.isfile(os.path.join(src_dir, f)) and f.endswith('.0.xlsx')]
+projects = get_accession_excel_filenames(src_dir)
 
 for i, project in enumerate(projects):
     print(f'\n% Progress: {i + 1}/{len(projects)} projects ({project}).\n'
           f'===========================================================')
-    run(xlsx=f'raw_excel_inputs/{project}',
+    run(xlsx=f'{src_dir}/{project}',
         # output_dir=f'testing_comparison/{project[:-5]}',
         upload=False)
