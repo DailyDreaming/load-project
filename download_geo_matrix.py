@@ -1,18 +1,17 @@
 import argparse
 import furl
-import gzip
 import os
 import re
 import requests
-import shutil
 import sys
-import tarfile
 import time
-from typing import MutableMapping, Sequence
+from typing import MutableMapping
 import uuid
-import zipfile
 
-from geo_namespace import deterministic_uuid
+from create_project import (
+    get_accession_excel_filenames,
+    generate_project_uuid
+)
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -23,15 +22,25 @@ source_url_template = 'https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc='
 def main(argv):
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--accessions', '-a',
-                        required=True,
-                        help='Comma separated list of GEO accession ids')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--all', '-A',
+                       action='store_true')
+    group.add_argument('--accessions', '-a',
+                       help='Comma separated list of GEO accession ids')
     args = parser.parse_args(argv)
 
-    accessions = args.accessions.split(',')
+    if args.all:
+        download_from_all_accessions()
+    else:
+        accession_ids = args.accessions.split(',')
+        for accession_id in accession_ids:
+            download_supplementary_files(accession_id)
 
-    for acc in accessions:
-        download_supplementary_files(acc)
+
+def download_from_all_accessions():
+    filenames = get_accession_excel_filenames('raw_excel_inputs')
+    for accession_id in [f.split('.')[0] for f in filenames]:
+        download_supplementary_files(accession_id)
 
 
 def download_supplementary_files(accession_id):
@@ -40,7 +49,7 @@ def download_supplementary_files(accession_id):
     """
     logging.info('---')
     logging.info('Accession: %s', accession_id)
-    project_uuid = deterministic_uuid(accession_id)
+    project_uuid = generate_project_uuid([accession_id])
 
     save_file_path = f'projects/{project_uuid}/geo'
     if not os.path.exists(save_file_path):
@@ -141,57 +150,6 @@ def download_file(url: str, path: str) -> dict:
         logging.warning('Download canceled ...')
         os.remove(path)
         return {}
-
-
-def extract_tar_files(folder: str):
-    """
-    Searches for all '.tar' files in given folder and extracts them in their current location
-    """
-    tar_files = [f for f in sorted(os.listdir(folder)) if f.endswith('.tar')]
-    for file in tar_files:
-        tar = tarfile.open(f'{folder}/{file}')
-        tar.extractall(path=folder)
-        tar.close()
-
-
-def extract_rename_and_zip(folder: str, files: Sequence[str], uuid: str) -> Sequence[str]:
-    """
-    Process 'files' files in location 'folder', return list of zip file names
-    """
-    extracted_files = []
-    zip_files = []
-    for file in files:
-        if file.endswith('.gz'):
-            extracted_file_name = file[:file.rindex('.gz')]
-            # extract the file
-            if not os.path.isfile(f'{folder}/{extracted_file_name}'):
-                with gzip.open(f'{folder}/{file}', 'rb') as file_in:
-                    with open(f'{folder}/{extracted_file_name}', 'wb') as file_out:
-                        shutil.copyfileobj(file_in, file_out)
-            # rename the extracted file to the uuid
-            if os.path.isfile(f'{folder}/{extracted_file_name}'):
-                # if '.' in extracted_file_name and len(extracted_file_name) - extracted_file_name.rindex('.') < 5:
-                #     new_file_name = uuid + extracted_file_name[extracted_file_name.rindex('.'):]
-                # else:
-                #     new_file_name = uuid + '.csv'
-                # TODO: parameterize 'homo_sapiens' to allow for other species
-                new_file_name = f'{uuid}.homo_sapiens.csv'
-                os.rename(f'{folder}/{extracted_file_name}', f'{folder}/{new_file_name}')
-                extracted_files.append(new_file_name)
-                break  # TODO: handle multiple files instead of using only the first one
-    for file in extracted_files:
-        if os.path.isfile(f'{folder}/{file}.zip'):
-            logging.info('Existing zip file found for %s, skipping zip process ...', file)
-            if f'{folder}/{file}.zip' not in zip_files:
-                zip_files.append(f'{folder}/{file}.zip')
-            continue
-        zip_file = zipfile.ZipFile(f'{folder}/{file}.zip', 'w')
-        zip_file.write(f'{folder}/{file}', compress_type=zipfile.ZIP_DEFLATED)
-        zip_file.close()
-        if os.path.isfile(f'{folder}/{file}.zip'):
-            zip_files.append(f'{file}.zip')
-        os.remove(f'{folder}/{file}')
-    return zip_files
 
 
 if __name__ == '__main__':
