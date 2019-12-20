@@ -14,7 +14,6 @@ from openpyxl import load_workbook
 
 
 # TODO: Consolidate similar functions and clean up code.
-# TODO: Make file uuid deterministic based on bundle uuid and file name
 
 
 def timestamp():
@@ -51,7 +50,7 @@ def get_accession_excel_filenames(src_dir):
 
 def create_project_json(data, version, verify=False):
     project_json = {
-      "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",
+      "describedBy": "https://schema.dev.data.humancellatlas.org/type/project/14.0.0/project",
       "schema_type": "project",
       "project_core": {
         "project_short_name": data["project_core.project_short_name"][0],
@@ -137,11 +136,11 @@ def create_project_json(data, version, verify=False):
     for i in range(len(grant_ids)):
         funder = {}
         if data["funders.grant_title"][i]:
-            funder['grant_title'] = data["funders.grant_title"][i]
+            funder['grant_title'] = str(data["funders.grant_title"][i])
         if data["funders.grant_id"][i]:
-            funder['grant_id'] = data["funders.grant_id"][i]
+            funder['grant_id'] = str(data["funders.grant_id"][i])
         if data["funders.organization"][i]:
-            funder['organization'] = data["funders.organization"][i]
+            funder['organization'] = str(data["funders.organization"][i])
         if funder:
             funders.append(funder)
     if funders:
@@ -151,9 +150,7 @@ def create_project_json(data, version, verify=False):
     project_json["provenance"] = {
         "document_id": project_uuid,
         "submission_date": version,
-        "update_date": version,
-        "schema_major_version": 14,
-        "schema_minor_version": 1
+        "update_date": version
         }
     if verify:
         print(json.dumps(project_json, indent=4))
@@ -163,7 +160,7 @@ def create_project_json(data, version, verify=False):
 def create_cell_suspension_jsons(data, cell_count, file_uuid, i=0):
     version = timestamp()
     cell_suspension_json = {
-        "describedBy": "https://schema.humancellatlas.org/type/biomaterial/13.1.0/cell_suspension",
+        "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/13.1.0/cell_suspension",
         "schema_type": "biomaterial"
     }
 
@@ -180,8 +177,8 @@ def create_cell_suspension_jsons(data, cell_count, file_uuid, i=0):
                         'biomaterial_name',
                         'biomaterial_description',
                         'ncbi_taxon_id',
-                        'biosamples_accession',
-                        'insdc_sample_accession',
+                        # 'biosamples_accession',
+                        # 'insdc_sample_accession',
                         'genotype'
                     ],
                 'genus_species':
@@ -190,22 +187,40 @@ def create_cell_suspension_jsons(data, cell_count, file_uuid, i=0):
                         'ontology',
                         'ontology_label'
                     ],
-                'cell_morphology':
-                    [
-                        'percent_cell_viability',
-                        'cell_viability_method'
-                    ],
+                # 'cell_morphology':
+                #     [
+                #         'percent_cell_viability',
+                #         'cell_viability_method'
+                #     ],
                 'selected_cell_types':
                     [
                         'text',
                         'ontology',
                         'ontology_label'
                     ],
+                'timecourse':
+                    [
+                        'value',
+                        'unit'
+                    ],
             },
             i=i
         )
     )
     cell_suspension_json['estimated_cell_count'] = cell_count
+    timecourse_unit = conditionally_create_subdict(
+        data=data,
+        primary_key='timecourse.unit',
+        secondary_keys=[
+            'text',
+            'ontology',
+            'ontology_label'
+        ],
+        i=i,
+        use_list=False
+    )
+    if timecourse_unit:
+        cell_suspension_json.get('timecourse', {}).update(timecourse_unit)
 
     cell_suspension_json["provenance"] = {
         "document_id": str(file_uuid),
@@ -229,10 +244,15 @@ def fill_sections(data, keys, i, as_list=[]):
         else:
             if primary_key in data:
                 if data[primary_key][i]:
-                    if primary_key == 'organism_age':
-                        document[primary_key] = str(data[primary_key][i])
+                    if primary_key == 'paired_end':
+                        if str(data[primary_key][i]) == 'yes':
+                            document[primary_key] = True
+                        elif str(data[primary_key][i]) == 'no':
+                            document[primary_key] = False
+                        else:
+                            raise RuntimeError('This should never happen.')
                     else:
-                        document[primary_key] = data[primary_key][i]
+                        document[primary_key] = str(data[primary_key][i])
     return document
 
 
@@ -245,7 +265,7 @@ def conditionally_create_subdict(data, primary_key, secondary_keys, i, use_list=
                 if key == 'ncbi_taxon_id':
                     sub_dictionary[key] = parse_ncbi_taxon_ids(data[f'{primary_key}.{key}'][i])
                 else:
-                    sub_dictionary[key] = data[f'{primary_key}.{key}'][i]
+                    sub_dictionary[key] = str(data[f'{primary_key}.{key}'][i])
     if sub_dictionary:
         prime_dictionary[primary_key.split('.')[-1]] = [sub_dictionary] if use_list else sub_dictionary
     return prime_dictionary
@@ -254,7 +274,7 @@ def conditionally_create_subdict(data, primary_key, secondary_keys, i, use_list=
 def create_sequencing_protocol_json(data, file_uuid, i=0):
     version = timestamp()
     sequencing_protocol_json = {
-        "describedBy": "https://schema.humancellatlas.org/type/protocol/sequencing/10.0.0/sequencing_protocol",
+        "describedBy": "https://schema.dev.data.humancellatlas.org/type/protocol/sequencing/10.0.0/sequencing_protocol",
         "schema_type": "protocol"
     }
     sequencing_protocol_json.update(
@@ -264,7 +284,9 @@ def create_sequencing_protocol_json(data, file_uuid, i=0):
             keys={
                 'protocol_core':
                     [
-                        'protocol_id'
+                        'protocol_id',
+                        'protocol_name',
+                        'protocol_description'
                     ],
                 'instrument_manufacturer_model':
                     [
@@ -294,7 +316,7 @@ def create_sequencing_protocol_json(data, file_uuid, i=0):
 def create_library_preparation_protocol_json(data, file_uuid, i=0):
     version = timestamp()
     library_preparation_protocol_json = {
-        "describedBy": "https://schema.humancellatlas.org/type/protocol/sequencing/6.1.0/library_preparation_protocol",
+        "describedBy": "https://schema.dev.data.humancellatlas.org/type/protocol/sequencing/6.1.0/library_preparation_protocol",
         "schema_type": "protocol"
     }
     library_preparation_protocol_json.update(
@@ -304,7 +326,9 @@ def create_library_preparation_protocol_json(data, file_uuid, i=0):
             keys={
                 'protocol_core':
                     [
-                        'protocol_id'
+                        'protocol_id',
+                        'protocol_name',
+                        'protocol_description'
                     ],
                 'nucleic_acid_source': [],
                 'input_nucleic_acid_molecule':
@@ -343,7 +367,7 @@ def create_library_preparation_protocol_json(data, file_uuid, i=0):
 def create_specimen_from_organism_json(data, file_uuid, i=0):
     version = timestamp()
     specimen_from_organism_json = {
-        "describedBy": "https://schema.humancellatlas.org/type/biomaterial/10.2.0/specimen_from_organism",
+        "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/10.2.0/specimen_from_organism",
         "schema_type": "biomaterial"
     }
     specimen_from_organism_json.update(
@@ -361,8 +385,8 @@ def create_specimen_from_organism_json(data, file_uuid, i=0):
                         'biomaterial_name',
                         'biomaterial_description',
                         'ncbi_taxon_id',
-                        'biosamples_accession',
-                        'insdc_sample_accession',
+                        # 'biosamples_accession',
+                        # 'insdc_sample_accession',
                         'genotype'
                     ],
                 'genus_species':
@@ -420,7 +444,7 @@ def parse_ncbi_taxon_ids(ids):
 def create_donor_organism_json(data, file_uuid, i=0):
     version = timestamp()
     donor_organism_json = {
-        "describedBy": "https://schema.humancellatlas.org/type/biomaterial/15.3.0/donor_organism",
+        "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/15.3.0/donor_organism",
         "schema_type": "biomaterial"
     }
     donor_organism_json.update(
@@ -454,21 +478,23 @@ def create_donor_organism_json(data, file_uuid, i=0):
                         'ontology',
                         'ontology_label'
                     ],
-                'organism_age': [],
-                'organism_age_unit':
-                    [
-                        'text',
-                        'ontology',
-                        'ontology_label'
-                    ],
-                'human_specific':
-                    [
-                        'body_mass_index'
-                    ],
-                'death':
-                    [
-                        'cause_of_death'
-                    ],
+                # Weird parsing???
+                # https://logs.dev.data.humancellatlas.org/_plugin/kibana/app/kibana#/discover?_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:'2019-12-20T05:51:59.104Z',mode:absolute,to:'2019-12-20T05:51:59.456Z'))&_a=(columns:!(_source),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'*',key:'@log_group',negate:!f,type:phrase,value:%2Faws%2Flambda%2Fdss-index-dev),query:(match:('@log_group':(query:%2Faws%2Flambda%2Fdss-index-dev,type:phrase))))),index:'*',interval:auto,query:(query_string:(analyze_wildcard:!t,query:ERROR)),sort:!('@timestamp',desc))
+                # 'organism_age': [],
+                # 'organism_age_unit':
+                #     [
+                #         'text',
+                #         'ontology',
+                #         'ontology_label'
+                #     ],
+                # 'human_specific':
+                #     [
+                #         'body_mass_index'
+                #     ],
+                # 'death':
+                #     [
+                #         'cause_of_death'
+                #     ],
                 'development_stage':
                     [
                         'text',
@@ -479,19 +505,19 @@ def create_donor_organism_json(data, file_uuid, i=0):
             i=i
         )
     )
-    ethnicity = conditionally_create_subdict(
-        data=data,
-        primary_key='human_specific.ethnicity',
-        secondary_keys=[
-            'text',
-            'ontology',
-            'ontology_label'
-        ],
-        i=i,
-        use_list=True
-    )
-    if ethnicity:
-        donor_organism_json.get('human_specific', {}).update(ethnicity)
+    # ethnicity = conditionally_create_subdict(
+    #     data=data,
+    #     primary_key='human_specific.ethnicity',
+    #     secondary_keys=[
+    #         'text',
+    #         'ontology',
+    #         'ontology_label'
+    #     ],
+    #     i=i,
+    #     use_list=True
+    # )
+    # if ethnicity:
+    #     donor_organism_json.get('human_specific', {}).update(ethnicity)
     donor_organism_json["provenance"] = {
             "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
@@ -790,8 +816,8 @@ def run(xlsx, output_dir=None, upload=False):
     generate_sequencing_protocol_json(wb=wb,
                                       output_dir=output_dir,
                                       bundle_uuid=bundle_uuid)
-    generate_analysis_protocol_json(output_dir=output_dir,
-                                    bundle_uuid=bundle_uuid)
+    # generate_analysis_protocol_json(output_dir=output_dir,
+    #                                 bundle_uuid=bundle_uuid)
     generate_links_json(output_dir)
 
     if upload:
