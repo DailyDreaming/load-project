@@ -45,6 +45,10 @@ def get_cell_counts():
     return cell_counts
 
 
+def get_accession_excel_filenames(src_dir):
+    return [f for f in os.listdir(src_dir) if os.path.isfile(os.path.join(src_dir, f)) and f.endswith('.0.xlsx')]
+
+
 def create_project_json(data, version, verify=False):
     project_json = {
       "describedBy": "https://schema.humancellatlas.org/type/project/14.1.0/project",

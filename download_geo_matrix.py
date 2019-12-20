@@ -8,7 +8,10 @@ import time
 from typing import MutableMapping
 import uuid
 
-from create_project import generate_project_uuid
+from create_project import (
+    get_accession_excel_filenames,
+    generate_project_uuid
+)
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -19,15 +22,25 @@ source_url_template = 'https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc='
 def main(argv):
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--accessions', '-a',
-                        required=True,
-                        help='Comma separated list of GEO accession ids')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--all', '-A',
+                       action='store_true')
+    group.add_argument('--accessions', '-a',
+                       help='Comma separated list of GEO accession ids')
     args = parser.parse_args(argv)
 
-    accessions = args.accessions.split(',')
+    if args.all:
+        download_from_all_accessions()
+    else:
+        accession_ids = args.accessions.split(',')
+        for accession_id in accession_ids:
+            download_supplementary_files(accession_id)
 
-    for acc in accessions:
-        download_supplementary_files(acc)
+
+def download_from_all_accessions():
+    filenames = get_accession_excel_filenames('raw_excel_inputs')
+    for accession_id in [f.split('.')[0] for f in filenames]:
+        download_supplementary_files(accession_id)
 
 
 def download_supplementary_files(accession_id):
