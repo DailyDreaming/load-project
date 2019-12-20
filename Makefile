@@ -1,11 +1,11 @@
 all:
-	$(MAKE) -s download
-	$(MAKE) -s extract
-	$(MAKE) -s merge
-	$(MAKE) -s count
-	$(MAKE) -s metadata
-	$(MAKE) -s bundles
-	$(MAKE) -s assets
+	$(MAKE) download
+	$(MAKE) extract
+	$(MAKE) merge
+	$(MAKE) count
+	$(MAKE) metadata
+	$(MAKE) bundles
+	$(MAKE) assets
 
 download:
 	python3 ./download_geo_matrix.py
