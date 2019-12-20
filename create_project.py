@@ -10,12 +10,6 @@ from datetime import datetime
 from hca import HCAConfig
 from hca.dss import DSSClient
 
-from download_geo_matrix import (
-    download_supplementary_files,
-    extract_rename_and_zip,
-    extract_tar_files
-)
-
 from openpyxl import load_workbook
 
 
@@ -508,24 +502,6 @@ def parse_donor_organism_data_from_xlsx(wb):
     return data
 
 
-def add_matrix_file(accessions, project_uuid, out_dir):
-    for acc in accessions:
-        download_dir = download_supplementary_files(acc)
-        if download_dir:
-            extract_tar_files(download_dir)
-            matching_files = [f for f in sorted(os.listdir(download_dir)) if f.startswith(acc) and f.endswith('.gz')]
-            if matching_files:
-                print(f'Matching files found for {acc}: {matching_files}')
-                zip_files = extract_rename_and_zip(download_dir, matching_files, project_uuid)
-                if zip_files:
-                    # move the zip file to the correct location
-                    file = zip_files[0]
-                    if not os.path.isfile(f'{out_dir}/{file}'):
-                        os.rename(f'{download_dir}/{file}', f'{out_dir}/{file}')
-                break
-        print(f'No matching files found for {acc}')
-
-
 def write_project_json(project_json, output_dir):
     with open(f'{output_dir}/project_0.json', 'w') as f:
         f.write(json.dumps(project_json, indent=4))
@@ -630,7 +606,6 @@ def run(xlsx, output_dir=None, upload=False):
         if accession in cell_counts:
             cell_count = cell_counts[accession]
 
-    # add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
     generate_cell_suspension_json(wb=wb,
                                   output_dir=output_dir,
                                   cell_count=cell_count,

@@ -1,16 +1,12 @@
 import argparse
 import furl
-import gzip
 import os
 import re
 import requests
-import shutil
 import sys
-import tarfile
 import time
-from typing import MutableMapping, Sequence
+from typing import MutableMapping
 import uuid
-import zipfile
 
 from create_project import generate_project_uuid
 
@@ -141,57 +137,6 @@ def download_file(url: str, path: str) -> dict:
         logging.warning('Download canceled ...')
         os.remove(path)
         return {}
-
-
-def extract_tar_files(folder: str):
-    """
-    Searches for all '.tar' files in given folder and extracts them in their current location
-    """
-    tar_files = [f for f in sorted(os.listdir(folder)) if f.endswith('.tar')]
-    for file in tar_files:
-        tar = tarfile.open(f'{folder}/{file}')
-        tar.extractall(path=folder)
-        tar.close()
-
-
-def extract_rename_and_zip(folder: str, files: Sequence[str], uuid: str) -> Sequence[str]:
-    """
-    Process 'files' files in location 'folder', return list of zip file names
-    """
-    extracted_files = []
-    zip_files = []
-    for file in files:
-        if file.endswith('.gz'):
-            extracted_file_name = file[:file.rindex('.gz')]
-            # extract the file
-            if not os.path.isfile(f'{folder}/{extracted_file_name}'):
-                with gzip.open(f'{folder}/{file}', 'rb') as file_in:
-                    with open(f'{folder}/{extracted_file_name}', 'wb') as file_out:
-                        shutil.copyfileobj(file_in, file_out)
-            # rename the extracted file to the uuid
-            if os.path.isfile(f'{folder}/{extracted_file_name}'):
-                # if '.' in extracted_file_name and len(extracted_file_name) - extracted_file_name.rindex('.') < 5:
-                #     new_file_name = uuid + extracted_file_name[extracted_file_name.rindex('.'):]
-                # else:
-                #     new_file_name = uuid + '.csv'
-                # TODO: parameterize 'homo_sapiens' to allow for other species
-                new_file_name = f'{uuid}.homo_sapiens.csv'
-                os.rename(f'{folder}/{extracted_file_name}', f'{folder}/{new_file_name}')
-                extracted_files.append(new_file_name)
-                break  # TODO: handle multiple files instead of using only the first one
-    for file in extracted_files:
-        if os.path.isfile(f'{folder}/{file}.zip'):
-            logging.info('Existing zip file found for %s, skipping zip process ...', file)
-            if f'{folder}/{file}.zip' not in zip_files:
-                zip_files.append(f'{folder}/{file}.zip')
-            continue
-        zip_file = zipfile.ZipFile(f'{folder}/{file}.zip', 'w')
-        zip_file.write(f'{folder}/{file}', compress_type=zipfile.ZIP_DEFLATED)
-        zip_file.close()
-        if os.path.isfile(f'{folder}/{file}.zip'):
-            zip_files.append(f'{file}.zip')
-        os.remove(f'{folder}/{file}')
-    return zip_files
 
 
 if __name__ == '__main__':
