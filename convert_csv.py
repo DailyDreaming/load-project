@@ -1,5 +1,8 @@
+import collections
+
 import pandas as pd
 import os
+from more_itertools import one
 
 
 def csv_to_mtx(csv_filename: str, mtx_filename: str, cells_in_rows: bool) -> None:
@@ -27,13 +30,13 @@ def csv_to_mtx(csv_filename: str, mtx_filename: str, cells_in_rows: bool) -> Non
 
     entries = [
         (
-            j + 1,
-            i + 1,
-            csv.iloc[i, j]
+            gene_idx + 1,
+            cell_idx + 1,
+            csv.iloc[cell_idx, gene_idx]
         )
-        for i, _ in enumerate(cells)
-        for j, _ in enumerate(genes)
-        if csv.iloc[i, j] != 0
+        for cell_idx, _ in enumerate(cells)
+        for gene_idx, _ in enumerate(genes)
+        if csv.iloc[cell_idx, gene_idx] != 0
     ]
 
     def fmt_line(x):
@@ -64,21 +67,91 @@ def compile_mtxs(input_dir: str, output_filename: str) -> None:
         for fileext in fileexts
     }
 
-    merged = filetypes['genes.tsv'].merge(filetypes['cells.tsv']).merge(filetypes['matrix.mtx'])
+    file_prefixes = filetypes['genes.tsv'].merge(filetypes['cells.tsv']).merge(filetypes['matrix.mtx'])
 
-    if merged.size != max(map(len, filetypes.values())):
+    if file_prefixes.size != max(map(len, filetypes.values())):
+        # if this causes problems, an alternative would be to disregard unassociated files
+        # and only compile ones where the full triplet is present.
         raise RuntimeError(f'There appear to be some missing/extra/unassociated mtx files')
 
-    # merged now contains a single column of all the distinct matrix names (filename before extension)
+    # file_prefixes now contains a single column of all the distinct matrix names (filename before extension)
 
-    all_genes = set()
+    entries = []
 
-    def add_genes(prefix):
-        with open(prefix + 'genes.tsv', 'r') as f:
-            for line in f:
-                all_genes.add(line.rstrip())
+    def add_matrix(row):
+        prefix = one(row)
 
-    merged.apply(add_genes,  axis=1)
+        mtx = pd.read_csv(prefix + 'matrix.mtx', skiprows=2)
+        mtx.columns = ['gene_idx', 'cell_idx', 'value']
+
+        cells = pd.read_csv(prefix + 'barcodes.tsv')
+        cells = cells[:, :1]  # only barcodes column
+        cells.columns = ['barcode']
+        cells.reset_index(inplace=True)
+        cells['index'] += 1
+
+        genes = pd.read_csv(prefix + 'genes.tsv')
+        genes = genes.iloc[:, 2]  # only id and name columns
+        genes.columns = ['gene_id', 'gene_name']
+        genes.reset_index(inplace=True)
+        genes['index'] += 1
+
+        mtx = mtx.merge(genes, left_on='gene_idx', right_on='index', validate='m:1')
+        mtx.drop(['gene_index', 'index'], inplace=True, axis=1)
+        mtx = mtx.merge(cells, left_on='cell_idx', right_on='index', validate='m:1')
+        mtx.drop(['cell_index', 'index'], inplace=True, axis=1)
+
+        entries.append(mtx)
+
+    # stack matrix entries into one frame
+    file_prefixes.apply(add_matrix, axis=1)
+    entries = pd.concat(entries, axis=0, ignore_index=True)
+
+    # consolidate inconsistent gene ids since most of them will probably be garbage from the previous method
+    for gene_name, group in entries.groupby('gene_name'):
+        if group['gene_id'].nunique() > 1:
+            mask = (entries['gene_name'] == gene_name)
+            # just take the first one
+            entries['gene_id'][mask] = entries['gene_id'][mask].iloc[0]
+
+    # resolve duplicate barcodes
+    for barcode, group in entries.groupby('barcode'):
+        gene_counts = group['gene_name'].value_counts()
+        for gene in gene_counts:
+            if gene_counts[gene] > 1:
+                mask = (entries['barcode'] == barcode) & (entries['gene_name'] == gene)
+                # take arithmetic mean of gene expression values
+                entries['value'][mask] = np.mean(entries['value'][mask])
+
+    # now that all duplicate rows have the same value we just drop the excess
+    entries.drop_duplicates(columns=['barcode', 'gene_name'], inplace=True)
+
+    # assign line numbers to unique gene names and barcodes
+    class id_dict(collections.defaultdict):
+        def __init__(self):
+            super().__init__(lambda: 1 + len(self))
+
+    entries['gene_idx'] = entries['gene_name'].map(id_dict())
+    entries['cell_idx'] = entries['barcode'].map(id_dict())
+
+    genes = entries[['gene_id', 'gene_name']].drop_duplicates()
+    genes.to_csv(os.path.join(output_filename, 'genes.tsv'),
+                 header=False,
+                 index=False,
+                 sep='\t')
+
+    barcodes = entries[['barcode']].drop_duplicates()
+    barcodes.to_csv(os.path.join(output_filename, 'barcodes.tsv'),
+                    header=False,
+                    index=False,
+                    sep='\t')
+
+    entries = entries[['gene_idx', 'cell_idx', 'value']]
+    mtx = os.path.join(output_filename, 'matrix.mtx')
+    with open(mtx, 'w') as f:
+        f.write('%%MatrixMarket matrix coordinate real general\n')
+        f.write(' '.join([genes.shape[1], barcodes.shape[1], entries.shape[1]]) + '\n')
+    entries.to_csv(mtx, mode='a', header=False, index=False, sep=' ')
 
 
 if __name__ == '__main__':

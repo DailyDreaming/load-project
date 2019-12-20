@@ -3,3 +3,4 @@ git+git://github.com/HumanCellAtlas/dcp-cli@4b04d05ccf825d050a3e2dcd765802367768
 furl==2.1.0
 pandas==0.25.3
 scanpy==1.4.4post1
+numpy==1.17.4
