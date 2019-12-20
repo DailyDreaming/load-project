@@ -27,7 +27,8 @@ def csv_to_mtx(csv_filename: str, mtx_filename: str, cells_in_rows: bool, **pd_a
 
     with open(os.path.join(mtx_filename, 'genes.tsv'), 'w') as f:
         # CSV file sonly include gene names but scanpy requires a gene id/featurekey column so we fake it
-        f.writelines('\t'.join([f'FAKE_FEATURE_KEY{i}', gene]) + '\n' for i, gene in enumerate(genes))
+        # Use hash for consistency across files
+        f.writelines('\t'.join([f'FAKE_FEATURE_KEY{hash(gene)}', gene]) + '\n' for gene in genes)
 
     entries = [
         (
@@ -114,6 +115,7 @@ def compile_mtxs(input_dir: str, output_filename: str, tsv_headers: bool) -> Non
     entries = pd.concat(entries, axis=0, ignore_index=True)
 
     # consolidate inconsistent gene ids since most of them will probably be garbage from the previous method
+    # this step might no longer be necessary given the hash changes
     for gene_name, group in entries.groupby('gene_name'):
         if group['gene_id'].nunique() > 1:
             mask = (entries['gene_name'] == gene_name)
