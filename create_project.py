@@ -130,8 +130,6 @@ def create_project_json(data, version, verify=False):
 
     # Funders
     grant_ids = [i for i in data.get("funders.grant_id", []) if i]
-    if grant_ids:
-        project_json['funders'] = []
     funders = []
     for i in range(len(grant_ids)):
         funder = {}
@@ -145,6 +143,14 @@ def create_project_json(data, version, verify=False):
             funders.append(funder)
     if funders:
         project_json['funders'] = funders
+    else:
+        project_json['funders'] = [
+            {
+                'grant_title': 'none given',
+                'grant_id': 'none given',
+                'organization': 'none given'
+            }
+        ]
 
     project_uuid = generate_project_uuid(project_json['geo_series_accessions'])
     project_json["provenance"] = {
@@ -161,7 +167,15 @@ def create_cell_suspension_jsons(data, cell_count, file_uuid, i=0):
     version = timestamp()
     cell_suspension_json = {
         "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/13.1.0/cell_suspension",
-        "schema_type": "biomaterial"
+        "schema_type": "biomaterial",
+        'biomaterial_core':
+            {
+                'biomaterial_id': None,
+                'biomaterial_name': None,
+                'biomaterial_description': None,
+                'ncbi_taxon_id': [0],
+                'genotype': None
+            }
     }
 
     cell_suspension_json.update(
@@ -275,7 +289,26 @@ def create_sequencing_protocol_json(data, file_uuid, i=0):
     version = timestamp()
     sequencing_protocol_json = {
         "describedBy": "https://schema.dev.data.humancellatlas.org/type/protocol/sequencing/10.0.0/sequencing_protocol",
-        "schema_type": "protocol"
+        "schema_type": "protocol",
+        'protocol_core':
+            {
+                'protocol_id': None,
+                'protocol_name': None,
+                'protocol_description': None
+            },
+        'instrument_manufacturer_model':
+            {
+                'text': None,
+                'ontology': None,
+                'ontology_label': None
+            },
+        'paired_end': None,
+        'method':
+            {
+                'text': None,
+                'ontology': None,
+                'ontology_label': None
+            }
     }
     sequencing_protocol_json.update(
         fill_sections(
@@ -317,7 +350,28 @@ def create_library_preparation_protocol_json(data, file_uuid, i=0):
     version = timestamp()
     library_preparation_protocol_json = {
         "describedBy": "https://schema.dev.data.humancellatlas.org/type/protocol/sequencing/6.1.0/library_preparation_protocol",
-        "schema_type": "protocol"
+        "schema_type": "protocol",
+        'protocol_core':
+            {
+                'protocol_id': None,
+                'protocol_name': None,
+                'protocol_description': None
+            },
+        'library_construction_method':
+            {
+                'text': None,
+                'ontology': None,
+                'ontology_label': None
+            },
+        'input_nucleic_acid_molecule':
+            {
+                'text': None,
+                'ontology': None,
+                'ontology_label': None
+            },
+        'nucleic_acid_source': None,
+        'end_bias': None,
+        'strand': None
     }
     library_preparation_protocol_json.update(
         fill_sections(
@@ -368,7 +422,21 @@ def create_specimen_from_organism_json(data, file_uuid, i=0):
     version = timestamp()
     specimen_from_organism_json = {
         "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/10.2.0/specimen_from_organism",
-        "schema_type": "biomaterial"
+        "schema_type": "biomaterial",
+        'biomaterial_core':
+            {
+                'biomaterial_id': None,
+                'biomaterial_name': None,
+                'biomaterial_description': None,
+                'ncbi_taxon_id': [0],
+                'genotype': None
+            },
+        'organ':
+            {
+                'text': None,
+                'ontology': None,
+                'ontology_label': None
+            }
     }
     specimen_from_organism_json.update(
         fill_sections(
@@ -445,7 +513,23 @@ def create_donor_organism_json(data, file_uuid, i=0):
     version = timestamp()
     donor_organism_json = {
         "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/15.3.0/donor_organism",
-        "schema_type": "biomaterial"
+        "schema_type": "biomaterial",
+        'biomaterial_core':
+            {
+                'biomaterial_id': None,
+                'biomaterial_name': None,
+                'biomaterial_description': None,
+                'ncbi_taxon_id': [0],
+                'genotype': None
+            },
+        'development_stage':
+            {
+                'text': None,
+                'ontology': None,
+                'ontology_label': None
+            },
+        'is_living': None,
+        'sex': None
     }
     donor_organism_json.update(
         fill_sections(
@@ -461,8 +545,8 @@ def create_donor_organism_json(data, file_uuid, i=0):
                         'biomaterial_name',
                         'biomaterial_description',
                         'ncbi_taxon_id',
-                        'biosamples_accession',
-                        'insdc_sample_accession',
+                        # 'biosamples_accession',
+                        # 'insdc_sample_accession',
                         'genotype'],
                 'genus_species':
                     [
