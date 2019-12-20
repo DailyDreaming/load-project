@@ -1,5 +1,5 @@
 """
-Running this will parse all excel files into bundles output into the folder: 'testing_comparison'.
+Running this will parse all excel files into bundles output into the folder: 'projects/{project_uuid}/bundle'.
 
 This is currently set to loop over two sets of excel files.
 
@@ -21,8 +21,8 @@ from create_project import (
     run
 )
 
-if os.path.exists('testing_comparison/'):
-    shutil.rmtree('testing_comparison/')
+# if os.path.exists('projects/'):
+#     shutil.rmtree('projects/')
 
 """6 ORIGINAL DATASETS (ALREADY IN THE DSS)"""
 # These are the original excel files provided that currently exist in dss prod

@@ -149,7 +149,7 @@ def create_project_json(data, version, verify=False):
 
     project_uuid = generate_project_uuid(project_json['geo_series_accessions'])
     project_json["provenance"] = {
-        "document_id": str(project_uuid),
+        "document_id": project_uuid,
         "submission_date": version,
         "update_date": version,
         "schema_major_version": 14,
@@ -249,6 +249,95 @@ def conditionally_create_subdict(data, primary_key, secondary_keys, i, use_list=
     if sub_dictionary:
         prime_dictionary[primary_key.split('.')[-1]] = [sub_dictionary] if use_list else sub_dictionary
     return prime_dictionary
+
+
+def create_sequencing_protocol_json(data, file_uuid, i=0):
+    version = timestamp()
+    sequencing_protocol_json = {
+        "describedBy": "https://schema.humancellatlas.org/type/protocol/sequencing/10.0.0/sequencing_protocol",
+        "schema_type": "protocol"
+    }
+    sequencing_protocol_json.update(
+        fill_sections(
+            data=data,
+            as_list=[],
+            keys={
+                'protocol_core':
+                    [
+                        'protocol_id'
+                    ],
+                'instrument_manufacturer_model':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'paired_end': [],
+                'method':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ]
+            },
+            i=i
+        )
+    )
+    sequencing_protocol_json["provenance"] = {
+        "document_id": file_uuid,
+        "submission_date": version,  # TODO: Fetch from DSS if it exists
+        "update_date": version
+    }
+    return sequencing_protocol_json
+
+
+def create_library_preparation_protocol_json(data, file_uuid, i=0):
+    version = timestamp()
+    library_preparation_protocol_json = {
+        "describedBy": "https://schema.humancellatlas.org/type/protocol/sequencing/6.1.0/library_preparation_protocol",
+        "schema_type": "protocol"
+    }
+    library_preparation_protocol_json.update(
+        fill_sections(
+            data=data,
+            as_list=[],
+            keys={
+                'protocol_core':
+                    [
+                        'protocol_id'
+                    ],
+                'nucleic_acid_source': [],
+                'input_nucleic_acid_molecule':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'library_construction_method':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'library_construction_kit':
+                    [
+                        'retail_name',
+                        'catalog_number',
+                        'manufacturer'
+                    ],
+                'end_bias': [],
+                'primer': [],
+                'strand': []
+            },
+            i=i
+        )
+    )
+    library_preparation_protocol_json["provenance"] = {
+        "document_id": file_uuid,
+        "submission_date": version,  # TODO: Fetch from DSS if it exists
+        "update_date": version
+    }
+    return library_preparation_protocol_json
 
 
 def create_specimen_from_organism_json(data, file_uuid, i=0):
@@ -480,6 +569,32 @@ def parse_cell_suspension_data_from_xlsx(wb):
     return data
 
 
+def parse_library_preparation_protocol_data_from_xlsx(wb):
+    data = {}
+
+    section_keywords = ['library']
+    project_sections = get_harmonized_project_sections(wb, section_keywords)
+    for project_key in section_keywords:
+        try:
+            data.update(process_section(section=project_sections[project_key], prefix='library_preparation_protocol.'))
+        except KeyError:
+            print(f'{project_key} section not found in the data!')
+    return data
+
+
+def parse_sequencing_protocol_data_from_xlsx(wb):
+    data = {}
+
+    section_keywords = ['sequencing']
+    project_sections = get_harmonized_project_sections(wb, section_keywords)
+    for project_key in section_keywords:
+        try:
+            data.update(process_section(section=project_sections[project_key], prefix='sequencing_protocol.'))
+        except KeyError:
+            print(f'{project_key} section not found in the data!')
+    return data
+
+
 def parse_specimen_from_organism_data_from_xlsx(wb):
     data = {}
 
@@ -531,6 +646,55 @@ def generate_specimen_from_organism_json(wb, output_dir, bundle_uuid):
         file_uuid=generate_file_uuid(bundle_uuid, file_name))
     with open(f'{output_dir}/{file_name}', 'w') as f:
         f.write(json.dumps(specimen_from_organism_json, indent=4))
+    print(f'"{output_dir}/{file_name}" successfully written.')
+
+
+def generate_library_preparation_protocol_json(wb, output_dir, bundle_uuid):
+    file_name = 'library_preparation_protocol_0.json'
+    library_preparation_protocol_data = parse_library_preparation_protocol_data_from_xlsx(wb)
+    library_preparation_protocol_json = create_library_preparation_protocol_json(
+        data=library_preparation_protocol_data,
+        file_uuid=generate_file_uuid(bundle_uuid, file_name)
+    )
+    with open(f'{output_dir}/{file_name}', 'w') as f:
+        f.write(json.dumps(library_preparation_protocol_json, indent=4))
+    print(f'"{output_dir}/{file_name}" successfully written.')
+
+
+def generate_analysis_protocol_json(output_dir, bundle_uuid):
+    # TODO: Hard-coded and not sure where this data should come from... ???
+    file_name = 'analysis_protocol_0.json'
+    version = timestamp()
+    analysis_protocol_json = {
+        "computational_method": "SmartSeq2SingleCell",
+        "describedBy": "https://schema.humancellatlas.org/type/protocol/analysis/9.0.0/analysis_protocol",
+        "protocol_core": {
+            "protocol_id": "smartseq2_v2.3.0"
+        },
+        "schema_type": "protocol",
+        "type": {
+            "text": "analysis"
+        },
+        "provenance": {
+            "document_id": generate_file_uuid(bundle_uuid, file_name),
+            "submission_date": version,  # TODO: Fetch from DSS if it exists
+            "update_date": version
+        }
+    }
+    with open(f'{output_dir}/{file_name}', 'w') as f:
+        f.write(json.dumps(analysis_protocol_json, indent=4))
+    print(f'"{output_dir}/{file_name}" successfully written.')
+
+
+def generate_sequencing_protocol_json(wb, output_dir, bundle_uuid):
+    file_name = 'sequencing_protocol_0.json'
+    sequencing_protocol_data = parse_sequencing_protocol_data_from_xlsx(wb)
+    sequencing_protocol_json = create_sequencing_protocol_json(
+        data=sequencing_protocol_data,
+        file_uuid=generate_file_uuid(bundle_uuid, file_name)
+    )
+    with open(f'{output_dir}/{file_name}', 'w') as f:
+        f.write(json.dumps(sequencing_protocol_json, indent=4))
     print(f'"{output_dir}/{file_name}" successfully written.')
 
 
@@ -620,6 +784,14 @@ def run(xlsx, output_dir=None, upload=False):
     generate_donor_organism_jsons(wb=wb,
                                   output_dir=output_dir,
                                   bundle_uuid=bundle_uuid)
+    generate_library_preparation_protocol_json(wb=wb,
+                                               output_dir=output_dir,
+                                               bundle_uuid=bundle_uuid)
+    generate_sequencing_protocol_json(wb=wb,
+                                      output_dir=output_dir,
+                                      bundle_uuid=bundle_uuid)
+    generate_analysis_protocol_json(output_dir=output_dir,
+                                    bundle_uuid=bundle_uuid)
     generate_links_json(output_dir)
 
     if upload:
