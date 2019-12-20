@@ -171,31 +171,44 @@ def create_cell_suspension_jsons(data, cell_count, file_uuid, i=0):
         "schema_type": "biomaterial"
     }
 
-    cell_suspension_json.update(fill_sections(data=data,
-                                              as_list=['genus_species',
-                                                       'selected_cell_types'],
-                                              keys={
-                                                  'biomaterial_core':
-                                                      ['biomaterial_id',
-                                                       'biomaterial_name',
-                                                       'biomaterial_description',
-                                                       'ncbi_taxon_id',
-                                                       'biosamples_accession',
-                                                       'insdc_sample_accession',
-                                                       'genotype'],
-                                                  'genus_species':
-                                                      ['text',
-                                                       'ontology',
-                                                       'ontology_label'],
-                                                  'cell_morphology':
-                                                      ['percent_cell_viability',
-                                                       'cell_viability_method'],
-                                                  'selected_cell_types':
-                                                      ['text',
-                                                       'ontology',
-                                                       'ontology_label'],
-                                              },
-                                              i=i))
+    cell_suspension_json.update(
+        fill_sections(
+            data=data,
+            as_list=[
+                'genus_species',
+                'selected_cell_types'],
+            keys={
+                'biomaterial_core':
+                    [
+                        'biomaterial_id',
+                        'biomaterial_name',
+                        'biomaterial_description',
+                        'ncbi_taxon_id',
+                        'biosamples_accession',
+                        'insdc_sample_accession',
+                        'genotype'
+                    ],
+                'genus_species':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+                'cell_morphology':
+                    [
+                        'percent_cell_viability',
+                        'cell_viability_method'
+                    ],
+                'selected_cell_types':
+                    [
+                        'text',
+                        'ontology',
+                        'ontology_label'
+                    ],
+            },
+            i=i
+        )
+    )
     cell_suspension_json['estimated_cell_count'] = cell_count
 
     cell_suspension_json["provenance"] = {
@@ -515,13 +528,10 @@ def add_matrix_file(accessions, project_uuid, out_dir):
         print(f'No matching files found for {acc}')
 
 
-def generate_project_json(wb, output_dir):
-    project_data = parse_project_data_from_xlsx(wb)
-    project_json, project_uuid = create_project_json(project_data, version=timestamp())
+def write_project_json(project_json, output_dir):
     with open(f'{output_dir}/project_0.json', 'w') as f:
         f.write(json.dumps(project_json, indent=4))
     print(f'"{output_dir}/project_0.json" successfully written.')
-    return project_json, project_uuid
 
 
 def generate_cell_suspension_json(wb, output_dir, cell_count, bundle_uuid):
@@ -546,16 +556,38 @@ def generate_specimen_from_organism_json(wb, output_dir, bundle_uuid):
     print(f'"{output_dir}/{file_name}" successfully written.')
 
 
+def generate_analysis_json(bundle_uuid, output_dir):
+    file_name = 'analysis_file_0.json'
+    version = timestamp()
+    analysis_json = {
+        "describedBy": "https://schema.humancellatlas.org/type/file/6.0.0/analysis_file",
+        "file_core": {
+            "file_name": "matrix.mtx.zip",
+            "format": "mtx"
+        },
+        "schema_type": "file",
+        "provenance": {
+            "document_id": generate_file_uuid(bundle_uuid, file_name),
+            "submission_date": version,  # TODO: Fetch from DSS if it exists
+            "update_date": version
+        }
+    }
+    with open(f'{output_dir}/{file_name}', 'w') as f:
+        f.write(json.dumps(analysis_json, indent=4))
+    print(f'"{output_dir}/{file_name}" successfully written.')
+
+
 def generate_links_json(output_dir):
-    links = {
+    file_name = 'links.json'
+    links_json = {
         'describedBy': 'https://schema.humancellatlas.org/system/1.1.5/links',
         'schema_type': 'link_bundle',
         'schema_version': '1.1.5',
         'links': []
     }
-    with open(f'{output_dir}/links.json', 'w') as f:
-        f.write(json.dumps(links, indent=4))
-    print(f'"{output_dir}/links.json" successfully written.')
+    with open(f'{output_dir}/{file_name}', 'w') as f:
+        f.write(json.dumps(links_json, indent=4))
+    print(f'"{output_dir}/{file_name}" successfully written.')
 
 
 def generate_donor_organism_jsons(wb, output_dir, bundle_uuid):
@@ -575,20 +607,30 @@ def generate_donor_organism_json(data, output_dir, donor_number, bundle_uuid):
     print(f'"{output_dir}/{file_name}" successfully written.')
 
 
-def run(xlsx, output_dir, upload=False):
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
+def run(xlsx, output_dir=None, upload=False):
     wb = load_workbook(xlsx)
 
-    project_json, project_uuid = generate_project_json(wb, output_dir)
+    project_data = parse_project_data_from_xlsx(wb)
+    project_json, project_uuid = create_project_json(project_data, version=timestamp())
+
+    root        = f'projects/{project_uuid}'
+    matrix_file = f'{root}/matrix/matrix.mtx.zip'
+    output_dir  = f'{root}/bundle' if not output_dir else output_dir
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+    write_project_json(project_json, output_dir)
     bundle_uuid = copy.deepcopy(project_uuid)
+
+    if os.path.exists(matrix_file):
+        generate_analysis_json(bundle_uuid=bundle_uuid, output_dir=output_dir)
 
     cell_counts = get_cell_counts()
     cell_count = 1  # the default if not found
     for accession in project_json['geo_series_accessions']:
         if accession in cell_counts:
             cell_count = cell_counts[accession]
-
 
     # add_matrix_file(project_json['geo_series_accessions'], project_uuid, output_dir)
     generate_cell_suspension_json(wb=wb,
@@ -623,7 +665,6 @@ def main(argv):
                         help="Path to an xlsx (excel) file.  "
                              "Example: 'data/test_project_000.xlsx'")
     parser.add_argument("--output_dir", type=str,
-                        default='bundle',
                         help="Path to an output directory.")
     parser.add_argument("--upload", type=bool,
                         default=False,
