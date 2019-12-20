@@ -175,7 +175,15 @@ def create_cell_suspension_jsons(data, cell_count, file_uuid, i=0):
                 'biomaterial_description': None,
                 'ncbi_taxon_id': [0],
                 'genotype': None
-            }
+            },
+        'genus_species':
+            [
+                {
+                    'text': None,
+                    'ontology': None,
+                    'ontology_label': None
+                }
+            ]
     }
 
     cell_suspension_json.update(
@@ -436,7 +444,15 @@ def create_specimen_from_organism_json(data, file_uuid, i=0):
                 'text': None,
                 'ontology': None,
                 'ontology_label': None
-            }
+            },
+        'genus_species':
+            [
+                {
+                    'text': None,
+                    'ontology': None,
+                    'ontology_label': None
+                }
+            ]
     }
     specimen_from_organism_json.update(
         fill_sections(
@@ -528,6 +544,14 @@ def create_donor_organism_json(data, file_uuid, i=0):
                 'ontology': None,
                 'ontology_label': None
             },
+        'genus_species':
+            [
+                {
+                    'text': None,
+                    'ontology': None,
+                    'ontology_label': None
+                }
+            ],
         'is_living': None,
         'sex': None
     }
