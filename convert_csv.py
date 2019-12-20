@@ -186,7 +186,7 @@ if __name__ == '__main__':
     assert adata1.to_df().equals(adata2.to_df())
 
     # some manullay created files in here
-    compile_mtxs('/tmp/mtxs', '/tmp/mtxs/out/', False)
+    compile_mtxs('mtx_test_files', 'mtx_test_files/out/', False)
     adata = sc.read_10x_mtx('/tmp/mtxs/out')
 
     print(adata.to_df())
