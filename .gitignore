@@ -64,6 +64,6 @@ variables.tf
 
 .~lock.*
 accessions/
-projects/
+/projects
 venv/
 v3nv/

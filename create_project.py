@@ -1,15 +1,18 @@
-import json
-import os
-import sys
 import argparse
 import copy
-from typing import Sequence
-import uuid
 from datetime import datetime
+import json
+import os
+from pathlib import Path
+import sys
+from typing import (
+    Sequence,
+    List,
+)
+import uuid
 
 from hca import HCAConfig
 from hca.dss import DSSClient
-
 from openpyxl import load_workbook
 
 
@@ -44,8 +47,8 @@ def get_cell_counts():
     return cell_counts
 
 
-def get_accession_excel_filenames(src_dir):
-    return [f for f in os.listdir(src_dir) if os.path.isfile(os.path.join(src_dir, f)) and f.endswith('.0.xlsx')]
+def get_spreadsheet_paths(src_dir: Path) -> List[Path]:
+    return [p for p in src_dir.iterdir() if p.is_file() and p.name.endswith('.0.xlsx')]
 
 
 def create_project_json(data, version, verify=False):

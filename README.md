@@ -47,3 +47,21 @@ Edited the following fields in "data/test_004.xlsx":
 
     publications.publication_url -> publications.url
     publications.publication_title -> publications.title
+
+**NOTE**
+
+6 ORIGINAL DATASETS (ALREADY IN THE DSS):
+
+`spreadsheets/existing/*.xlsx` are the original excel files provided that 
+currently exist in dss prod and we have finished examples to compare against.
+
+71 RAW DATASETS (STATUS NOT PARSED)
+
+The `xlsx` files in `spreadsheets/new` were downloaded from a spreadsheet of 
+spreadsheets and assumed to be (mostly) complete projects. These inputs were 
+provided with the labels "finished" or "full". Differences assumed are inferred 
+from skimming over the files. I chose to use the inputs which end in ".0.xlsx" 
+("finished") rather than the normal ".xlsx" extension ("full").
+
+These are missing fields such as the "funders" section (as opposed to the 6 
+excel files above). Not sure of other differences yet.
