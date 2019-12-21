@@ -1,8 +1,19 @@
+import csv
 import collections
+import gzip
+import logging
+import mimetypes
+import sys
+import tempfile
+import zipfile
+from contextlib import contextmanager
+from pathlib import Path
 
 import pandas as pd
 import os
 from more_itertools import one
+
+log = logging.getLogger(__file__)
 
 
 def csv_to_mtx(csv_filename: str, mtx_filename: str, cells_in_rows: bool, **pd_args) -> None:
@@ -50,7 +61,8 @@ def csv_to_mtx(csv_filename: str, mtx_filename: str, cells_in_rows: bool, **pd_a
         f.writelines(map(fmt_line, entries))
 
 
-def compile_mtxs(input_dir: str, output_filename: str, tsv_headers: bool) -> None:
+# TODO: I (jesse) made tsv_headers default to false only to make the code work. FIXME
+def compile_mtxs(input_dir: str, output_filename: str, tsv_headers: bool = False) -> None:
     """
     :param input_dir: where to look for mtx files
     :param output_filename: path to output mtx directory
@@ -164,7 +176,188 @@ def compile_mtxs(input_dir: str, output_filename: str, tsv_headers: bool) -> Non
     entries.to_csv(mtx, mode='a', header=False, index=False, sep=' ')
 
 
+def parse_path(path: Path):
+    """
+    Gets the project UUID from the path
+
+    >>> parse_path(Path('~/load-project.jesse/projects/51a21599-a014-5c5a-9760-d5bdeb80f741/geo'))
+    51a21599-a014-5c5a-9760-d5bdeb80f741
+    """
+    uuid_index = path.parts.index('projects') + 1
+    return path.parts[uuid_index]
+
+
+def is_mtx(p: Path):
+    return p.name.endswith('.mtx') or p.name.endswith('.mtx.gz')
+
+
+def geo_dir(project_dir: Path):
+    return project_dir / 'geo'
+
+
+def matrix_dir(project_dir: Path):
+    return project_dir / 'matrix'
+
+
+def staging_dir(project_dir: Path):
+    return project_dir / 'matrix_staging'
+
+
+def bundle_dir(project_dir: Path):
+    return project_dir / 'bundle'
+
+
+def find_separator(file: Path, smart=False) -> str:
+    # FIXME: "smart" was really slow, but the dumb version should work alright.
+    # The catch is, dumb mode will ignore .txt files
+    if smart:
+        for sep, extension in [('\t', 'tsv'), (',', 'csv')]:
+            with read_maybe_gz(str(file)) as fp:
+                rows = csv.reader(fp, delimiter=sep)
+                try:
+                    if len(next(rows)) != 1:
+                        return sep, extension
+                except StopIteration:
+                    # Empty file... continue
+                    pass
+        return None, None
+    else:
+        for ext, sep in [('.tsv', '\t'), ('.tsv.gz', '\t'), ('.csv', ','), ('.csv.gz', ',')]:
+            if file.name.endswith(ext):
+                return sep, ext
+        return None, None
+
+
+@contextmanager
+def read_maybe_gz(filename, **kwargs):
+    m_type, encoding = mimetypes.guess_type(filename)
+    if encoding == 'gzip':
+        open_ = gzip.open(filename, 'rt', encoding='utf-8', **kwargs)
+    else:
+        open_ = open(filename, 'r', newline='', **kwargs)
+    try:
+        with open_ as f:
+            yield f
+    except UnicodeDecodeError as e:
+        log.warning(f'Cannot open `{filename}` since it is not text nor gzip. Maybe tar?')
+
+
+def strip_suffix(s, suffix):
+    if s.endswith(suffix):
+        return s[:-len(suffix)]
+    else:
+        return s
+
+
+def matrix_name(filename: Path):
+    """
+    This is more or less arbitrary. Just used to avoid namespace collisions from multiple
+    converted matrices.
+    """
+    name = filename.name
+    name = strip_suffix(name, '.gz')
+    for suffix in ('.txt', '.csv', '.tsv'):
+        name = strip_suffix(name, suffix)
+    return name + '.mtx'
+
+
+def cell_in_rows(filename):
+    # FIXME: actually do something here.
+    return True
+
+
+def files_recursively(path: Path):
+    for dir_path, _, files in os.walk(path):
+        for f in files:
+            yield Path(dir_path, f)
+
+
+def try_to_convert(file, tmpdir):
+    sep, extension = find_separator(file)
+    if sep:
+        # FIXME: should pass in sep parameter once csv accepts it
+        log.info('Found potential csv/tsv %s, attempting to convert', file)
+        try:
+            csv_to_mtx(str(file), Path(tmpdir) / matrix_name(file), cells_in_rows=cell_in_rows(file))
+        except Exception:
+            log.warning('Failed to convert file %s,', file, exc_info=True)
+
+
+def synthesize_matrix(project_dir: Path):
+    """
+    Look at files in project and decide how they should be combined
+    / transformed in order to produce a single .mtx file.
+
+    The algorithm is:
+    If we don't have any mtx files:
+        Try and make some in a temp dir.
+        Then squish them together.
+    Otherwise:
+        just squish together what we have.
+
+    If unable to synthesize the matrices raises a RuntimeError
+    """
+    log.info('Starting project %s', project_dir)
+    files = list(files_recursively(geo_dir(project_dir)))
+    log.info('Project %s contains %s files', project_dir, len(files))
+    if not any(is_mtx(f) for f in files):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for f in files:
+                try_to_convert(f, tmpdir)
+            files = list(files_recursively(tmpdir))
+            if any(is_mtx(f) for f in files):
+                log.info('%s csvs were converted; compiling to mtx', len(files))
+                compile_mtxs(tmpdir, matrix_dir(project_dir))
+            else:
+                raise RuntimeError("Unable to synthesize; nothing converted / nothing to convert")
+    else:
+        log.info('Found some mtx files; trying to convert them')
+        compile_mtxs(geo_dir(project_dir), matrix_dir(project_dir))
+
+
+def zip_matrix(project_dir: Path):
+    with zipfile.ZipFile(str(final_matrix_file(project_dir))) as zipf:
+        zipf.write(project_dir / 'matrix.mtx')
+        zipf.write(project_dir / 'matrix_barcodes.tsv')
+        zipf.write(project_dir / 'matrix_cells.tsv')
+
+
+def final_matrix_file(project_dir: Path):
+    return bundle_dir(project_dir) / 'matrix.mtx.zip'
+
+
+def synthesize_matrices(projects: Path):
+    failed_projects = {}
+    succeeded_projects = set()
+    for project_dir in projects.iterdir():
+        # Assuming that dir.name is the project UUID
+        project_dir = Path(project_dir)
+        project_uuid = parse_path(project_dir)
+        if not final_matrix_file(project_dir).exists():
+            try:
+                synthesize_matrix(project_dir)
+            except Exception as e:
+                failed_projects[project_uuid] = e
+                log.exception('Failed to process project', exc_info=True)
+            else:
+                succeeded_projects.add(project_dir)
+
+    print('Failed projects', file=sys.stderr)
+    for p in failed_projects:
+        print(p, file=sys.stderr)
+
+    for project_dir in succeeded_projects:
+        zip_matrix(project_dir)
+
+
 if __name__ == '__main__':
+    log.setLevel('INFO')
+    # Noah, to download some test files run
+    # scp -r ubuntu@skunk.dev.explore.data.humancellatlas.org:/home/ubuntu/load-project.jesse/projects/0* ./test/projects
+    synthesize_matrices(Path('test/projects'))
+
+
+if __name__ == '__main__X':
     print('testing')
 
     import scanpy as sc
@@ -178,7 +371,7 @@ if __name__ == '__main__':
     df.index = [str(chr(x)) + str(i) for x in range(ord('a'), ord('z')) for i in range(5)][:100]
 
     df.to_csv('/tmp/test.csv')
-    csv_to_mtx('/tmp/test.csv', '/tmp/test.mtx', True)
+    csv_to_mtx('/tmp/test.csv', '/tmp/test.mtx', cells_in_rows=True)
 
     adata1 = sc.read_csv('/tmp/test.csv')
     adata2 = sc.read_10x_mtx('/tmp/test.mtx')
