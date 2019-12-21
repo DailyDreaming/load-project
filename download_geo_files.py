@@ -1,26 +1,27 @@
 import argparse
-import furl
+import logging
 import os
+from pathlib import Path
 import re
-import requests
 import sys
 import time
 from typing import MutableMapping
 import uuid
 
+import furl
+import requests
+
 from create_project import (
-    get_accession_excel_filenames,
-    generate_project_uuid
+    generate_project_uuid,
+    get_spreadsheet_paths,
 )
 
-import logging
 logging.basicConfig(level=logging.INFO)
 
 source_url_template = 'https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc='
 
 
 def main(argv):
-
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--all', '-A',
@@ -38,9 +39,11 @@ def main(argv):
 
 
 def download_from_all_accessions():
-    filenames = get_accession_excel_filenames('raw_excel_inputs')
-    for accession_id in [f.split('.')[0] for f in filenames]:
-        download_supplementary_files(accession_id)
+    for sub_dir in 'existing', 'new':
+        src_dir = Path('spreadsheets') / sub_dir
+        paths = get_spreadsheet_paths(src_dir)
+        for accession_id in [p.name.split('.')[0] for p in paths]:
+            download_supplementary_files(accession_id)
 
 
 def download_supplementary_files(accession_id):

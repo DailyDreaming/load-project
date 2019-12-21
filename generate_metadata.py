@@ -14,39 +14,24 @@ Editing 'upload=False' to 'upload=True' with upload to dss dev if you are creden
 Otherwise it will just parse the excel files and generate all of the matrix and json files necessary for upload.
 """
 import os
+from pathlib import Path
 import shutil
 
 from create_project import (
-    get_accession_excel_filenames,
+    get_spreadsheet_paths,
     run
 )
 
 # if os.path.exists('projects/'):
 #     shutil.rmtree('projects/')
 
-"""6 ORIGINAL DATASETS (ALREADY IN THE DSS)"""
-# These are the original excel files provided that currently exist in dss prod
-# and we have finished examples to compare against.
-for project in range(6):
-    print(f'\nProject: test_00{project}')
-    run(xlsx=f'data/test_00{project}.xlsx',
-        # output_dir=f'testing_comparison/test_00{project}',
-        upload=False)
 
-"""71 RAW DATASETS (STATUS NOT PARSED)"""
-# Downloaded from a spreadsheet of spreadsheets and assumed to be (mostly) complete projects.
-# These inputs were provided with the labels "finished" or "full".
-# Differences assumed are inferred from skimming over the files.
-# I chose to use the inputs which end in ".0.xlsx" ("finished") rather than the normal ".xlsx" extension ("full").
-#
-# These are missing fields such as the "funders" section (as opposed to the 6 excel files above).
-# Not sure of other differences yet.
-src_dir = 'raw_excel_inputs'
-projects = get_accession_excel_filenames(src_dir)
-
-for i, project in enumerate(projects):
-    print(f'\n% Progress: {i + 1}/{len(projects)} projects ({project}).\n'
-          f'===========================================================')
-    run(xlsx=f'{src_dir}/{project}',
-        # output_dir=f'testing_comparison/{project[:-5]}',
-        upload=False)
+for sub_dir in 'existing', 'new':
+    src_dir = Path('spreadsheets') / sub_dir
+    projects = get_spreadsheet_paths(src_dir)
+    for i, project in enumerate(projects):
+        print(f'\n% Progress: {i + 1}/{len(projects)} projects ({project}).\n'
+              f'===========================================================')
+        run(xlsx=project.as_posix(),
+            # output_dir=f'testing_comparison/{project[:-5]}',
+            upload=False)
