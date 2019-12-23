@@ -757,50 +757,97 @@ def parse_donor_organism_data_from_xlsx(wb):
             print(f'{project_key} section not found in the data!')
     return data
 
+def write_json(file_name, json_content):
+    with open(file_name, 'w') as f:
+        f.write(json.dumps(json_content, indent=4))
+    print(f'{file_name} successfully written.')
 
-def write_project_json(project_json, output_dir):
-    with open(f'{output_dir}/project_0.json', 'w') as f:
-        f.write(json.dumps(project_json, indent=4))
-    print(f'"{output_dir}/project_0.json" successfully written.')
+
+def load_json(file_name):
+    with open(file_name, 'r') as f:
+        json_content = json.loads(f.read())
+    return json_content
+
+
+def create_json_if_not_present(file_name):
+    if not os.path.exists(file_name):
+        with open(file_name, 'w') as f:
+            f.write('{}\n')
+
+
+def update_file_uuid_config_file(file_name, file_uuid, output_dir):
+    file_path = f'{output_dir}/{file_name}'
+    file_uuid_config_file = os.path.abspath(os.path.join(output_dir, '..', 'file_uuids.json'))
+
+    create_json_if_not_present(file_name=file_uuid_config_file)
+    json_content = load_json(file_uuid_config_file)
+    json_content[file_path] = file_uuid
+    write_json(
+        file_name=file_uuid_config_file,
+        json_content=json_content
+    )
+
+
+def write_project_json(project_json, output_dir, bundle_uuid):
+    file_name = 'project_0.json'
+    file_uuid = generate_file_uuid(bundle_uuid, file_name)
+    write_json(
+        file_name=f'{output_dir}/{file_name}',
+        json_content=project_json
+    )
+    update_file_uuid_config_file(file_name, file_uuid, output_dir)
 
 
 def generate_cell_suspension_json(wb, output_dir, cell_count, bundle_uuid):
     file_name = 'cell_suspension_0.json'
+    file_uuid = generate_file_uuid(bundle_uuid, file_name)
     cell_suspension_data = parse_cell_suspension_data_from_xlsx(wb)
-    cell_json = create_cell_suspension_jsons(data=cell_suspension_data,
-                                             cell_count=cell_count,
-                                             file_uuid=generate_file_uuid(bundle_uuid, file_name))
-    with open(f'{output_dir}/{file_name}', 'w') as f:
-        f.write(json.dumps(cell_json, indent=4))
-    print(f'"{output_dir}/{file_name}" successfully written.')
+    cell_json = create_cell_suspension_jsons(
+        data=cell_suspension_data,
+        cell_count=cell_count,
+        file_uuid=file_uuid
+    )
+    write_json(
+        file_name=f'{output_dir}/{file_name}',
+        json_content=cell_json
+    )
+    update_file_uuid_config_file(file_name, file_uuid, output_dir)
 
 
 def generate_specimen_from_organism_json(wb, output_dir, bundle_uuid):
     file_name = 'specimen_from_organism_0.json'
+    file_uuid = generate_file_uuid(bundle_uuid, file_name)
     specimen_from_organism_data = parse_specimen_from_organism_data_from_xlsx(wb)
     specimen_from_organism_json = create_specimen_from_organism_json(
         data=specimen_from_organism_data,
-        file_uuid=generate_file_uuid(bundle_uuid, file_name))
-    with open(f'{output_dir}/{file_name}', 'w') as f:
-        f.write(json.dumps(specimen_from_organism_json, indent=4))
-    print(f'"{output_dir}/{file_name}" successfully written.')
+        file_uuid=file_uuid
+    )
+    write_json(
+        file_name=f'{output_dir}/{file_name}',
+        json_content=specimen_from_organism_json
+    )
+    update_file_uuid_config_file(file_name, file_uuid, output_dir)
 
 
 def generate_library_preparation_protocol_json(wb, output_dir, bundle_uuid):
     file_name = 'library_preparation_protocol_0.json'
+    file_uuid = generate_file_uuid(bundle_uuid, file_name)
     library_preparation_protocol_data = parse_library_preparation_protocol_data_from_xlsx(wb)
     library_preparation_protocol_json = create_library_preparation_protocol_json(
         data=library_preparation_protocol_data,
-        file_uuid=generate_file_uuid(bundle_uuid, file_name)
+        file_uuid=file_uuid
     )
-    with open(f'{output_dir}/{file_name}', 'w') as f:
-        f.write(json.dumps(library_preparation_protocol_json, indent=4))
-    print(f'"{output_dir}/{file_name}" successfully written.')
+    write_json(
+        file_name=f'{output_dir}/{file_name}',
+        json_content=library_preparation_protocol_json
+    )
+    update_file_uuid_config_file(file_name, file_uuid, output_dir)
 
 
 def generate_analysis_protocol_json(output_dir, bundle_uuid):
     # TODO: Hard-coded and not sure where this data should come from... ???
     file_name = 'analysis_protocol_0.json'
+    file_uuid = generate_file_uuid(bundle_uuid, file_name)
     version = timestamp()
     analysis_protocol_json = {
         "computational_method": "SmartSeq2SingleCell",
@@ -813,30 +860,36 @@ def generate_analysis_protocol_json(output_dir, bundle_uuid):
             "text": "analysis"
         },
         "provenance": {
-            "document_id": generate_file_uuid(bundle_uuid, file_name),
+            "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
             "update_date": version
         }
     }
-    with open(f'{output_dir}/{file_name}', 'w') as f:
-        f.write(json.dumps(analysis_protocol_json, indent=4))
-    print(f'"{output_dir}/{file_name}" successfully written.')
+    write_json(
+        file_name=f'{output_dir}/{file_name}',
+        json_content=analysis_protocol_json
+    )
+    update_file_uuid_config_file(file_name, file_uuid, output_dir)
 
 
 def generate_sequencing_protocol_json(wb, output_dir, bundle_uuid):
     file_name = 'sequencing_protocol_0.json'
+    file_uuid = generate_file_uuid(bundle_uuid, file_name)
     sequencing_protocol_data = parse_sequencing_protocol_data_from_xlsx(wb)
     sequencing_protocol_json = create_sequencing_protocol_json(
         data=sequencing_protocol_data,
-        file_uuid=generate_file_uuid(bundle_uuid, file_name)
+        file_uuid=file_uuid
     )
-    with open(f'{output_dir}/{file_name}', 'w') as f:
-        f.write(json.dumps(sequencing_protocol_json, indent=4))
-    print(f'"{output_dir}/{file_name}" successfully written.')
+    write_json(
+        file_name=f'{output_dir}/{file_name}',
+        json_content=sequencing_protocol_json
+    )
+    update_file_uuid_config_file(file_name, file_uuid, output_dir)
 
 
 def generate_analysis_json(bundle_uuid, output_dir):
     file_name = 'analysis_file_0.json'
+    file_uuid = generate_file_uuid(bundle_uuid, file_name)
     version = timestamp()
     analysis_json = {
         "describedBy": "https://schema.humancellatlas.org/type/file/6.0.0/analysis_file",
@@ -846,27 +899,32 @@ def generate_analysis_json(bundle_uuid, output_dir):
         },
         "schema_type": "file",
         "provenance": {
-            "document_id": generate_file_uuid(bundle_uuid, file_name),
+            "document_id": file_uuid,
             "submission_date": version,  # TODO: Fetch from DSS if it exists
             "update_date": version
         }
     }
-    with open(f'{output_dir}/{file_name}', 'w') as f:
-        f.write(json.dumps(analysis_json, indent=4))
-    print(f'"{output_dir}/{file_name}" successfully written.')
+    write_json(
+        file_name=f'{output_dir}/{file_name}',
+        json_content=analysis_json
+    )
+    update_file_uuid_config_file(file_name, file_uuid, output_dir)
 
 
-def generate_links_json(output_dir):
+def generate_links_json(bundle_uuid, output_dir):
     file_name = 'links.json'
+    file_uuid = generate_file_uuid(bundle_uuid, file_name)
     links_json = {
         'describedBy': 'https://schema.humancellatlas.org/system/1.1.5/links',
         'schema_type': 'link_bundle',
         'schema_version': '1.1.5',
         'links': []
     }
-    with open(f'{output_dir}/{file_name}', 'w') as f:
-        f.write(json.dumps(links_json, indent=4))
-    print(f'"{output_dir}/{file_name}" successfully written.')
+    write_json(
+        file_name=f'{output_dir}/{file_name}',
+        json_content=links_json
+    )
+    update_file_uuid_config_file(file_name, file_uuid, output_dir)
 
 
 def generate_donor_organism_jsons(wb, output_dir, bundle_uuid):
@@ -878,12 +936,15 @@ def generate_donor_organism_jsons(wb, output_dir, bundle_uuid):
 
 def generate_donor_organism_json(data, output_dir, donor_number, bundle_uuid):
     file_name = f'donor_organism_{donor_number}.json'
+    file_uuid = generate_file_uuid(bundle_uuid, file_name)
     donor_organism_json = create_donor_organism_json(data=data,
-                                                     file_uuid=generate_file_uuid(bundle_uuid, file_name),
+                                                     file_uuid=file_uuid,
                                                      i=donor_number)
-    with open(f'{output_dir}/{file_name}', 'w') as f:
-        f.write(json.dumps(donor_organism_json, indent=4))
-    print(f'"{output_dir}/{file_name}" successfully written.')
+    write_json(
+        file_name=f'{output_dir}/{file_name}',
+        json_content=donor_organism_json
+    )
+    update_file_uuid_config_file(file_name, file_uuid, output_dir)
 
 
 def run(xlsx, output_dir=None, upload=False):
@@ -892,18 +953,16 @@ def run(xlsx, output_dir=None, upload=False):
     project_data = parse_project_data_from_xlsx(wb)
     project_json, project_uuid = create_project_json(project_data, version=timestamp())
 
-    root        = f'projects/{project_uuid}'
-    matrix_file = f'{root}/matrix/matrix.mtx.zip'
-    output_dir  = f'{root}/bundle' if not output_dir else output_dir
+    output_dir  = f'projects/{project_uuid}/bundle' if not output_dir else output_dir
+    matrix_file = f'{output_dir}/matrix.mtx.zip'
+    bundle_uuid = copy.deepcopy(project_uuid)
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    write_project_json(project_json, output_dir)
-    bundle_uuid = copy.deepcopy(project_uuid)
-
-    if os.path.exists(matrix_file):
-        generate_analysis_json(bundle_uuid=bundle_uuid, output_dir=output_dir)
+    write_project_json(bundle_uuid=bundle_uuid,
+                       project_json=project_json,
+                       output_dir=output_dir)
 
     cell_counts = get_cell_counts()
     cell_count = 1  # the default if not found
@@ -927,9 +986,11 @@ def run(xlsx, output_dir=None, upload=False):
     generate_sequencing_protocol_json(wb=wb,
                                       output_dir=output_dir,
                                       bundle_uuid=bundle_uuid)
-    # generate_analysis_protocol_json(output_dir=output_dir,
-    #                                 bundle_uuid=bundle_uuid)
-    generate_links_json(output_dir)
+    generate_links_json(output_dir=output_dir, bundle_uuid=bundle_uuid)
+
+    if os.path.exists(matrix_file):
+        generate_analysis_json(bundle_uuid=bundle_uuid, output_dir=output_dir)
+        generate_analysis_protocol_json(bundle_uuid=bundle_uuid, output_dir=output_dir)
 
     if upload:
         hca_config = HCAConfig()
@@ -937,10 +998,12 @@ def run(xlsx, output_dir=None, upload=False):
         hca_config["DSSClient"].swagger_url = f"https://dss.dev.data.humancellatlas.org/v1/swagger.json"
         dss = DSSClient(config=hca_config)
 
+        file_uuids_config = os.path.abspath(os.path.join(output_dir, '..', 'file_uuids.json'))
         response = dss.upload(src_dir=output_dir,
                               replica='aws',
                               staging_bucket='lon-test-data',
-                              bundle_uuid=bundle_uuid)
+                              bundle_uuid=bundle_uuid,
+                              file_uuids_config=file_uuids_config)
         print(f'Successful upload.  Bundle information is:\n{json.dumps(response, indent=4)}')
 
 

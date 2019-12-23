@@ -32,6 +32,4 @@ for sub_dir in 'existing', 'new':
     for i, project in enumerate(projects):
         print(f'\n% Progress: {i + 1}/{len(projects)} projects ({project}).\n'
               f'===========================================================')
-        run(xlsx=project.as_posix(),
-            # output_dir=f'testing_comparison/{project[:-5]}',
-            upload=False)
+        run(xlsx=project.as_posix(), upload=True)
