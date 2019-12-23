@@ -5,7 +5,10 @@ from pathlib import Path
 import re
 import sys
 import time
-from typing import MutableMapping
+from typing import (
+    MutableMapping,
+    Sequence
+)
 import uuid
 
 import furl
@@ -62,49 +65,18 @@ def download_supplementary_files(accession_id):
         os.remove(file_link_path)
     os.symlink(str(project_uuid), file_link_path)
 
-    source = furl.furl(source_url_template)
-
     page = requests.get(source_url_template + accession_id)
 
-    if 'Supplementary file' not in page.text:
+    links = supplementary_file_download_links(page.text)
+
+    if not links:
         logging.warning('No supplementary files found on page')
         os.makedirs(save_file_path, exist_ok=True)
         open(f'{save_file_path}/no-supplementary-files', 'a').close()
         return None
 
-    # extract the html links
-    html = page.text[page.text.rindex('Supplementary file'):]
-    links = re.findall(r'<a href="[^"]+">\(http\)</a>', html)
-    logging.info('Found %s links', len(links))
-
-    for link in links:
-        # extract the urls from the html links
-        match = re.search(r'href="([^"]+)"', link)
-        if not match:
-            logging.warning('Unable to find link url in %s', link)
-            continue
-        url = match.group(1)
-        if url.startswith('/'):
-            url = source.asdict()['origin'] + url
-        # logging.info('URL %s', url)
-
-        # get the filename for the download file
-        file_name_found = False
-        save_file_name = None
-        attempts = 0
-        while attempts < 3:
-            response = requests.head(url)
-            save_file_name = filename_from_headers(response.headers)
-            if save_file_name:
-                file_name_found = True
-                break
-            else:
-                logging.info('Failed to find filename via head request, retrying ...')
-                attempts += 1
-                time.sleep(1)
-        if not file_name_found:
-            logging.warning('Unable to find filename in headers')
-            save_file_name = str(uuid.uuid4()) + '.gz'
+    for filename, url in links:
+        save_file_name = filename
         save_file_full = f'{save_file_path}/{save_file_name}'
 
         # download and save the file
@@ -113,16 +85,32 @@ def download_supplementary_files(accession_id):
             logging.info('Skipping existing file: %s', save_file_full)
         else:
             logging.info('Downloading to: %s', save_file_full)
-            headers = download_file(url, save_file_full)
-            if not file_name_found:
-                # try one last time to find filename in headers and rename downloaded file if found
-                save_file_name = filename_from_headers(headers)
-                if save_file_name:
-                    new_file_full = f'{save_file_path}/{save_file_name}'
-                    if not os.path.isfile(new_file_full):
-                        os.rename(save_file_full, new_file_full)
-                        logging.info('Renaming %s to %s', save_file_full, new_file_full)
+            download_file(url, save_file_full)
     return save_file_path
+
+
+def supplementary_file_download_links(html: str) -> Sequence:
+    """
+    Locate the Supplementary file table in the given html
+    and pluck out the file name & urls to download the file
+    """
+    source = furl.furl(source_url_template)
+    match = re.search(r'<table(?:(?!table).)+?>Supplementary file<(?:(?!table).)+</table>', html, re.DOTALL)
+    if match:
+        # For each row in the table get the filename and the http link url
+        table_html = match.group()
+        match = re.findall(r'<tr[^>]*>'                             # tr up to first td
+                           r'<td[^>]*>([^<]+)</td>'                 # first td and capture contents
+                           r'(?:(?!/tr).)*<td[^>]*>(?:(?!</td).)*'  # skip ahead another td in same tr
+                           r'<a href="([^"]+)">\(http\)</a>',       # <a> tag and capture href value
+                           table_html, re.DOTALL)
+        if match:
+            return [(filename, source.asdict()['origin'] + url if url.startswith('/') else url)
+                    for filename, url in match]
+        else:
+            return None
+    else:
+        return None
 
 
 def filename_from_headers(headers: MutableMapping[str, str]):
