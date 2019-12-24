@@ -1,5 +1,6 @@
 import argparse
 import csv
+import json
 import os
 import sys
 
@@ -24,7 +25,13 @@ def main(argv):
     group.add_argument('--write-all', '-W',
                        action='store_true',
                        help='write cell count files for all project matrix files')
+    parser.add_argument('--verbose', '-v',
+                        action='store_true',
+                        help='Verbose debug output')
     args = parser.parse_args(argv)
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     if args.list:
         count_one_project_cells(args.list, save_to_file=False)
@@ -60,7 +67,8 @@ def count_one_project_cells(path: str, save_to_file=True):
             project_path = path
         else:
             project_path = '/'.join(path.split('/')[:-1])
-        write_project_cell_count(project_path, cell_count)
+        accession_id = accession_id_from_project_path(project_path)
+        update_cell_count_file(accession_id, cell_count)
 
 
 def get_project_paths() -> Sequence[str]:
@@ -76,18 +84,41 @@ def get_project_paths() -> Sequence[str]:
     return project_paths
 
 
-def write_project_cell_count(project_path: str, cell_count: int):
-    """
-    Save the cell count to a file in the project path
+def update_cell_count_file(accession_id: str, cell_count: int) -> bool:
+    if not accession_id or cell_count is None:
+        return False
+    cell_counts_file = 'cell_counts.json'
+    if os.path.exists(cell_counts_file):
+        with open(cell_counts_file, 'r') as f:
+            cell_counts = json.loads(f.read())
+    else:
+        cell_counts = {}
+    logging.info('Writing to cell counts json: accession=%s count=%s', accession_id, cell_count)
+    cell_counts[accession_id] = cell_count
+    with open(cell_counts_file, 'w') as f:
+        f.write(json.dumps(cell_counts, sort_keys=True, indent='    '))
+    return True
 
-    :param project_path: A path to the project folder
-    :param cell_count: A count of cells
-    """
-    if cell_count is not None:
-        cell_count_file = f'{project_path}/cell_counts'
-        logging.info('Writing: %s', cell_count_file)
-        with open(cell_count_file, 'w') as f:
-            f.write(f'{cell_count}\n')
+
+def accession_id_from_project_path(project_path: str) -> str:
+    # Try to get the accession id from the project json file
+    # TODO: handle multiple accession ids in project json
+    project_json = f'{project_path}/bundle/project_0.json'
+    if os.path.exists(project_json):
+        with open(project_json, 'r') as f:
+            accession_id = ''.join(json.loads(f.read()).get('geo_series_accessions', []))
+            logging.debug('Found accession id "%s" in project json', accession_id)
+            return accession_id
+    # Try to get the accession id from the filename of the downloaded geo files
+    # TODO: handle multiple accession ids in filenames
+    geo_dir = f'{project_path}/geo'
+    if os.path.isdir(geo_dir):
+        for filename in os.listdir(geo_dir):
+            if filename.startswith('GSE') and '_' in filename:
+                accession_id = filename[:filename.index('_')]
+                logging.debug('Found accession id "%s" from filename %s', accession_id, filename)
+                return accession_id
+    return None
 
 
 def get_project_cell_count(path: str) -> int:
@@ -122,7 +153,13 @@ def count_cells(matrix_file: str) -> int:
         return None
     barcode_indexes = set(())
     with open(matrix_file, newline='') as csv_file:
-        dialect = csv.Sniffer().sniff(csv_file.read(1024))
+        csv_reader = None
+        try:
+            dialect = csv.Sniffer().sniff(csv_file.read(1024))
+        except csv.Error:
+            pass  # Retry one more time if first read couldn't be sniffed
+        if not csv_reader:
+            dialect = csv.Sniffer().sniff(csv_file.read(1024))
         csv_file.seek(0)
         csv_reader = csv.reader(csv_file, dialect)
         next(csv_reader)  # skip header row
