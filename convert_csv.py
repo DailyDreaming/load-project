@@ -5,31 +5,78 @@ import logging
 import mimetypes
 import sys
 import tempfile
+from typing import (
+    Tuple,
+    Optional,
+    Dict,
+    Sequence,
+)
 import zipfile
 from contextlib import contextmanager
 from pathlib import Path
 
+from attr import dataclass
 import pandas as pd
+import numpy as np
 import os
 from more_itertools import one
 
 log = logging.getLogger(__file__)
 
 
-def csv_to_mtx(csv_filename: str, mtx_filename: str, cells_in_rows: bool, **pd_args) -> None:
-    """
-    :param csv_filename: path to input csv file.
-    :param mtx_filename: path to output mtx directory.
-    :param cells_in_rows: if true, cells are rows and genes are columns in the csv, else vice-versa.
-    :param pd_args: keywords args to be passed to pandas.read_csv
-    """
-    csv = pd.read_csv(csv_filename, index_col=0, **pd_args)
+def try_delim_file(file: str, target: str, hints: dict = None) -> None:
 
-    if not cells_in_rows:
-        csv = csv.T
+    try:
+        # Pandas will infer sep if None
+        data = pd.read_csv(file, index_col=0, sep=hints.get('separator'))
+    except Exception:
+        log.warning(f'{file}: not a parse-able data file')
+        raise
 
-    cells = csv.index
-    genes = csv.columns
+    if data.shape[1] == 1:
+        log.warning(f'{file}: not a matrix file, or using wrong separator.')
+        raise RuntimeError
+
+    cells_in_rows = hints.get('cells_in_rows')
+
+    # Try to guess which axis is genes based on size.
+    # Humans and mice both have approx. 25000 genes so one axis is close to this size and the other is far from it we
+    # can fairly certain which is genes
+    if cells_in_rows is None:
+        n_genes = 25000
+        genes_in_rows = abs(data.shape[0] - n_genes) <= 5000
+        cells_in_rows = abs(data.shape[1] - n_genes) <= 5000
+
+        # other possible strategies for heuristic:
+        # search for a gene name in index or columns
+
+        if cells_in_rows == genes_in_rows:
+            log.warning(f'{file}: could not infer which axis was genes (size = {data.shape})')
+            raise RuntimeError
+        else:
+            log.info(f'{file}: inferred cells are in {"rows" if cells_in_rows else "columns"} from shape {data.shape}')
+
+    if cells_in_rows is False:
+        data = data.T
+
+    try:
+        csv_to_mtx(data, target)
+    except Exception:
+        log.warning(f'{file}: conversion step failed')
+        raise
+
+
+def csv_to_mtx(data: pd.DataFrame, mtx_filename: str) -> None:
+    cells = data.index
+    genes = data.columns
+
+    # To properly cross-reference this we'd need to know species and maybe other info
+    if all(gene.startswith('ENS') for gene in genes[10:]):
+        gene_ids = genes
+        gene_names = [f'FAKE_GENE_NAME_{gene}' for gene in genes]
+    else:
+        gene_ids = [f'FAKE_GENE_ID_{gene}' for gene in genes]
+        gene_names = genes
 
     os.makedirs(mtx_filename, exist_ok=True)
 
@@ -37,19 +84,19 @@ def csv_to_mtx(csv_filename: str, mtx_filename: str, cells_in_rows: bool, **pd_a
         f.writelines(cell + '\n' for cell in cells)
 
     with open(os.path.join(mtx_filename, 'genes.tsv'), 'w') as f:
-        # CSV file sonly include gene names but scanpy requires a gene id/featurekey column so we fake it
+        # CSV files only include gene names but scanpy requires a gene id/featurekey column so we fake it
         # Use hash for consistency across files
-        f.writelines('\t'.join([f'FAKE_FEATURE_KEY{hash(gene)}', gene]) + '\n' for gene in genes)
+        f.writelines('\t'.join([gene_id, gene_name]) + '\n' for gene_id, gene_name in zip(gene_ids, gene_names))
 
     entries = [
         (
             gene_idx + 1,
             cell_idx + 1,
-            csv.iloc[cell_idx, gene_idx]
+            data.iloc[cell_idx, gene_idx]
         )
         for cell_idx, _ in enumerate(cells)
         for gene_idx, _ in enumerate(genes)
-        if csv.iloc[cell_idx, gene_idx] != 0
+        if data.iloc[cell_idx, gene_idx] != 0
     ]
 
     def fmt_line(x):
@@ -61,53 +108,65 @@ def csv_to_mtx(csv_filename: str, mtx_filename: str, cells_in_rows: bool, **pd_a
         f.writelines(map(fmt_line, entries))
 
 
-# TODO: I (jesse) made tsv_headers default to false only to make the code work. FIXME
-def compile_mtxs(input_dir: str, output_filename: str, tsv_headers: bool = False) -> None:
-    """
-    :param input_dir: where to look for mtx files
-    :param output_filename: path to output mtx directory
-    :param tsv_headers: whether there are column headers in genes.tsv and barcodes.tsv
-    """
-    files = os.listdir(input_dir)
-    fileexts = ('genes.tsv', 'barcodes.tsv', 'matrix.mtx')
+def find_mtx_files(input_dir: Path) -> Dict[str, Tuple[str, str, str]]:
+    result = {}
 
-    filetypes = {
-        fileext: pd.DataFrame([
-            [
-                file.split(fileext)[0]
-            ]
+    files = [str(file) for file in input_dir.iterdir()]
+    anchors = [
+        (file, strip_suffix(strip_suffix(strip_suffix(file, '.gz'), '.mtx'), 'matrix'))
+        for file in files
+        if is_mtx(file)
+    ]
+
+    for anchor_file, prefix in anchors:
+        links = [
+            strip_prefix(file, prefix)
             for file in files
-            if file.endswith(fileext)
-        ])
-        for fileext in fileexts
-    }
+            if file.startswith(prefix) and file != anchor_file
+        ]
+        if len(links) >= 2:
+            def find(names):
+                return one(link
+                           for link in links
+                           if any(link.startswith(name) for name in names)
+                           and strip_suffix(link, '.gz')[-4:] in ['.csv', '.tsv'])
 
-    file_prefixes = filetypes['genes.tsv'].merge(filetypes['barcodes.tsv']).merge(filetypes['matrix.mtx'])
+            try:
+                barcodes_file = find(['barcodes', 'cells'])
+                genes_file = find(['genes', 'features'])
+            except ValueError:
+                log.warning('Couldn\'t identify row and column files for mtx')
+            else:
+                result[prefix] = (genes_file, barcodes_file, anchor_file)
+        else:
+            log.warning('There appear to be some missing/extra/unassociated mtx files')
 
-    if file_prefixes.size != max(map(len, filetypes.values())):
-        # if this causes problems, an alternative would be to disregard unassociated files
-        # and only compile ones where the full triplet is present.
-        raise RuntimeError(f'There appear to be some missing/extra/unassociated mtx files')
+    return result
 
-    # file_prefixes now contains a single column of all the distinct matrix names (filename before extension)
+
+def compile_mtxs(triplets: Sequence[Tuple[str, str, str]], output_filename: str, tsv_headers: bool) -> None:
+    """
+    :param triplets: sequence of genes, barcodes, matrix files.
+    :param output_filename: path to output mtx directory
+    :param tsv_headers: whether there are column headers in the genes and barcodes files
+    """
 
     entries = []
 
-    def add_matrix(row):
-        prefix = one(row)
+    def add_matrix(triplet):
 
-        mtx = pd.read_csv(os.path.join(input_dir, prefix + 'matrix.mtx'), skiprows=2, sep=' ', header=None)
+        mtx = pd.read_csv(triplet[2], skiprows=2, sep=' ', header=None)
         mtx.columns = ['gene_idx', 'cell_idx', 'value']
 
-        cells = pd.read_csv(os.path.join(input_dir, prefix + 'barcodes.tsv'),
-                            sep='\t',
+        cells = pd.read_csv(triplet[1],
+                            sep='\t',  # some of these are named .csv but I'm pretty sure they all actually use tabs
                             header=0 if tsv_headers else None)
         cells = cells.iloc[:, :1]  # only barcodes column
         cells.columns = ['barcode']
         cells.reset_index(inplace=True)
         cells['index'] += 1
 
-        genes = pd.read_csv(os.path.join(input_dir, prefix + 'genes.tsv'),
+        genes = pd.read_csv(triplet[0],
                             sep='\t',
                             header=0 if tsv_headers else None)
         genes = genes.iloc[:, :2]  # only id and name columns
@@ -123,7 +182,7 @@ def compile_mtxs(input_dir: str, output_filename: str, tsv_headers: bool = False
         entries.append(mtx)
 
     # stack matrix entries into one frame
-    file_prefixes.apply(add_matrix, axis=1)
+    map(add_matrix, triplets)
     entries = pd.concat(entries, axis=0, ignore_index=True)
 
     # consolidate inconsistent gene ids since most of them will probably be garbage from the previous method
@@ -148,6 +207,7 @@ def compile_mtxs(input_dir: str, output_filename: str, tsv_headers: bool = False
 
     # assign line numbers to unique gene names and barcodes
     class id_dict(collections.defaultdict):
+
         def __init__(self):
             super().__init__(lambda: 1 + len(self))
 
@@ -176,11 +236,11 @@ def compile_mtxs(input_dir: str, output_filename: str, tsv_headers: bool = False
     entries.to_csv(mtx, mode='a', header=False, index=False, sep=' ')
 
 
-def parse_path(path: Path):
+def extract_uuid(path: Path):
     """
     Gets the project UUID from the path
 
-    >>> parse_path(Path('~/load-project.jesse/projects/51a21599-a014-5c5a-9760-d5bdeb80f741/geo'))
+    >>> extract_uuid(Path('~/load-project.jesse/projects/51a21599-a014-5c5a-9760-d5bdeb80f741/geo'))
     51a21599-a014-5c5a-9760-d5bdeb80f741
     """
     uuid_index = path.parts.index('projects') + 1
@@ -207,27 +267,6 @@ def bundle_dir(project_dir: Path):
     return project_dir / 'bundle'
 
 
-def find_separator(file: Path, smart=False) -> str:
-    # FIXME: "smart" was really slow, but the dumb version should work alright.
-    # The catch is, dumb mode will ignore .txt files
-    if smart:
-        for sep, extension in [('\t', 'tsv'), (',', 'csv')]:
-            with read_maybe_gz(str(file)) as fp:
-                rows = csv.reader(fp, delimiter=sep)
-                try:
-                    if len(next(rows)) != 1:
-                        return sep, extension
-                except StopIteration:
-                    # Empty file... continue
-                    pass
-        return None, None
-    else:
-        for ext, sep in [('.tsv', '\t'), ('.tsv.gz', '\t'), ('.csv', ','), ('.csv.gz', ',')]:
-            if file.name.endswith(ext):
-                return sep, ext
-        return None, None
-
-
 @contextmanager
 def read_maybe_gz(filename, **kwargs):
     m_type, encoding = mimetypes.guess_type(filename)
@@ -249,6 +288,13 @@ def strip_suffix(s, suffix):
         return s
 
 
+def strip_prefix(s, prefix):
+    if s.startswith(prefix):
+        return s[len(prefix):]
+    else:
+        return s
+
+
 def matrix_name(filename: Path):
     """
     This is more or less arbitrary. Just used to avoid namespace collisions from multiple
@@ -261,26 +307,25 @@ def matrix_name(filename: Path):
     return name + '.mtx'
 
 
-def cell_in_rows(filename):
-    # FIXME: actually do something here.
-    return True
-
-
 def files_recursively(path: Path):
     for dir_path, _, files in os.walk(path):
         for f in files:
             yield Path(dir_path, f)
 
 
-def try_to_convert(file, tmpdir):
-    sep, extension = find_separator(file)
-    if sep:
-        # FIXME: should pass in sep parameter once csv accepts it
-        log.info('Found potential csv/tsv %s, attempting to convert', file)
-        try:
-            csv_to_mtx(str(file), Path(tmpdir) / matrix_name(file), cells_in_rows=cell_in_rows(file))
-        except Exception:
-            log.warning('Failed to convert file %s,', file, exc_info=True)
+def try_to_convert(files: Sequence[str], tmpdir: str) -> None:
+
+    delim_exts = ['csv', 'tsv', 'txt']
+    delim_exts.extend(ext + '.gz' for ext in delim_exts)
+
+    for file in files:
+        if any(file.endswith(ext) for ext in delim_exts):
+            log.info(f'Found potential csv/tsv {file}, attempting to convert')
+            try:
+                try_delim_file(file,
+                               Path(tmpdir) / matrix_name(Path(file)))
+            except Exception:
+                log.warning(f'Failed to convert file {file}', exc_info=True)
 
 
 def synthesize_matrix(project_dir: Path):
@@ -295,24 +340,35 @@ def synthesize_matrix(project_dir: Path):
     Otherwise:
         just squish together what we have.
 
+    This assumes (probably correctly) that we won't encounter projects
+    containing data in BOTH csv/tsv/txt AND mtx files.
+
     If unable to synthesize the matrices raises a RuntimeError
     """
     log.info('Starting project %s', project_dir)
-    files = list(files_recursively(geo_dir(project_dir)))
+    in_dir = geo_dir(project_dir)
+    files = list(files_recursively(in_dir))
     log.info('Project %s contains %s files', project_dir, len(files))
-    if not any(is_mtx(f) for f in files):
+
+    if any(is_mtx(f) for f in files):
+        log.info('Found some mtx files; trying to convert them')
+        mtxs = find_mtx_files(in_dir)
+        # Incredibly, headers are only present in the CSV files, not the TSV ones.
+        # THIS MAY BREAK ON NEW FILES!!
+        tsv_headers = (strip_suffix(mtx[0], '.gz').endswith('.csv') for mtx in mtxs)
+        if any(tsv_headers) and not all(tsv_headers):
+            raise RuntimeError('Mixed csv and tsv files in mtx directory')
+        compile_mtxs(list(mtxs.values()), str(matrix_dir(project_dir)), tsv_headers=tsv_headers[0])
+    else:
         with tempfile.TemporaryDirectory() as tmpdir:
-            for f in files:
-                try_to_convert(f, tmpdir)
+            try_to_convert(files, tmpdir)
             files = list(files_recursively(tmpdir))
             if any(is_mtx(f) for f in files):
-                log.info('%s csvs were converted; compiling to mtx', len(files))
-                compile_mtxs(tmpdir, matrix_dir(project_dir))
+                log.info('%s files were converted to mtx; compiling', len(files))
+                # Here we assume there are no TSV headers because csv_to_mtx doesn't add them.
+                compile_mtxs(tmpdir, str(matrix_dir(project_dir)), tsv_headers=False)
             else:
                 raise RuntimeError("Unable to synthesize; nothing converted / nothing to convert")
-    else:
-        log.info('Found some mtx files; trying to convert them')
-        compile_mtxs(geo_dir(project_dir), matrix_dir(project_dir))
 
 
 def zip_matrix(project_dir: Path):
@@ -327,15 +383,22 @@ def final_matrix_file(project_dir: Path):
 
 
 def synthesize_matrices(projects: Path):
+
+    # GEO accessions for which the script will fail without special instructions
+    special_cases = {}
+
     failed_projects = {}
     succeeded_projects = set()
     for project_dir in projects.iterdir():
         # Assuming that dir.name is the project UUID
         project_dir = Path(project_dir)
-        project_uuid = parse_path(project_dir)
+        project_uuid = extract_uuid(project_dir)
         if not final_matrix_file(project_dir).exists():
             try:
-                synthesize_matrix(project_dir)
+                if project_uuid in special_cases:
+                    special_cases[project_uuid](project_dir)
+                else:
+                    synthesize_matrix(project_dir)
             except Exception as e:
                 failed_projects[project_uuid] = e
                 log.exception('Failed to process project', exc_info=True)
@@ -357,7 +420,7 @@ if __name__ == '__main__':
     synthesize_matrices(Path('test/projects'))
 
 
-if __name__ == '__main__X':
+def test_conversion():
     print('testing')
 
     import scanpy as sc
@@ -378,7 +441,7 @@ if __name__ == '__main__X':
 
     assert adata1.to_df().equals(adata2.to_df())
 
-    # some manullay created files in here
+    # some manually created files in here
     compile_mtxs('mtx_test_files', 'mtx_test_files/out/', False)
     adata = sc.read_10x_mtx('/tmp/mtxs/out')
 
