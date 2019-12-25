@@ -8,7 +8,7 @@ all:
 	$(MAKE) assets
 
 download:
-	python3 download_geo_files.py --all
+	python3 download.py --all
 
 extract:
 	python3 unpack_tar_file.py
