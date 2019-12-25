@@ -54,8 +54,8 @@ def download_supplementary_files(accession_id):
     Scrape web page for given accession id and download all supplementary files
     """
     logging.info('---')
-    logging.info('Accession: %s', accession_id)
     project_uuid = generate_project_uuid([accession_id])
+    logging.info('Downloading files for project accession %s, UUID %s.', accession_id, project_uuid)
 
     save_file_path = f'projects/{project_uuid}/geo'
     if not os.path.exists(save_file_path):
@@ -65,12 +65,13 @@ def download_supplementary_files(accession_id):
         os.remove(file_link_path)
     os.symlink(str(project_uuid), file_link_path)
 
-    page = requests.get(source_url_template + accession_id)
+    source_url = source_url_template + accession_id
+    page = requests.get(source_url)
 
     links = supplementary_file_download_links(page.text)
 
     if not links:
-        logging.warning('No supplementary files found on page')
+        logging.warning('No supplementary files found on %s', source_url)
         os.makedirs(save_file_path, exist_ok=True)
         open(f'{save_file_path}/no-supplementary-files', 'a').close()
         return None
