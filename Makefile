@@ -11,7 +11,7 @@ download:
 	python3 download.py --all
 
 extract:
-	python3 unpack_tar_file.py
+	python3 extract.py
 
 merge:
 	@echo 'Replace with merge matrix script'
