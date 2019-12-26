@@ -1,17 +1,19 @@
 import argparse
+from itertools import dropwhile
 import logging
 import os
 from pathlib import Path
 import re
 import sys
-import time
 from typing import (
     MutableMapping,
-    Sequence
+    Sequence,
+    Tuple,
 )
-import uuid
 
+from bs4 import BeautifulSoup
 import furl
+from more_itertools import one
 import requests
 
 from create_project import (
@@ -68,10 +70,10 @@ def download_supplementary_files(accession_id):
     source_url = source_url_template + accession_id
     page = requests.get(source_url)
 
-    links = supplementary_file_download_links(page.text)
+    links = supplementary_file_download_links(accession_id, page.text)
 
     if not links:
-        logging.warning('No supplementary files found on %s', source_url)
+        logging.info('No supplementary files found on %s', source_url)
         os.makedirs(save_file_path, exist_ok=True)
         open(f'{save_file_path}/no-supplementary-files', 'a').close()
         return None
@@ -90,28 +92,44 @@ def download_supplementary_files(accession_id):
     return save_file_path
 
 
-def supplementary_file_download_links(html: str) -> Sequence:
+def supplementary_file_download_links(accession, html: str) -> Sequence[Tuple[str, str]]:
     """
-    Locate the Supplementary file table in the given html
-    and pluck out the file name & urls to download the file
+    Locate the supplementary file table in the given html and pluck out the
+    file name & URLs to download the file.
     """
     source = furl.furl(source_url_template)
-    match = re.search(r'<table(?:(?!table).)+?>Supplementary file<(?:(?!table).)+</table>', html, re.DOTALL)
-    if match:
-        # For each row in the table get the filename and the http link url
-        table_html = match.group()
-        match = re.findall(r'<tr[^>]*>'                             # tr up to first td
-                           r'<td[^>]*>([^<]+)</td>'                 # first td and capture contents
-                           r'(?:(?!/tr).)*<td[^>]*>(?:(?!</td).)*'  # skip ahead another td in same tr
-                           r'<a href="([^"]+)">\(http\)</a>',       # <a> tag and capture href value
-                           table_html, re.DOTALL)
-        if match:
-            return [(filename, source.asdict()['origin'] + url if url.startswith('/') else url)
-                    for filename, url in match]
-        else:
-            return None
+    base_url = source.asdict()['origin']
+    html = BeautifulSoup(html, 'html.parser')
+    file_name_column_name = 'Supplementary file'
+    url_column_name = 'Download'
+    # Find single table listing supplementary files
+    tables = [td.parent.parent for td in html('td', string=file_name_column_name)]
+    if tables:
+        table = one(tables)
+        # Determine file name and URL columns
+        table_header, *table_body = table('tr')
+        file_name_column_index = table_header('td').index(one(table_header('td', string=file_name_column_name)))
+        url_column_index = table_header('td').index(one(table_header('td', string=url_column_name)))
+        # Drop single-cell rows with notes at the bottom of the table
+        table_body = reversed(list(dropwhile(lambda tr: len(tr('td')) == 1, reversed(table_body))))
+        links = []
+        for tr in table_body:
+            td = tr('td')
+            file_name = td[file_name_column_index].string
+            url = td[url_column_index].find('a', text='(http)').attrs['href']
+            links.append((file_name, base_url + url if url.startswith('/') else url))
+        return links
     else:
-        return None
+        # Otherwise find a table cell explcit declaring absence of files
+        if html('td', string='Supplementary data files not provided'):
+            return []
+        else:
+            # Otherwise find error message delaring accession as inaccessible
+            pattern = re.compile(f'Accession "{accession}" is currently private and is scheduled to be released on')
+            if html(string=pattern):
+                return []
+            else:
+                assert False, "No known method for extracting files from GEO listing applies"
 
 
 def filename_from_headers(headers: MutableMapping[str, str]):

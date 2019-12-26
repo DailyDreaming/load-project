@@ -1,3 +1,5 @@
 openpyxl==3.0.2
 git+git://github.com/HumanCellAtlas/dcp-cli@4b04d05ccf825d050a3e2dcd765802367768af69#egg=hca
 furl==2.1.0
+beautifulsoup4==4.8.2
+more-itertools==8.0.2
