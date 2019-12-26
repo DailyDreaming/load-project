@@ -59,37 +59,31 @@ def download_supplementary_files(accession):
     project_uuid = generate_project_uuid([accession])
     logging.info('Downloading files for project accession %s, UUID %s.', accession, project_uuid)
 
-    save_file_path = f'projects/{project_uuid}/geo'
-    if not os.path.exists(save_file_path):
-        os.makedirs(save_file_path, exist_ok=True)
-    file_link_path = f'projects/{accession}'
-    if os.path.lexists(file_link_path):
-        os.remove(file_link_path)
-    os.symlink(str(project_uuid), file_link_path)
+    projects_path = Path.cwd() / 'projects'
+    project_path = projects_path / project_uuid
+    geo_path = project_path / 'geo'
+    if not geo_path.exists():
+        geo_path.mkdir(parents=True)
+    accession_path = projects_path / accession
+    if not accession_path.is_symlink() or accession_path.resolve() != project_path.resolve():
+        logging.info('Linking %s to %s', accession_path, project_path)
+        if accession_path.exists():
+            accession_path.unlink()
+        accession_path.symlink_to(project_path, target_is_directory=True)
 
     source_url = source_url_template + accession
     page = requests.get(source_url)
-
     links = supplementary_file_download_links(accession, page.text)
-
-    if not links:
+    if links:
+        for file_name, url in links:
+            file_path = geo_path / file_name
+            if file_path.is_file():
+                logging.info('Skipping existing file: %s', file_path)
+            else:
+                logging.info('Downloading to: %s', file_path)
+                download_file(url, file_path.as_posix())
+    else:
         logging.info('No supplementary files found on %s', source_url)
-        os.makedirs(save_file_path, exist_ok=True)
-        open(f'{save_file_path}/no-supplementary-files', 'a').close()
-        return None
-
-    for filename, url in links:
-        save_file_name = filename
-        save_file_full = f'{save_file_path}/{save_file_name}'
-
-        # download and save the file
-        os.makedirs(save_file_path, exist_ok=True)
-        if os.path.isfile(save_file_full):
-            logging.info('Skipping existing file: %s', save_file_full)
-        else:
-            logging.info('Downloading to: %s', save_file_full)
-            download_file(url, save_file_full)
-    return save_file_path
 
 
 def supplementary_file_download_links(accession, html: str) -> Sequence[Tuple[str, str]]:
