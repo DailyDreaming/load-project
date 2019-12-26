@@ -51,6 +51,22 @@ def download_from_all_accessions():
             download_supplementary_files(accession)
 
 
+# Work around https://bugs.python.org/issue30618, fixed on 3.7+
+
+if not hasattr(Path, 'readlink'):
+    def path_readlink(self):
+        """
+        Return the path to which the symbolic link points.
+        """
+        path = self._accessor.readlink(self)
+        obj = self._from_parts((path,), init=False)
+        obj._init(template=self)
+        return obj
+
+
+    Path.readlink = path_readlink
+
+
 def download_supplementary_files(accession):
     """
     Scrape web page for given accession id and download all supplementary files
@@ -65,11 +81,8 @@ def download_supplementary_files(accession):
     if not geo_path.exists():
         geo_path.mkdir(parents=True)
     accession_path = projects_path / accession
-    if not accession_path.is_symlink() or accession_path.resolve() != project_path.resolve():
-        logging.info('Linking %s to %s', accession_path, project_path)
-        if accession_path.exists():
-            accession_path.unlink()
-        accession_path.symlink_to(project_path, target_is_directory=True)
+    relative_path = project_path.relative_to(accession_path.parent)
+    create_or_update_symlink(accession_path, relative_path)
 
     source_url = source_url_template + accession
     page = requests.get(source_url)
@@ -84,6 +97,19 @@ def download_supplementary_files(accession):
                 download_file(url, file_path.as_posix())
     else:
         logging.info('No supplementary files found on %s', source_url)
+
+
+def create_or_update_symlink(symlink, target):
+    if symlink.is_symlink():
+        current_target = symlink.readlink()
+        if current_target == target:
+            return
+        logging.warning('Removing stale symlink from %s to %s.', symlink, current_target)
+        symlink.unlink()
+    elif symlink.exists():
+        raise RuntimeError(f'Will not overwrite {symlink} with link to {target}')
+    logging.info('Linking %s to %s', symlink, target)
+    symlink.symlink_to(target, target_is_directory=True)
 
 
 def supplementary_file_download_links(accession, html: str) -> Sequence[Tuple[str, str]]:
