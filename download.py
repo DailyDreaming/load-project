@@ -38,39 +38,39 @@ def main(argv):
     if args.all:
         download_from_all_accessions()
     else:
-        accession_ids = args.accessions.split(',')
-        for accession_id in accession_ids:
-            download_supplementary_files(accession_id)
+        accessions = args.accessions.split(',')
+        for accession in accessions:
+            download_supplementary_files(accession)
 
 
 def download_from_all_accessions():
     for sub_dir in 'existing', 'new':
         src_dir = Path('spreadsheets') / sub_dir
         paths = get_spreadsheet_paths(src_dir)
-        for accession_id in [p.name.split('.')[0] for p in paths]:
-            download_supplementary_files(accession_id)
+        for accession in [p.name.split('.')[0] for p in paths]:
+            download_supplementary_files(accession)
 
 
-def download_supplementary_files(accession_id):
+def download_supplementary_files(accession):
     """
     Scrape web page for given accession id and download all supplementary files
     """
     logging.info('---')
-    project_uuid = generate_project_uuid([accession_id])
-    logging.info('Downloading files for project accession %s, UUID %s.', accession_id, project_uuid)
+    project_uuid = generate_project_uuid([accession])
+    logging.info('Downloading files for project accession %s, UUID %s.', accession, project_uuid)
 
     save_file_path = f'projects/{project_uuid}/geo'
     if not os.path.exists(save_file_path):
         os.makedirs(save_file_path, exist_ok=True)
-    file_link_path = f'projects/{accession_id}'
+    file_link_path = f'projects/{accession}'
     if os.path.lexists(file_link_path):
         os.remove(file_link_path)
     os.symlink(str(project_uuid), file_link_path)
 
-    source_url = source_url_template + accession_id
+    source_url = source_url_template + accession
     page = requests.get(source_url)
 
-    links = supplementary_file_download_links(accession_id, page.text)
+    links = supplementary_file_download_links(accession, page.text)
 
     if not links:
         logging.info('No supplementary files found on %s', source_url)
