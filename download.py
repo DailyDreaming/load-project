@@ -1,10 +1,10 @@
 import argparse
 from itertools import dropwhile
 import logging
-import os
 from pathlib import Path
 import re
 import sys
+import tempfile
 from typing import (
     MutableMapping,
     Sequence,
@@ -94,7 +94,7 @@ def download_supplementary_files(accession):
                 logging.info('Skipping existing file: %s', file_path)
             else:
                 logging.info('Downloading to: %s', file_path)
-                download_file(url, file_path.as_posix())
+                download_file(url, file_path)
     else:
         logging.info('No supplementary files found on %s', source_url)
 
@@ -163,23 +163,20 @@ def filename_from_headers(headers: MutableMapping[str, str]):
     return None
 
 
-def download_file(url: str, path: str) -> dict:
+def download_file(url: str, path: Path):
     """
     Stream download the file from url, save it to path, and return response headers
     """
-    try:
-        with requests.get(url, stream=True) as request:
-            request.raise_for_status()
-            with open(path, 'wb') as f:
-                for chunk in request.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-            headers = request.headers
-        return headers
-    except KeyboardInterrupt:
-        logging.warning('Download canceled ...')
-        os.remove(path)
-        return {}
+    with requests.get(url, stream=True) as request:
+        request.raise_for_status()
+        with tempfile.NamedTemporaryFile(dir=path.parent.as_posix(), delete=False) as f:
+            try:
+                for chunk in request.iter_content(chunk_size=1024 * 1024):
+                    f.write(chunk)
+            except:
+                Path(f.name).unlink()
+            else:
+                Path(f.name).rename(path)
 
 
 if __name__ == '__main__':
