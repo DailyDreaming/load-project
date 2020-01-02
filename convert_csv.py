@@ -331,6 +331,11 @@ def try_to_convert(files: Sequence[Path], tmpdir: str) -> None:
 
 
 def synthesize_matrix(project_dir: Path):
+
+    pass
+
+
+def default_synthesis_technique(project_dir: Path):
     """
     Look at files in project and decide how they should be combined
     / transformed in order to produce a single .mtx file.
@@ -364,11 +369,12 @@ def synthesize_matrix(project_dir: Path):
     else:
         with tempfile.TemporaryDirectory() as tmpdir:
             try_to_convert(files, tmpdir)
+            mtxs = find_mtx_files(in_dir)
             files = list(files_recursively(tmpdir))
             if any(is_mtx(f) for f in files):
                 log.info('%s files were converted to mtx; compiling', len(files))
                 # Here we assume there are no TSV headers because csv_to_mtx doesn't add them.
-                compile_mtxs(tmpdir, str(matrix_dir(project_dir)), tsv_headers=False)
+                compile_mtxs(list(mtxs.values()), str(matrix_dir(project_dir)), tsv_headers=False)
             else:
                 raise RuntimeError("Unable to synthesize; nothing converted / nothing to convert")
 
