@@ -1,4 +1,3 @@
-import csv
 import collections
 import gzip
 import logging
@@ -7,7 +6,6 @@ import sys
 import tempfile
 from typing import (
     Tuple,
-    Optional,
     Dict,
     Sequence,
 )
@@ -15,7 +13,6 @@ import zipfile
 from contextlib import contextmanager
 from pathlib import Path
 
-from attr import dataclass
 import pandas as pd
 import numpy as np
 import os
@@ -279,7 +276,7 @@ def read_maybe_gz(filename, **kwargs):
     try:
         with open_ as f:
             yield f
-    except UnicodeDecodeError as e:
+    except UnicodeDecodeError:
         log.warning(f'Cannot open `{filename}` since it is not text nor gzip. Maybe tar?')
 
 
@@ -438,7 +435,7 @@ def synthesize_matrices(projects: Path):
 if __name__ == '__main__':
     log.setLevel('INFO')
     # Noah, to download some test files run
-    # scp -r ubuntu@skunk.dev.explore.data.humancellatlas.org:/home/ubuntu/load-project.jesse/projects/0* ./test/projects
+    # scp -r ubuntu@skunk.dev.explore.data.humancellatlas.org:/home/ubuntu/load-project/projects/0* ./test/projects
     synthesize_matrices(Path('test/projects'))
 
 
@@ -456,7 +453,7 @@ def test_conversion():
     df.index = [str(chr(x)) + str(i) for x in range(ord('a'), ord('z')) for i in range(5)][:100]
 
     df.to_csv('/tmp/test.csv')
-    csv_to_mtx('/tmp/test.csv', '/tmp/test.mtx', cells_in_rows=True)
+    csv_to_mtx('/tmp/test.csv', '/tmp/test.mtx')
 
     adata1 = sc.read_csv('/tmp/test.csv')
     adata2 = sc.read_10x_mtx('/tmp/test.mtx')
