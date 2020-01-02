@@ -25,7 +25,7 @@ log = logging.getLogger(__file__)
 
 
 def try_delim_file(file: str, target: str, hints: dict = None) -> None:
-
+    hints = {} if hints is None else hints
     try:
         # Pandas will infer sep if None
         data = pd.read_csv(file, index_col=0, sep=hints.get('separator'))
@@ -111,17 +111,19 @@ def csv_to_mtx(data: pd.DataFrame, mtx_filename: str) -> None:
 def find_mtx_files(input_dir: Path) -> Dict[str, Tuple[str, str, str]]:
     result = {}
 
-    files = [str(file) for file in input_dir.iterdir()]
+    filepaths = input_dir.iterdir()
+    filenames = list(map(str, filepaths))
+
     anchors = [
-        (file, strip_suffix(strip_suffix(strip_suffix(file, '.gz'), '.mtx'), 'matrix'))
-        for file in files
-        if is_mtx(file)
+        (fn, strip_suffix(strip_suffix(strip_suffix(fn, '.gz'), '.mtx'), 'matrix'))
+        for fn, fp in zip(filenames, filepaths)
+        if is_mtx(fp)
     ]
 
     for anchor_file, prefix in anchors:
         links = [
             strip_prefix(file, prefix)
-            for file in files
+            for file in filenames
             if file.startswith(prefix) and file != anchor_file
         ]
         if len(links) >= 2:
