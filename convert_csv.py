@@ -331,11 +331,25 @@ def try_to_convert(files: Sequence[Path], tmpdir: str) -> None:
 
 
 def synthesize_matrix(project_dir: Path):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        project_uuid = extract_uuid(project_dir)
+        if project_uuid == '099c02da-23b2-5748-8618-92bc6770dc51':
+            # Only a single mtx triplet, with incorrect names
+            geo = geo_dir(project_dir)
+            for src, dst in [('GSE106273_combined_barcodes.tsv.gz', 'barcodes.tsv.gz'),
+                             ('GSE106273_combined_genes.tsv.gz', 'genes.tsv.gz'),
+                             ('GSE106273_combined_matrix.tsv.gz', 'matrix.mtx.gz')]:
+                try:
+                    os.link(str(geo / src), str(project_dir / dst))
+                except FileExistsError:
+                    pass
+        else:
+            # default_synthesis_technique(project_dir, tmpdir)
+            log.info('Do the default thing')
+            raise RuntimeError
 
-    pass
 
-
-def default_synthesis_technique(project_dir: Path):
+def default_synthesis_technique(project_dir: Path, tmpdir: str):
     """
     Look at files in project and decide how they should be combined
     / transformed in order to produce a single .mtx file.
@@ -367,23 +381,23 @@ def default_synthesis_technique(project_dir: Path):
             raise RuntimeError('Mixed csv and tsv files in mtx directory')
         compile_mtxs(list(mtxs.values()), str(matrix_dir(project_dir)), tsv_headers=tsv_headers[0])
     else:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            try_to_convert(files, tmpdir)
-            mtxs = find_mtx_files(in_dir)
-            files = list(files_recursively(tmpdir))
-            if any(is_mtx(f) for f in files):
-                log.info('%s files were converted to mtx; compiling', len(files))
-                # Here we assume there are no TSV headers because csv_to_mtx doesn't add them.
-                compile_mtxs(list(mtxs.values()), str(matrix_dir(project_dir)), tsv_headers=False)
-            else:
-                raise RuntimeError("Unable to synthesize; nothing converted / nothing to convert")
+        try_to_convert(files, tmpdir)
+        mtxs = find_mtx_files(in_dir)
+        files = list(files_recursively(tmpdir))
+        if any(is_mtx(f) for f in files):
+            log.info('%s files were converted to mtx; compiling', len(files))
+            # Here we assume there are no TSV headers because csv_to_mtx doesn't add them.
+            compile_mtxs(list(mtxs.values()), str(matrix_dir(project_dir)), tsv_headers=False)
+        else:
+            raise RuntimeError("Unable to synthesize; nothing converted / nothing to convert")
 
 
 def zip_matrix(project_dir: Path):
-    with zipfile.ZipFile(str(final_matrix_file(project_dir))) as zipf:
-        zipf.write(project_dir / 'matrix.mtx')
-        zipf.write(project_dir / 'matrix_barcodes.tsv')
-        zipf.write(project_dir / 'matrix_cells.tsv')
+    final_matrix = final_matrix_file(project_dir)
+    os.makedirs(final_matrix.parent, exist_ok=True)
+    with zipfile.ZipFile(str(final_matrix), 'w') as zipf:
+        for filename in ['matrix.mtx.gz', 'barcodes.tsv.gz', 'genes.tsv.gz']:
+            zipf.write(project_dir / filename, arcname=filename)
 
 
 def final_matrix_file(project_dir: Path):
