@@ -309,22 +309,22 @@ def matrix_name(filename: Path):
     return name + '.mtx'
 
 
-def files_recursively(path: Path):
+def files_recursively(path: Path) -> Sequence[Path]:
     for dir_path, _, files in os.walk(path):
         for f in files:
             yield Path(dir_path, f)
 
 
-def try_to_convert(files: Sequence[str], tmpdir: str) -> None:
+def try_to_convert(files: Sequence[Path], tmpdir: str) -> None:
 
     delim_exts = ['csv', 'tsv', 'txt']
-    delim_exts.extend(ext + '.gz' for ext in delim_exts)
+    delim_exts.extend([ext + '.gz' for ext in delim_exts])
 
     for file in files:
-        if any(file.endswith(ext) for ext in delim_exts):
+        if any(file.name.endswith(ext) for ext in delim_exts):
             log.info(f'Found potential csv/tsv {file}, attempting to convert')
             try:
-                try_delim_file(file,
+                try_delim_file(str(file),
                                Path(tmpdir) / matrix_name(Path(file)))
             except Exception:
                 log.warning(f'Failed to convert file {file}', exc_info=True)
@@ -357,7 +357,7 @@ def synthesize_matrix(project_dir: Path):
         mtxs = find_mtx_files(in_dir)
         # Incredibly, headers are only present in the CSV files, not the TSV ones.
         # THIS MAY BREAK ON NEW FILES!!
-        tsv_headers = (strip_suffix(mtx[0], '.gz').endswith('.csv') for mtx in mtxs)
+        tsv_headers = [strip_suffix(mtx[0], '.gz').endswith('.csv') for mtx in mtxs]
         if any(tsv_headers) and not all(tsv_headers):
             raise RuntimeError('Mixed csv and tsv files in mtx directory')
         compile_mtxs(list(mtxs.values()), str(matrix_dir(project_dir)), tsv_headers=tsv_headers[0])
