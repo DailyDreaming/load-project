@@ -17,7 +17,7 @@ merge:
 	@echo 'Replace with merge matrix script'
 
 count:
-	python3 count_cells_in_matrix.py --write-all
+	python3 count_cells.py --write-all
 
 metadata:
 	python3 generate_metadata.py
