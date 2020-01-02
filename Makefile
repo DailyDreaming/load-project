@@ -26,6 +26,6 @@ bundles:
 	@echo 'Replace with upload bundles script'
 
 assets:
-	@echo 'Replace with upload to assets bucket script'
+	python3 upload_assets.py
 
 .PHONY: all download extract merge count metadata bundles assets
