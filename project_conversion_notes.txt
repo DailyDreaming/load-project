@@ -49,6 +49,18 @@ test/projects/061ec9d5-9acf-54db-9eee-555136d5ce41
 1cafb09c-e0dc-536b-b166-5cb6debfc3cf
     one sample (cell?) per file. genes in rows. header present.
 
+/home/ubuntu/load-project/projects/227f5c51-389c-576c-b4d3-e4da53b89f79/geo
+  2 tsvs with genes in rows
+
+/home/ubuntu/load-project/projects/2ff83170-ec52-5b24-9962-161c558f52ba
+  tsvs with genes in columns
+
+/home/ubuntu/load-project/projects/2b4c411d-35b1-5f97-9d6a-c9331c7f679a
+  Don't know what to do with .bed.gz, .bed.tdf
+
+/home/ubuntu/load-project/projects/2cdd0744-6422-57fd-8fdd-9ac2bb8bf257/geo
+  expected mtx triplets
+
 30fb622d-6629-527e-a681-6e2ba143af3d/
     2 tsvs with genes in rows.
 
@@ -65,6 +77,9 @@ test/projects/061ec9d5-9acf-54db-9eee-555136d5ce41
 
 3fe16b18-e782-542b-b308-de9b26e7f69c
     one big csv, genes in rows.
+
+/home/ubuntu/load-project/projects/427157c0-993f-56ae-9e40-8cfe40ef81c5/geo
+  There is a tar ball with tsv matrices inside. Everything else should be ignored
 
 5016f45e-b86a-57ce-984e-a50605641d08
     2 csv, genes in rows
