@@ -1,0 +1,74 @@
+test/projects/0a8f2289-5862-5bf0-8c27-0885453de788
+    "normal." unambiguous .mtx triplets.
+
+test/projects/04ba7269-1301-5758-8f13-025565326f66
+    2 csv with genes in rows, cells in columns
+    heuristic SHOULD detect orientation
+
+test/projects/06a318d9-54d8-5e41-aab5-f2d682fba690
+    one csv per cell. genes in rows. cell "barcodes" in filenames.
+
+test/projects/0f4d7e06-5f77-5614-8cd6-123f555dc9b1
+    one csv file with genes in rows
+
+test/projects/06f8848d-9c54-5829-92d3-d334809ad1e2
+    in raw mouse files, genes in columns, barcodes in row
+    same for donor files (but human genes)
+    GFP seems to be more human genes
+    same for GFP_FOXI1
+    we can probably ignore raw and just use normalized
+    ignore metadata files
+
+test/projects/096b7311-2bf7-5e61-9afb-d65c24a71243
+    one big tsv with genes in rows
+
+test/projects/099c02da-23b2-5748-8618-92bc6770dc51
+    one mtx triplet.
+    don't process RAW
+
+test/projects/06917f50-92aa-5e58-8376-aae1d888e8b7
+    can't find any cell data
+
+test/projects/069198f7-c2b5-5d39-988c-1cb12db4f28a
+    bunch of h5 files. scanpy can read them. cells in rows.
+
+test/projects/061ec9d5-9acf-54db-9eee-555136d5ce41
+    data actually in mtx format despite no .mtx or .tsv extesnions.
+    raw format (RNA counts) but valid for cell cpped)ount.
+
+1a72144b-f4e8-5fd5-b46e-6a40eee8b6e6
+    well behaved mtx triplets. headers in csv files.
+
+1a7ccf4f-a500-5aa6-b31a-2fff80cf8f08
+    one big tsv. genes in rows.
+
+1a85f2da-5aaa-5bc2-a6ea-9584742118e6
+    one big tsv. genes in rows.
+    ignore cluster file.
+
+1cafb09c-e0dc-536b-b166-5cb6debfc3cf
+    one sample (cell?) per file. genes in rows. header present.
+
+30fb622d-6629-527e-a681-6e2ba143af3d/
+    2 tsvs with genes in rows.
+
+36a7d62a-57ae-59af-ae8d-7dd2a8f1422e
+    well behaved mtx triplets. no headers in tsvs.
+
+39bfc05a-44ca-507a-bbf5-156bd35c5c74
+    one big tsv. genes in rows.
+
+31d48835-7d9f-52ae-8cdc-ae227b63dd2c
+    2 tsvs. Most data in GSE116237_scRNAseq_expressionMatrix.txt.gz, probably just use that.
+    genes in rows.
+    \r used for line breaks instead of \n
+
+3fe16b18-e782-542b-b308-de9b26e7f69c
+    one big csv, genes in rows.
+
+5016f45e-b86a-57ce-984e-a50605641d08
+    2 csv, genes in rows
+
+51a21599-a014-5c5a-9760-d5bdeb80f741
+    1 tsv with mouse genes in rows. also an Rdata file (110 MB gzipped), no idea what's in it.
+
