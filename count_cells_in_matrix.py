@@ -135,9 +135,13 @@ def count_cells(matrix_file: str) -> Union[int, None]:
     if not os.path.exists(matrix_file):
         logging.error(f'File not found "{matrix_file}"')
         return None
+    first_line_length = len(open(matrix_file, newline='').readline().strip())
+    if not first_line_length:
+        logging.error(f'File has no first line "{matrix_file}"')
+        return None
     barcode_indexes = set()
     with open(matrix_file, newline='') as csv_file:
-        dialect = csv.Sniffer().sniff(csv_file.read(2048))
+        dialect = csv.Sniffer().sniff(csv_file.read(first_line_length))
         csv_file.seek(0)
         csv_reader = csv.reader(csv_file, dialect)
         next(csv_reader)  # skip header row
