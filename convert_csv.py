@@ -1,13 +1,12 @@
-import csv
 import collections
 import gzip
 import logging
 import mimetypes
+import shutil
 import sys
 import tempfile
 from typing import (
     Tuple,
-    Optional,
     Dict,
     Sequence,
 )
@@ -15,11 +14,12 @@ import zipfile
 from contextlib import contextmanager
 from pathlib import Path
 
-from attr import dataclass
 import pandas as pd
 import numpy as np
 import os
 from more_itertools import one
+
+import conversions
 
 log = logging.getLogger(__file__)
 
@@ -219,23 +219,30 @@ def compile_mtxs(triplets: Sequence[Tuple[str, str, str]], output_filename: str,
     os.makedirs(output_filename, exist_ok=True)
 
     genes = entries[['gene_id', 'gene_name']].drop_duplicates()
-    genes.to_csv(os.path.join(output_filename, 'genes.tsv'),
+    genes.to_csv(os.path.join(output_filename, 'genes.tsv.gz'),
+                 compression='gzip',
                  header=False,
                  index=False,
                  sep='\t')
 
     barcodes = entries[['barcode']].drop_duplicates()
-    barcodes.to_csv(os.path.join(output_filename, 'barcodes.tsv'),
+    barcodes.to_csv(os.path.join(output_filename, 'barcodes.tsv.gz'),
+                    compression='gzip',
                     header=False,
                     index=False,
                     sep='\t')
 
     entries = entries[['gene_idx', 'cell_idx', 'value']]
     mtx = os.path.join(output_filename, 'matrix.mtx')
-    with open(mtx, 'w') as f:
+
+    # appending to gzip archive doesn't seem to work
+    with open(mtx, '+') as f:
         f.write('%%MatrixMarket matrix coordinate real general\n')
         f.write(' '.join([str(df.shape[0]) for df in (genes, barcodes, entries)]) + '\n')
-    entries.to_csv(mtx, mode='a', header=False, index=False, sep=' ')
+        entries.to_csv(f, mode='a', header=False, index=False, sep=' ')
+
+        with gzip.open(mtx + '.gz', 'wb') as gzf:
+            shutil.copyfileobj(f, gzf)
 
 
 def extract_uuid(path: Path):
@@ -316,7 +323,6 @@ def files_recursively(path: Path) -> Sequence[Path]:
 
 
 def try_to_convert(files: Sequence[Path], tmpdir: str) -> None:
-
     delim_exts = ['csv', 'tsv', 'txt']
     delim_exts.extend([ext + '.gz' for ext in delim_exts])
 
@@ -334,15 +340,20 @@ def synthesize_matrix(project_dir: Path):
     with tempfile.TemporaryDirectory() as tmpdir:
         project_uuid = extract_uuid(project_dir)
         if project_uuid == '099c02da-23b2-5748-8618-92bc6770dc51':
-            # Only a single mtx triplet, with incorrect names
-            geo = geo_dir(project_dir)
-            for src, dst in [('GSE106273_combined_barcodes.tsv.gz', 'barcodes.tsv.gz'),
-                             ('GSE106273_combined_genes.tsv.gz', 'genes.tsv.gz'),
-                             ('GSE106273_combined_matrix.tsv.gz', 'matrix.mtx.gz')]:
-                try:
-                    os.link(str(geo / src), str(project_dir / dst))
-                except FileExistsError:
-                    pass
+            # one mtx, just need to link files with proper names
+            conversions.one_mtx(project_dir, ('GSE106273_combined_genes.tsv.gz',
+                                              'GSE106273_combined_barcodes.tsv.gz',
+                                              'GSE106273_combined_matrix.tsv.gz'))
+        elif project_uuid == '0a8f2289-5862-5bf0-8c27-0885453de788':
+            # multiple mtx files with "correct" names, no special case required
+            default_synthesis_technique(project_dir, tmpdir)
+        elif project_uuid == '061ec9d5-9acf-54db-9eee-555136d5ce41':
+            # multiple mtxs with un-parseable filenames
+            compile_mtxs([
+                ('GSM3271040_RNA_sciCAR_A549_gene.txt.gz',  'GSM3271040_RNA_sciCAR_A549_cell.txt.gz',  'GSM3271040_RNA_sciCAR_A549_gene_count.txt.gz'),
+                ('GSM3271042_RNA_only_A549_gene.txt.gz',    'GSM3271042_RNA_only_A549_cell.txt.gz',    'GSM3271042_RNA_only_A549_gene_count.txt.gz'),
+                ('GSM3271044_RNA_mouse_kidney_gene.txt.gz', 'GSM3271044_RNA_mouse_kidney_cell.txt.gz', 'GSM3271044_RNA_mouse_kidney_gene_count.txt.gz')
+            ], str(project_dir), True)
         else:
             # default_synthesis_technique(project_dir, tmpdir)
             log.info('Do the default thing')
@@ -405,7 +416,6 @@ def final_matrix_file(project_dir: Path):
 
 
 def synthesize_matrices(projects: Path):
-
     # GEO accessions for which the script will fail without special instructions
     special_cases = {}
 
