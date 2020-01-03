@@ -1,19 +1,19 @@
 import argparse
 import csv
 import json
+import logging
 import os
 import sys
-
 from typing import (
     Sequence,
-    Union
+    Union,
 )
 
-import logging
-logging.basicConfig(level=logging.INFO)
+from util import open_maybe_gz
 
 
 def main(argv):
+    logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--list', '-l',
@@ -103,7 +103,7 @@ def update_cell_count_file(accession_id: str, cell_count: int) -> bool:
         cell_counts[accession_id] = cell_count
     elif cell_count is None and accession_id in cell_counts:
         logging.info('Removing accession %s cell count.', accession_id)
-        del(cell_counts[accession_id])
+        del cell_counts[accession_id]
     with open(cell_counts_file, 'w') as f:
         f.write(json.dumps(cell_counts, sort_keys=True, indent='    '))
     return True
@@ -116,13 +116,14 @@ def get_project_cell_count(accession_id: str) -> Union[int, None]:
     :param accession_id: An accession id that has a downloaded matrix file
     :return: A count of cells
     """
-    matrix_file_full = f'projects/{accession_id}/matrix.mtx'
+    matrix_file_full = f'projects/{accession_id}/matrix.mtx.gz'
     if not os.path.isdir(f'projects/{accession_id}') or not os.path.isfile(matrix_file_full):
         logging.warning('Unable to find matrix file %s', matrix_file_full)
         return None
-    cell_count = count_cells(matrix_file_full)
-    logging.info('Cell count in %s is %s', accession_id, cell_count)
-    return cell_count
+    else:
+        cell_count = count_cells(matrix_file_full)
+        logging.info('Cell count in %s is %s', accession_id, cell_count)
+        return cell_count
 
 
 def count_cells(matrix_file: str) -> Union[int, None]:
@@ -132,23 +133,26 @@ def count_cells(matrix_file: str) -> Union[int, None]:
     :param matrix_file: A mtx file with tab/space/comma delimited data
     :return: A count of cells found in the given file
     """
-    if not os.path.exists(matrix_file):
+    if os.path.exists(matrix_file):
+        with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
+            first_line_length = len(csv_file.readline().strip())
+            csv_file.seek(0)
+            if first_line_length:
+                dialect = csv.Sniffer().sniff(csv_file.read(first_line_length))
+            else:
+                logging.error(f'File has no first line "{matrix_file}"')
+                return None
+        barcode_indexes = set()
+        with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
+            csv_reader = csv.reader(csv_file, dialect)
+            next(csv_reader)  # skip header row
+            for row in csv_reader:
+                if len(row) == 3:
+                    barcode_indexes.add(row[1])  # 2nd column is barcode
+        return len(barcode_indexes)
+    else:
         logging.error(f'File not found "{matrix_file}"')
         return None
-    first_line_length = len(open(matrix_file, newline='').readline().strip())
-    if not first_line_length:
-        logging.error(f'File has no first line "{matrix_file}"')
-        return None
-    barcode_indexes = set()
-    with open(matrix_file, newline='') as csv_file:
-        dialect = csv.Sniffer().sniff(csv_file.read(first_line_length))
-        csv_file.seek(0)
-        csv_reader = csv.reader(csv_file, dialect)
-        next(csv_reader)  # skip header row
-        for row in csv_reader:
-            if len(row) == 3:
-                barcode_indexes.add(row[1])  # 2nd column is barcode
-    return len(barcode_indexes)
 
 
 if __name__ == '__main__':
