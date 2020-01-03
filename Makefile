@@ -23,7 +23,7 @@ metadata:
 	python3 generate_metadata.py
 
 bundles:
-	@echo 'Replace with upload bundles script'
+	python3 upload_bundles.py
 
 assets:
 	python3 upload_assets.py
