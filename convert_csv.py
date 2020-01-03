@@ -9,6 +9,7 @@ from typing import (
     Tuple,
     Dict,
     Sequence,
+    Iterable,
 )
 import zipfile
 from contextlib import contextmanager
@@ -24,10 +25,25 @@ import conversions
 log = logging.getLogger(__file__)
 
 
+class SkipMatrix(RuntimeError):
+    pass
+
+
+def move_to_gz(filename: str):
+    """
+    compress file and remove uncompressed
+    """
+    with open(filename, 'rb') as src:
+        with gzip.open(filename + '.gz', 'wb') as dst:
+            shutil.copyfileobj(src, dst)
+    os.remove(filename)
+
+
 def try_delim_file(file: str, target: str, hints: dict = None) -> None:
     hints = {} if hints is None else hints
     try:
-        # Pandas will infer sep if None
+        # Pandas will infer sep if None, but this will fail with only 1 column.
+        # Might want to use '[\t,]' as default instead?
         data = pd.read_csv(file, index_col=0, sep=hints.get('separator'))
     except Exception:
         log.warning(f'{file}: not a parse-able data file')
@@ -68,15 +84,11 @@ def try_delim_file(file: str, target: str, hints: dict = None) -> None:
 
 def csv_to_mtx(data: pd.DataFrame, mtx_filename: str) -> None:
     cells = data.index
-    genes = data.columns
 
-    # To properly cross-reference this we'd need to know species and maybe other info
-    if all(gene.startswith('ENS') for gene in genes[10:]):
-        gene_ids = genes
-        gene_names = [f'FAKE_GENE_NAME_{gene}' for gene in genes]
-    else:
-        gene_ids = [f'FAKE_GENE_ID_{gene}' for gene in genes]
-        gene_names = genes
+    # This may be either gene names (e.g. MLH1) or gene symbols (e.g. ENS...)
+    # When only a single column is present, ScanPy will assume that it represents gene symbols.
+    # But I don't think using names in place of symbols will actually cause issues.
+    genes = data.columns
 
     os.makedirs(mtx_filename, exist_ok=True)
 
@@ -84,9 +96,7 @@ def csv_to_mtx(data: pd.DataFrame, mtx_filename: str) -> None:
         f.writelines(cell + '\n' for cell in cells)
 
     with open(os.path.join(mtx_filename, 'genes.tsv'), 'w') as f:
-        # CSV files only include gene names but scanpy requires a gene id/featurekey column so we fake it
-        # Use hash for consistency across files
-        f.writelines('\t'.join([gene_id, gene_name]) + '\n' for gene_id, gene_name in zip(gene_ids, gene_names))
+        f.writelines(gene + '\n' for gene in genes)
 
     entries = [
         (
@@ -108,10 +118,9 @@ def csv_to_mtx(data: pd.DataFrame, mtx_filename: str) -> None:
         f.writelines(map(fmt_line, entries))
 
 
-def find_mtx_files(input_dir: Path) -> Dict[str, Tuple[str, str, str]]:
+def find_mtx_files(filepaths: Iterable[Path]) -> Dict[str, Tuple[str, str, str]]:
     result = {}
 
-    filepaths = input_dir.iterdir()
     filenames = list(map(str, filepaths))
 
     anchors = [
@@ -122,7 +131,7 @@ def find_mtx_files(input_dir: Path) -> Dict[str, Tuple[str, str, str]]:
 
     for anchor_file, prefix in anchors:
         links = [
-            strip_prefix(file, prefix)
+            file
             for file in filenames
             if file.startswith(prefix) and file != anchor_file
         ]
@@ -130,7 +139,7 @@ def find_mtx_files(input_dir: Path) -> Dict[str, Tuple[str, str, str]]:
             def find(names):
                 return one(link
                            for link in links
-                           if any(link.startswith(name) for name in names)
+                           if any(strip_prefix(link, prefix).startswith(name) for name in names)
                            and strip_suffix(link, '.gz')[-4:] in ['.csv', '.tsv'])
 
             try:
@@ -157,11 +166,12 @@ def compile_mtxs(triplets: Sequence[Tuple[str, str, str]], output_filename: str,
 
     def add_matrix(triplet):
 
-        mtx = pd.read_csv(triplet[2], skiprows=2, sep=' ', header=None)
+        mtx = pd.read_csv(triplet[2], comment='%', sep=' ', header=None)
         mtx.columns = ['gene_idx', 'cell_idx', 'value']
 
         cells = pd.read_csv(triplet[1],
-                            sep='\t',  # some of these are named .csv but I'm pretty sure they all actually use tabs
+                            sep='[\t,]',  # some use tabs, others commas (and not always consistent with file ext)
+                            # and pandas ability to infer separators fails with only one column
                             header=0 if tsv_headers else None)
         cells = cells.iloc[:, :1]  # only barcodes column
         cells.columns = ['barcode']
@@ -169,10 +179,10 @@ def compile_mtxs(triplets: Sequence[Tuple[str, str, str]], output_filename: str,
         cells['index'] += 1
 
         genes = pd.read_csv(triplet[0],
-                            sep='\t',
+                            sep='[\t,]',
                             header=0 if tsv_headers else None)
-        genes = genes.iloc[:, :2]  # only id and name columns
-        genes.columns = ['gene_id', 'gene_name']
+        genes = genes.iloc[:, :1]  # this will be gene symbols unless only names were present
+        genes.columns = ['gene']
         genes.reset_index(inplace=True)
         genes['index'] += 1
 
@@ -184,28 +194,18 @@ def compile_mtxs(triplets: Sequence[Tuple[str, str, str]], output_filename: str,
         entries.append(mtx)
 
     # stack matrix entries into one frame
-    map(add_matrix, triplets)
+    for triplet in triplets:
+        add_matrix(triplet)
     entries = pd.concat(entries, axis=0, ignore_index=True)
 
-    # consolidate inconsistent gene ids since most of them will probably be garbage from the previous method
-    # this step might no longer be necessary given the hash changes
-    for gene_name, group in entries.groupby('gene_name'):
-        if group['gene_id'].nunique() > 1:
-            mask = (entries['gene_name'] == gene_name)
-            # just take the first one
-            entries.loc[mask, 'gene_id'] = entries.loc[np.flatnonzero(mask)[0], 'gene_id']
-
     # resolve duplicate barcodes
-    for barcode, group in entries.groupby('barcode'):
-        gene_counts = group['gene_name'].value_counts()
-        for gene in gene_counts.index:
-            if gene_counts[gene] > 1:
-                mask = (entries['barcode'] == barcode) & (entries['gene_name'] == gene)
-                # take arithmetic mean of gene expression values
-                entries.loc[mask, 'value'] = entries.loc[mask, 'value'].mean()
-
-    # now that all duplicate rows have the same value we just drop the excess
-    entries.drop_duplicates(subset=['barcode', 'gene_name'], inplace=True)
+    # ignore the same data included twice
+    entries.drop_duplicates(inplace=True)
+    # now look for cases where data conflicts between cells
+    duplicates = entries[entries.duplicated(['barcode', 'gene'])]
+    for _, group in duplicates.groupby(['barcode', 'gene']):
+        entries.loc[group.index[0], 'value'] = group['value'].mean()
+        entries.drop(group.index[1:], inplace=True, axis=0)
 
     # assign line numbers to unique gene names and barcodes
     class id_dict(collections.defaultdict):
@@ -213,19 +213,19 @@ def compile_mtxs(triplets: Sequence[Tuple[str, str, str]], output_filename: str,
         def __init__(self):
             super().__init__(lambda: 1 + len(self))
 
-    entries['gene_idx'] = entries['gene_name'].map(id_dict())
+    entries['gene_idx'] = entries['gene'].map(id_dict())
     entries['cell_idx'] = entries['barcode'].map(id_dict())
 
     os.makedirs(output_filename, exist_ok=True)
 
-    genes = entries[['gene_id', 'gene_name']].drop_duplicates()
+    genes = entries['gene'].drop_duplicates()
     genes.to_csv(os.path.join(output_filename, 'genes.tsv.gz'),
                  compression='gzip',
                  header=False,
                  index=False,
                  sep='\t')
 
-    barcodes = entries[['barcode']].drop_duplicates()
+    barcodes = entries['barcode'].drop_duplicates()
     barcodes.to_csv(os.path.join(output_filename, 'barcodes.tsv.gz'),
                     compression='gzip',
                     header=False,
@@ -236,13 +236,12 @@ def compile_mtxs(triplets: Sequence[Tuple[str, str, str]], output_filename: str,
     mtx = os.path.join(output_filename, 'matrix.mtx')
 
     # appending to gzip archive doesn't seem to work
-    with open(mtx, '+') as f:
+    with open(mtx, 'w') as f:
         f.write('%%MatrixMarket matrix coordinate real general\n')
         f.write(' '.join([str(df.shape[0]) for df in (genes, barcodes, entries)]) + '\n')
         entries.to_csv(f, mode='a', header=False, index=False, sep=' ')
 
-        with gzip.open(mtx + '.gz', 'wb') as gzf:
-            shutil.copyfileobj(f, gzf)
+    move_to_gz(mtx)
 
 
 def extract_uuid(path: Path):
@@ -316,7 +315,7 @@ def matrix_name(filename: Path):
     return name + '.mtx'
 
 
-def files_recursively(path: Path) -> Sequence[Path]:
+def files_recursively(path: str) -> Sequence[Path]:
     for dir_path, _, files in os.walk(path):
         for f in files:
             yield Path(dir_path, f)
@@ -349,15 +348,20 @@ def synthesize_matrix(project_dir: Path):
             default_synthesis_technique(project_dir, tmpdir)
         elif project_uuid == '061ec9d5-9acf-54db-9eee-555136d5ce41':
             # multiple mtxs with un-parseable filenames
-            compile_mtxs([
-                ('GSM3271040_RNA_sciCAR_A549_gene.txt.gz',  'GSM3271040_RNA_sciCAR_A549_cell.txt.gz',  'GSM3271040_RNA_sciCAR_A549_gene_count.txt.gz'),
-                ('GSM3271042_RNA_only_A549_gene.txt.gz',    'GSM3271042_RNA_only_A549_cell.txt.gz',    'GSM3271042_RNA_only_A549_gene_count.txt.gz'),
-                ('GSM3271044_RNA_mouse_kidney_gene.txt.gz', 'GSM3271044_RNA_mouse_kidney_cell.txt.gz', 'GSM3271044_RNA_mouse_kidney_gene_count.txt.gz')
-            ], str(project_dir), True)
+            triplets = [
+                ('GSM3271040_RNA_sciCAR_A549_gene.txt.gz', 'GSM3271040_RNA_sciCAR_A549_cell.txt.gz',
+                 'GSM3271040_RNA_sciCAR_A549_gene_count.txt.gz'),
+                ('GSM3271042_RNA_only_A549_gene.txt.gz', 'GSM3271042_RNA_only_A549_cell.txt.gz',
+                 'GSM3271042_RNA_only_A549_gene_count.txt.gz'),
+                ('GSM3271044_RNA_mouse_kidney_gene.txt.gz', 'GSM3271044_RNA_mouse_kidney_cell.txt.gz',
+                 'GSM3271044_RNA_mouse_kidney_gene_count.txt.gz')
+            ]
+            triplets = [tuple(str(project_dir / 'geo/GSE117089_RAW' / f) for f in triplet) for triplet in triplets]
+            compile_mtxs(triplets, str(project_dir), True)
         else:
             # default_synthesis_technique(project_dir, tmpdir)
             log.info('Do the default thing')
-            raise RuntimeError
+            raise SkipMatrix
 
 
 def default_synthesis_technique(project_dir: Path, tmpdir: str):
@@ -384,16 +388,17 @@ def default_synthesis_technique(project_dir: Path, tmpdir: str):
 
     if any(is_mtx(f) for f in files):
         log.info('Found some mtx files; trying to convert them')
-        mtxs = find_mtx_files(in_dir)
+        mtxs = find_mtx_files(files)
         # Incredibly, headers are only present in the CSV files, not the TSV ones.
         # THIS MAY BREAK ON NEW FILES!!
         tsv_headers = [strip_suffix(mtx[0], '.gz').endswith('.csv') for mtx in mtxs]
         if any(tsv_headers) and not all(tsv_headers):
             raise RuntimeError('Mixed csv and tsv files in mtx directory')
-        compile_mtxs(list(mtxs.values()), str(matrix_dir(project_dir)), tsv_headers=tsv_headers[0])
+        compile_mtxs(list(mtxs.values()), str(matrix_dir(project_dir)), tsv_headers=all(tsv_headers))
     else:
         try_to_convert(files, tmpdir)
-        mtxs = find_mtx_files(in_dir)
+        files = list(files_recursively(tmpdir))
+        mtxs = find_mtx_files(files)
         files = list(files_recursively(tmpdir))
         if any(is_mtx(f) for f in files):
             log.info('%s files were converted to mtx; compiling', len(files))
