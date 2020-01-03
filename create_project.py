@@ -893,7 +893,7 @@ def run(xlsx, output_dir=None, upload=False):
     project_json, project_uuid = create_project_json(project_data, version=timestamp())
 
     root        = f'projects/{project_uuid}'
-    matrix_file = f'{root}/matrix/matrix.mtx.zip'
+    matrix_file = f'{root}/bundle/matrix.mtx.zip'
     output_dir  = f'{root}/bundle' if not output_dir else output_dir
 
     if not os.path.exists(output_dir):
