@@ -6,13 +6,11 @@ import os
 from pathlib import Path
 import sys
 from typing import (
-    Sequence,
     List,
+    Sequence,
 )
 import uuid
 
-from hca import HCAConfig
-from hca.dss import DSSClient
 from openpyxl import load_workbook
 
 
@@ -886,15 +884,15 @@ def generate_donor_organism_json(data, output_dir, donor_number, bundle_uuid):
     print(f'"{output_dir}/{file_name}" successfully written.')
 
 
-def run(xlsx, output_dir=None, upload=False):
+def run(xlsx, output_dir=None):
     wb = load_workbook(xlsx)
 
     project_data = parse_project_data_from_xlsx(wb)
     project_json, project_uuid = create_project_json(project_data, version=timestamp())
 
-    root        = f'projects/{project_uuid}'
+    root = f'projects/{project_uuid}'
     matrix_file = f'{root}/bundle/matrix.mtx.zip'
-    output_dir  = f'{root}/bundle' if not output_dir else output_dir
+    output_dir = f'{root}/bundle' if not output_dir else output_dir
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
@@ -931,18 +929,6 @@ def run(xlsx, output_dir=None, upload=False):
     #                                 bundle_uuid=bundle_uuid)
     generate_links_json(output_dir)
 
-    if upload:
-        hca_config = HCAConfig()
-
-        hca_config["DSSClient"].swagger_url = f"https://dss.dev.data.humancellatlas.org/v1/swagger.json"
-        dss = DSSClient(config=hca_config)
-
-        response = dss.upload(src_dir=output_dir,
-                              replica='aws',
-                              staging_bucket='lon-test-data',
-                              bundle_uuid=bundle_uuid)
-        print(f'Successful upload.  Bundle information is:\n{json.dumps(response, indent=4)}')
-
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Turn an xlsx file into the json files necessary for a complete '
@@ -952,12 +938,9 @@ def main(argv):
                              "Example: 'data/test_project_000.xlsx'")
     parser.add_argument("--output_dir", type=str,
                         help="Path to an output directory.")
-    parser.add_argument("--upload", type=bool,
-                        default=False,
-                        help="Whether or not one should upload this data as a bundle to the data-store.")
 
     args = parser.parse_args(argv)
-    run(args.xlsx, args.output_dir, args.upload)
+    run(args.xlsx, args.output_dir)
 
 
 if __name__ == "__main__":
