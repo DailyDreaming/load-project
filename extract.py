@@ -1,3 +1,4 @@
+from operator import methodcaller
 from pathlib import Path
 import shutil
 from tarfile import TarFile
@@ -45,7 +46,10 @@ def extract_tar_file_recursive(tar_path: Path):
     logging.debug('Running extract_tar_file_recursive(%s)', tar_path)
     if tar_path.is_dir():
         logging.debug('Decending into directory %s', tar_path)
-        for file in tar_path.iterdir():
+        # Iterate over directory contents sorted by type with files first, then
+        # directories. This is done to avoid wasting time processing a directory
+        # that could be itself be deleted and re-extracted from a tar file
+        for file in sorted(tar_path.iterdir(), key=methodcaller('is_dir')):
             extract_tar_file_recursive(file)
     elif tar_path.name.endswith(('.tar', '.tar.gz')):
         assert tar_path.is_file()
