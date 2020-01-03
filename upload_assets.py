@@ -19,21 +19,19 @@ class ProjectMatrixUploader:
         for project_uuid in os.listdir(geo_projects_directory):
             project_directory = os.path.join(geo_projects_directory, project_uuid)
             bundle_directory = os.path.join(project_directory, 'bundle')
-            if False:
-                # FIXME add later to check other donor_organisim files
-                cs_json_path = os.path.join(bundle_directory, 'donor_organism_0.json')
+            # FIXME add later to check other donor_organisim files
+            cs_json_path = os.path.join(bundle_directory, 'donor_organism_0.json')
             file_extension = '.mtx.zip'
             matrix_path = os.path.join(bundle_directory, 'matrix' + file_extension)
             if not os.path.islink(project_directory) and os.path.exists(matrix_path):
-                if False:
-                    with open(cs_json_path, 'r') as cs_json:
-                        cell_suspension_json = json.load(cs_json)
-                        # FIXME check other element in genus species array
-                        species_name = cell_suspension_json['genus_species'][0]['text']
-                        species_name = unicodedata.normalize('NFKD', species_name)
-                        species_name = re.sub(r'[^\w ,.@%&-_()\\[\]/{}]', '_', species_name).strip()
-                key = f'{key_prefix}{project_uuid}{file_extension}'
-                content_disposition = f'attachment;filename="{project_uuid}{file_extension}"'
+                with open(cs_json_path, 'r') as cs_json:
+                    cell_suspension_json = json.load(cs_json)
+                    # FIXME check other element in genus species array
+                    species_name = cell_suspension_json['genus_species'][0]['text']
+                    species_name = unicodedata.normalize('NFKD', species_name)
+                    species_name = re.sub(r'[^\w,.@%&-_()\\[\]/{}]', '_', species_name).strip().lower()
+                key = f'{key_prefix}{project_uuid}.{species_name}{file_extension}'
+                content_disposition = f'attachment;filename="{project_uuid}.{species_name}{file_extension}"'
                 obj = self.s3.Object(bucket_name, key)
 
                 log.info(f'Uploading %s to s3://%s/%s.', matrix_path, bucket_name, key)
