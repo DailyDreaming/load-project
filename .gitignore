@@ -51,8 +51,9 @@ npm-debug.log
 /environment.*.local
 
 # virtualenv folder
-venv
-v3nv
+venv/
+v3nv/
+.venv/
 
 # Terraform files
 .terraform
@@ -65,5 +66,5 @@ variables.tf
 .~lock.*
 accessions/
 /projects
-venv/
-v3nv/
+
+/cell_counts.json
