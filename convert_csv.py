@@ -166,7 +166,7 @@ def compile_mtxs(triplets: Sequence[Tuple[str, str, str]], output_filename: str,
 
     def add_matrix(triplet):
 
-        mtx = pd.read_csv(triplet[2], comment='%', sep=' ', header=None)
+        mtx = pd.read_csv(triplet[2], comment='%', skiprows=1, sep=' ', header=None)
         mtx.columns = ['gene_idx', 'cell_idx', 'value']
 
         cells = pd.read_csv(triplet[1],
@@ -199,13 +199,9 @@ def compile_mtxs(triplets: Sequence[Tuple[str, str, str]], output_filename: str,
     entries = pd.concat(entries, axis=0, ignore_index=True)
 
     # resolve duplicate barcodes
-    # ignore the same data included twice
-    entries.drop_duplicates(inplace=True)
-    # now look for cases where data conflicts between cells
-    duplicates = entries[entries.duplicated(['barcode', 'gene'])]
-    for _, group in duplicates.groupby(['barcode', 'gene']):
-        entries.loc[group.index[0], 'value'] = group['value'].mean()
-        entries.drop(group.index[1:], inplace=True, axis=0)
+    # originally we planned on calculating the arithmetic mean but this proved to be far too
+    # computationally expensive. So we just keep the first duplicate and drop the rest.
+    entries = entries[~entries.duplicated(['barcode', 'gene'], keep='first')]
 
     # assign line numbers to unique gene names and barcodes
     class id_dict(collections.defaultdict):
@@ -413,7 +409,7 @@ def zip_matrix(project_dir: Path):
     os.makedirs(final_matrix.parent, exist_ok=True)
     with zipfile.ZipFile(str(final_matrix), 'w') as zipf:
         for filename in ['matrix.mtx.gz', 'barcodes.tsv.gz', 'genes.tsv.gz']:
-            zipf.write(project_dir / filename, arcname=filename)
+            zipf.write(project_dir / 'matrix' / filename, arcname=filename)
 
 
 def final_matrix_file(project_dir: Path):
@@ -421,8 +417,6 @@ def final_matrix_file(project_dir: Path):
 
 
 def synthesize_matrices(projects: Path):
-    # GEO accessions for which the script will fail without special instructions
-    special_cases = {}
 
     failed_projects = {}
     succeeded_projects = set()
@@ -430,12 +424,11 @@ def synthesize_matrices(projects: Path):
         # Assuming that dir.name is the project UUID
         project_dir = Path(project_dir)
         project_uuid = extract_uuid(project_dir)
-        if not final_matrix_file(project_dir).exists():
+        if final_matrix_file(project_dir).exists():
+            log.warning(f'Skipping {project_uuid} as its matrix is already present.')
+        else:
             try:
-                if project_uuid in special_cases:
-                    special_cases[project_uuid](project_dir)
-                else:
-                    synthesize_matrix(project_dir)
+                synthesize_matrix(project_dir)
             except Exception as e:
                 failed_projects[project_uuid] = e
                 log.exception('Failed to process project', exc_info=True)
