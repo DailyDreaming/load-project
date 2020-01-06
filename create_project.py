@@ -40,7 +40,7 @@ def generate_file_uuid(bundle_uuid: str, file_name: str) -> str:
 
 
 def get_cell_counts():
-    with open('cell_counts.json', 'r') as f:
+    with open('.attic/cell_counts.json', 'r') as f:
         cell_counts = json.loads(f.read())
     return cell_counts
 
