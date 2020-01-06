@@ -424,7 +424,7 @@ def synthesize_matrices(projects: Path):
         project_dir = Path(project_dir)
         project_uuid = extract_uuid(project_dir)
         if final_matrix_file(project_dir).exists():
-            log.warning(f'Skipping {project_uuid} as its matrix is already present.')
+            log.info('Final matrix already exists for project %s; moving on.', project_dir)
         else:
             try:
                 synthesize_matrix(project_dir)
@@ -443,7 +443,8 @@ def synthesize_matrices(projects: Path):
 
 
 if __name__ == '__main__':
-    log.setLevel('INFO')
+    logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
+                        level=logging.DEBUG)
     # Noah, to download some test files run
     # scp -r ubuntu@skunk.dev.explore.data.humancellatlas.org:/home/ubuntu/load-project/projects/0* ./test/projects
     synthesize_matrices(Path('test/projects'))
