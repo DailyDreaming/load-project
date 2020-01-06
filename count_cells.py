@@ -11,6 +11,8 @@ from typing import (
 
 from util import open_maybe_gz
 
+CELL_COUNTS_FILE = 'cell_counts.json'
+
 
 def main(argv):
     logging.basicConfig(level=logging.INFO)
@@ -92,9 +94,8 @@ def update_cell_count_file(accession_id: str, cell_count: int) -> bool:
     """
     if not accession_id:
         return False
-    cell_counts_file = 'cell_counts.json'
-    if os.path.exists(cell_counts_file):
-        with open(cell_counts_file, 'r') as f:
+    if os.path.exists(CELL_COUNTS_FILE):
+        with open(CELL_COUNTS_FILE, 'r') as f:
             cell_counts = json.loads(f.read())
     else:
         cell_counts = {}
@@ -104,7 +105,7 @@ def update_cell_count_file(accession_id: str, cell_count: int) -> bool:
     elif cell_count is None and accession_id in cell_counts:
         logging.info('Removing accession %s cell count.', accession_id)
         del cell_counts[accession_id]
-    with open(cell_counts_file, 'w') as f:
+    with open(CELL_COUNTS_FILE, 'w') as f:
         f.write(json.dumps(cell_counts, sort_keys=True, indent='    '))
     return True
 

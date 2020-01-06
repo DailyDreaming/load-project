@@ -13,6 +13,8 @@ import uuid
 
 from openpyxl import load_workbook
 
+from count_cells import CELL_COUNTS_FILE
+
 
 # TODO: Consolidate similar functions and clean up code.
 
@@ -40,9 +42,11 @@ def generate_file_uuid(bundle_uuid: str, file_name: str) -> str:
 
 
 def get_cell_counts():
-    with open('cell_counts.json', 'r') as f:
-        cell_counts = json.loads(f.read())
-    return cell_counts
+    if os.path.exists(CELL_COUNTS_FILE):
+        with open(CELL_COUNTS_FILE, 'r') as f:
+            cell_counts = json.loads(f.read())
+        return cell_counts
+    return {}
 
 
 def get_spreadsheet_paths(src_dir: Path) -> List[Path]:
