@@ -311,7 +311,7 @@ def matrix_name(filename: Path):
     return name + '.mtx'
 
 
-def files_recursively(path: str) -> Sequence[Path]:
+def files_recursively(path) -> Sequence[Path]:
     for dir_path, _, files in os.walk(path):
         for f in files:
             yield Path(dir_path, f)
