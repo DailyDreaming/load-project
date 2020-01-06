@@ -432,14 +432,16 @@ def synthesize_matrices(projects: Path):
                 failed_projects[project_uuid] = e
                 log.exception('Failed to process project', exc_info=True)
             else:
+                zip_matrix(project_dir)
                 succeeded_projects.add(project_dir)
 
     print('Failed projects', file=sys.stderr)
     for p in failed_projects:
         print(p, file=sys.stderr)
 
+    print('Succeeded projects')
     for project_dir in succeeded_projects:
-        zip_matrix(project_dir)
+        print(project_dir)
 
 
 if __name__ == '__main__':
