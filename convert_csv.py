@@ -16,7 +16,6 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pandas as pd
-import numpy as np
 import os
 from more_itertools import one
 
@@ -260,6 +259,7 @@ def geo_dir(project_dir: Path):
 
 
 def matrix_dir(project_dir: Path):
+    # FIXME: should this just be the project dir?
     return project_dir / 'matrix'
 
 
@@ -353,7 +353,7 @@ def synthesize_matrix(project_dir: Path):
                  'GSM3271044_RNA_mouse_kidney_gene_count.txt.gz')
             ]
             triplets = [tuple(str(project_dir / 'geo/GSE117089_RAW' / f) for f in triplet) for triplet in triplets]
-            compile_mtxs(triplets, str(project_dir), True)
+            compile_mtxs(triplets, str(matrix_dir(project_dir)), True)
         else:
             # default_synthesis_technique(project_dir, tmpdir)
             log.info('Do the default thing')
@@ -377,7 +377,6 @@ def default_synthesis_technique(project_dir: Path, tmpdir: str):
 
     If unable to synthesize the matrices raises a RuntimeError
     """
-    log.info('Starting project %s', project_dir)
     in_dir = geo_dir(project_dir)
     files = list(files_recursively(in_dir))
     log.info('Project %s contains %s files', project_dir, len(files))
@@ -409,7 +408,7 @@ def zip_matrix(project_dir: Path):
     os.makedirs(final_matrix.parent, exist_ok=True)
     with zipfile.ZipFile(str(final_matrix), 'w') as zipf:
         for filename in ['matrix.mtx.gz', 'barcodes.tsv.gz', 'genes.tsv.gz']:
-            zipf.write(project_dir / 'matrix' / filename, arcname=filename)
+            zipf.write(matrix_dir(project_dir) / filename, arcname=filename)
 
 
 def final_matrix_file(project_dir: Path):
