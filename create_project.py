@@ -780,8 +780,8 @@ def generate_cell_suspension_json(wb, output_dir, cell_count, bundle_uuid):
 def generate_specimen_from_organism_jsons(wb, output_dir, bundle_uuid):
     data = parse_specimen_from_organism_data_from_xlsx(wb)
     specimens = [specimen for specimen in data['biomaterial_core.biomaterial_id'] if specimen]
-    for donor_number in range(len(specimens)):
-        generate_specimen_from_organism_json(data, output_dir, donor_number, bundle_uuid)
+    for specimen_number in range(len(specimens)):
+        generate_specimen_from_organism_json(data, output_dir, specimen_number, bundle_uuid)
 
 
 def generate_specimen_from_organism_json(data, output_dir, specimen_number, bundle_uuid):
