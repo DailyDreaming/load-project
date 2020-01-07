@@ -3,6 +3,7 @@ import csv
 import json
 import logging
 import os
+from pathlib import Path
 import sys
 from typing import (
     Sequence,
@@ -11,7 +12,7 @@ from typing import (
 
 from util import open_maybe_gz
 
-CELL_COUNTS_FILE = 'cell_counts.json'
+cell_counts_file = Path('cell_counts.json')
 
 
 def main(argv):
@@ -84,6 +85,14 @@ def get_accession_ids() -> Sequence[str]:
     return accession_ids
 
 
+def get_cell_counts():
+    if cell_counts_file.exists():
+        with open(cell_counts_file, 'r') as f:
+            cell_counts = json.loads(f.read())
+        return cell_counts
+    return {}
+
+
 def update_cell_count_file(accession_id: str, cell_count: int) -> bool:
     """
     Write the accession cell count to the global cell count file
@@ -94,47 +103,46 @@ def update_cell_count_file(accession_id: str, cell_count: int) -> bool:
     """
     if not accession_id:
         return False
-    if os.path.exists(CELL_COUNTS_FILE):
-        with open(CELL_COUNTS_FILE, 'r') as f:
-            cell_counts = json.loads(f.read())
-    else:
-        cell_counts = {}
+    cell_counts = get_cell_counts()
     if isinstance(cell_count, int):
         logging.info('Writing accession %s cell count.', accession_id)
         cell_counts[accession_id] = cell_count
     elif cell_count is None and accession_id in cell_counts:
         logging.info('Removing accession %s cell count.', accession_id)
         del cell_counts[accession_id]
-    with open(CELL_COUNTS_FILE, 'w') as f:
+    with open(cell_counts_file, 'w') as f:
         f.write(json.dumps(cell_counts, sort_keys=True, indent='    '))
     return True
 
 
 def get_project_cell_count(accession_id: str) -> Union[int, None]:
     """
-    Get the cell count from a project's matrix file
+    Get the cell count from a project's matrix file(s)
 
-    :param accession_id: An accession id that has a downloaded matrix file
+    :param accession_id: An accession id that has downloaded matrix file(s)
     :return: A count of cells
     """
-    matrix_file_full = f'projects/{accession_id}/matrix.mtx.gz'
-    if not os.path.isdir(f'projects/{accession_id}') or not os.path.isfile(matrix_file_full):
-        logging.warning('Unable to find matrix file %s', matrix_file_full)
+    if not os.path.isdir(f'projects/{accession_id}'):
+        logging.warning('Unable to find path %s', f'projects/{accession_id}')
         return None
-    else:
-        cell_count = count_cells(matrix_file_full)
-        logging.info('Cell count in %s is %s', accession_id, cell_count)
-        return cell_count
+    total_count = 0
+    for file in Path(f'projects/{accession_id}/matrices').glob('**/*'):
+        if file.name.endswith(('.mtx', '.mtx.gz')):
+            cell_count = count_cells(file)
+            logging.info('Cell count in %s is %s', file, cell_count)
+            total_count += cell_count
+    logging.info('Total cell count in %s is %s', accession_id, total_count)
+    return total_count
 
 
-def count_cells(matrix_file: str) -> Union[int, None]:
+def count_cells(matrix_file: Path) -> Union[int, None]:
     """
     Count the number of cells in a matrix file
 
     :param matrix_file: A mtx file with tab/space/comma delimited data
     :return: A count of cells found in the given file
     """
-    if os.path.exists(matrix_file):
+    if matrix_file.exists():
         with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
             first_line_length = len(csv_file.readline().strip())
             csv_file.seek(0)
@@ -146,8 +154,9 @@ def count_cells(matrix_file: str) -> Union[int, None]:
         barcode_indexes = set()
         with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
             csv_reader = csv.reader(csv_file, dialect)
-            next(csv_reader)  # skip header row
             for row in csv_reader:
+                if row[0].startswith('%'):
+                    continue  # skip comment lines in the csv
                 if len(row) == 3:
                     barcode_indexes.add(row[1])  # 2nd column is barcode
         return len(barcode_indexes)
