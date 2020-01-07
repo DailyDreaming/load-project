@@ -53,10 +53,8 @@ class Converter(metaclass=ABCMeta):
             self._create_zip()
 
     def _create_zip(self):
-        final_matrix = self.zip_file
-        os.makedirs(final_matrix.parent, exist_ok=True)
-        # make_archive adds it's own .zip at the end
-        shutil.make_archive(self.zip_file.parent / self.zip_file.stem, 'zip', self.matrices_dir)
+        os.makedirs(self.zip_file.parent, exist_ok=True)
+        atomic_make_archive(self.zip_file, root_dir=self.matrices_dir)
 
     @abstractmethod
     def _convert(self):
@@ -73,6 +71,19 @@ class Converter(metaclass=ABCMeta):
     def _link_matrices(self, matrices):
         for matrix in matrices:
             self._link_matrix(matrix)
+
+
+def atomic_make_archive(dst: Path, root_dir: Path):
+    tmp_stem = dst.parent / (dst.stem + '.tmp')
+    tmp = tmp_stem.parent / (tmp_stem.name + '.zip')
+    try:
+        # make_archive adds it's own .zip at the end
+        shutil.make_archive(tmp_stem, 'zip', root_dir=root_dir.as_posix())
+    except BaseException as e:
+        tmp.unlink()
+        raise e
+    else:
+        os.rename(Path(tmp), dst)
 
 
 def idempotent_link(src: Path, dst: Path):
