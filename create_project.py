@@ -781,13 +781,13 @@ def generate_specimen_from_organism_jsons(wb, output_dir, bundle_uuid):
     data = parse_specimen_from_organism_data_from_xlsx(wb)
     # specimens = [specimen for specimen in data['biomaterial_core.biomaterial_id'] if specimen]
     file_number = 0
-    seen_organs = []
+    seen_organs = set()
     for specimen_number, organ in enumerate(data['organ.text']):
         if organ not in seen_organs:
             if organ:
                 generate_specimen_from_organism_json(data, output_dir, specimen_number, file_number, bundle_uuid)
                 file_number += 1
-            seen_organs.append(organ)
+            seen_organs.add(organ)
     if file_number == 0:
         generate_specimen_from_organism_json(data, output_dir, 0, 0, bundle_uuid)
 
