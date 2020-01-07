@@ -777,12 +777,19 @@ def generate_cell_suspension_json(wb, output_dir, cell_count, bundle_uuid):
     print(f'"{output_dir}/{file_name}" successfully written.')
 
 
-def generate_specimen_from_organism_json(wb, output_dir, bundle_uuid):
-    file_name = 'specimen_from_organism_0.json'
-    specimen_from_organism_data = parse_specimen_from_organism_data_from_xlsx(wb)
+def generate_specimen_from_organism_jsons(wb, output_dir, bundle_uuid):
+    data = parse_specimen_from_organism_data_from_xlsx(wb)
+    specimens = [specimen for specimen in data['biomaterial_core.biomaterial_id'] if specimen]
+    for specimen_number in range(len(specimens)):
+        generate_specimen_from_organism_json(data, output_dir, specimen_number, bundle_uuid)
+
+
+def generate_specimen_from_organism_json(data, output_dir, specimen_number, bundle_uuid):
+    file_name = f'specimen_from_organism_{specimen_number}.json'
     specimen_from_organism_json = create_specimen_from_organism_json(
-        data=specimen_from_organism_data,
-        file_uuid=generate_file_uuid(bundle_uuid, file_name))
+        data=data,
+        file_uuid=generate_file_uuid(bundle_uuid, file_name),
+        i=specimen_number)
     with open(f'{output_dir}/{file_name}', 'w') as f:
         f.write(json.dumps(specimen_from_organism_json, indent=4))
     print(f'"{output_dir}/{file_name}" successfully written.')
@@ -917,9 +924,9 @@ def run(xlsx, output_dir=None):
                                   output_dir=output_dir,
                                   cell_count=cell_count,
                                   bundle_uuid=bundle_uuid)
-    generate_specimen_from_organism_json(wb=wb,
-                                         output_dir=output_dir,
-                                         bundle_uuid=bundle_uuid)
+    generate_specimen_from_organism_jsons(wb=wb,
+                                          output_dir=output_dir,
+                                          bundle_uuid=bundle_uuid)
     generate_donor_organism_jsons(wb=wb,
                                   output_dir=output_dir,
                                   bundle_uuid=bundle_uuid)
