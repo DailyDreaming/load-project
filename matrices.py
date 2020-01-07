@@ -1,55 +1,150 @@
-import gzip
 import logging
-import mimetypes
 import shutil
 import sys
-import tempfile
-from typing import (
-    Tuple,
-    Dict,
-    Sequence,
-    Iterable,
-)
-from contextlib import contextmanager
+from abc import abstractmethod, ABCMeta
 from pathlib import Path
 
 import os
-from more_itertools import one
+from typing import NamedTuple
 
 log = logging.getLogger(__file__)
 
 
-def synthesize_matrices(projects: Path):
-    # GEO accessions for which the script will fail without special instructions
-    # FIXME: These are not actual special cases, but are added for testing
-    special_cases = {
-        '06a318d9-54d8-5e41-aab5-f2d682fba690',
-        '06f8848d-9c54-5829-92d3-d334809ad1e2',
-        '096b7311-2bf7-5e61-9afb-d65c24a71243',
-    }
+class Matrix(NamedTuple):
+    mtx: str
+    genes: str
+    barcodes: str
 
+
+# noinspection PyUnusedLocal
+def convert_csv_to_mtx(input_file: Path, output_dir: Path, delimiter: str = ',', rows_are_genes: bool = True):
+    raise NotImplementedError()
+
+
+class Converter(metaclass=ABCMeta):
+
+    def __init__(self, project_dir: Path):
+        self.project_dir = project_dir
+
+    @property
+    def matrices_dir(self) -> Path:
+        return self.project_dir / 'matrices'
+
+    @property
+    def geo_dir(self) -> Path:
+        return self.project_dir / 'geo'
+
+    @property
+    def bundle_dir(self) -> Path:
+        return self.project_dir / 'bundle'
+
+    @property
+    def zip_file(self) -> Path:
+        return self.bundle_dir / 'matrix.mtx.zip'
+
+    def matrix_dir(self, input_: str) -> Path:
+        return self.matrices_dir / input_.replace('/', '__')
+
+    def convert(self):
+        if self.zip_file.exists():
+            log.info('Final matrix already exists for project %s; moving on.', self.project_dir)
+        else:
+            self._convert()
+            self._create_zip()
+
+    def _create_zip(self):
+        final_matrix = self.zip_file
+        os.makedirs(final_matrix.parent, exist_ok=True)
+        # make_archive adds it's own .zip at the end
+        shutil.make_archive(self.zip_file.parent / self.zip_file.stem, 'zip', self.matrices_dir)
+
+    @abstractmethod
+    def _convert(self):
+        raise NotImplementedError()
+
+    def _link_matrix(self, matrix: 'Matrix'):
+        matrix_dir = self.matrix_dir(matrix.mtx)
+        matrix_dir.mkdir(parents=True, exist_ok=True)
+        assert all(name.endswith('.gz') for name in matrix)
+        idempotent_link(self.geo_dir / matrix.mtx, matrix_dir / 'matrix.mtx.gz')
+        idempotent_link(self.geo_dir / matrix.genes, matrix_dir / 'genes.tsv.gz')
+        idempotent_link(self.geo_dir / matrix.barcodes, matrix_dir / 'barcodes.tsv.gz')
+
+    def _link_matrices(self, matrices):
+        for matrix in matrices:
+            self._link_matrix(matrix)
+
+
+def idempotent_link(src: Path, dst: Path):
+    if src.stat().st_ino != dst.stat().st_ino:
+        dst.unlink()
+        os.link(src, dst)
+
+
+class GSE107909(Converter):
+
+    def _convert(self):
+        csvs = [
+            "GSE107909_RAW/GSM2883183_PLNr9c.csv.gz",
+            "GSE107909_RAW/GSM2883182_PLN++.csv.gz"
+        ]
+        for csv in csvs:
+            convert_csv_to_mtx(self.geo_dir / csv, self.matrix_dir(csv), ',', rows_are_genes=True)
+
+
+class GSE106273(Converter):
+
+    def _convert(self):
+        self._link_matrices([
+            Matrix(
+                mtx='GSE106273_combined_matrix.tsv.gz',
+                genes='GSE106273_combined_genes.tsv.gz',
+                barcodes='GSE106273_combined_barcodes.tsv.gz',
+            ),
+        ])
+
+
+class GSE117089(Converter):
+
+    def _convert(self):
+        self._link_matrices([
+            Matrix(
+                barcodes='GSE117089_RAW/GSM3271042_RNA_only_A549_cell.txt.gz',
+                genes='GSE117089_RAW/GSM3271042_RNA_only_A549_gene.txt.gz',
+                mtx='GSE117089_RAW/GSM3271042_RNA_only_A549_gene_count.txt.gz',
+            ),
+            Matrix(
+                barcodes='GSE117089_RAW/GSM3271043_ATAC_only_A549_cell.txt.gz',
+                genes='GSE117089_RAW/GSM3271043_ATAC_only_A549_peak.txt.gz',
+                mtx='GSE117089_RAW/GSM3271043_ATAC_only_A549_peak_count.txt.gz',
+            ),
+            Matrix(
+                barcodes='GSE117089_RAW/GSM3271044_RNA_mouse_kidney_cell.txt.gz',
+                genes='GSE117089_RAW/GSM3271044_RNA_mouse_kidney_gene.txt.gz',
+                mtx='GSE117089_RAW/GSM3271044_RNA_mouse_kidney_gene_count.txt.gz',
+            ),
+            Matrix(
+                barcodes='GSE117089_RAW/GSM3271045_ATAC_mouse_kidney_cell.txt.gz',
+                genes='GSE117089_RAW/GSM3271045_ATAC_mouse_kidney_peak.txt.gz',
+                mtx='GSE117089_RAW/GSM3271045_ATAC_mouse_kidney_peak_count.txt.gz',
+            )
+        ])
+
+
+def synthesize_matrices(projects: Path):
     failed_projects = {}
     succeeded_projects = set()
     for project_dir in projects.iterdir():
-        # Assuming that dir.name is the project UUID
-        project_dir = Path(project_dir)
-        project_uuid = extract_uuid(project_dir)
-        if final_matrix_file(project_dir).exists():
-            log.info('Final matrix already exists for project %s; moving on.', project_dir)
-        elif project_uuid in special_cases:
-            # FIXME
-            log.warning('Skipping special case %s', project_dir)
-            continue
-        else:
-            with tempfile.TemporaryDirectory() as staging_dir:
-                try:
-                    convert_and_move_matrices(project_dir, Path(staging_dir))
-                except Exception as e:
-                    failed_projects[project_uuid] = e
-                    log.exception('Failed to process project', exc_info=True)
-                else:
-                    export_matrices(project_dir, staging_dir)
-                    succeeded_projects.add(project_dir)
+        if project_dir.is_symlink():
+            try:
+                converter_class = globals()[project_dir.name]
+                converter = converter_class(project_dir)
+                converter.convert()
+            except Exception as e:
+                failed_projects[project_dir] = e
+                log.exception('Failed to process project', exc_info=True)
+            else:
+                succeeded_projects.add(project_dir)
 
     print('Failed projects', file=sys.stderr)
     for p in failed_projects:
@@ -60,134 +155,11 @@ def synthesize_matrices(projects: Path):
         print(project_dir)
 
 
-def convert_and_move_matrices(project_dir: Path, staging_dir: Path):
-    # For the first iteration, just link everything that's in the geo dir into
-    # the staging dir
-    geo = geo_dir(project_dir)
-    for dir_path, _, file_names in os.walk(geo):
-        dir_path = Path(dir_path)
-        for file in file_names:
-            full_path = dir_path / file
-            relative_path = full_path.relative_to(geo)
-            os.makedirs(staging_dir / relative_path.parent, exist_ok=True)
-            os.link(full_path, staging_dir / relative_path)
-
-
-def find_mtx_files(filepaths: Iterable[Path]) -> Dict[str, Tuple[str, str, str]]:
-    result = {}
-
-    filenames = list(map(str, filepaths))
-
-    anchors = [
-        (fn, strip_suffix(strip_suffix(strip_suffix(fn, '.gz'), '.mtx'), 'matrix'))
-        for fn, fp in zip(filenames, filepaths)
-        if is_mtx(fp)
-    ]
-
-    for anchor_file, prefix in anchors:
-        links = [
-            file
-            for file in filenames
-            if file.startswith(prefix) and file != anchor_file
-        ]
-        if len(links) >= 2:
-            def find(names):
-                return one(link
-                           for link in links
-                           if any(strip_prefix(link, prefix).startswith(name) for name in names)
-                           and strip_suffix(link, '.gz')[-4:] in ['.csv', '.tsv'])
-
-            try:
-                barcodes_file = find(['barcodes', 'cells'])
-                genes_file = find(['genes', 'features'])
-            except ValueError:
-                log.warning('Could not identify row and column files for mtx')
-            else:
-                result[prefix] = (genes_file, barcodes_file, anchor_file)
-        else:
-            log.warning('There appear to be some missing/extra/unassociated mtx files')
-
-    return result
-
-
-def export_matrices(project_dir: Path, staging_dir: Path):
-    """
-    Zip up the final, converted matrices (in staging_dir) and copy the zip to
-    its expected location.
-    """
-    final_matrix = final_matrix_file(project_dir)
-    os.makedirs(final_matrix.parent, exist_ok=True)
-    # make_archive adds it's own .zip at the end
-    shutil.make_archive(strip_suffix(final_matrix_file(project_dir), '.zip'), 'zip', staging_dir)
-
-
-def strip_suffix(s, suffix):
-    s = str(s)
-    if s.endswith(suffix):
-        return s[:-len(suffix)]
-    else:
-        return s
-
-
-def strip_prefix(s, prefix):
-    s = str(s)
-    if s.startswith(prefix):
-        return s[len(prefix):]
-    else:
-        return s
-
-
-def files_recursively(path) -> Sequence[Path]:
-    for dir_path, _, files in os.walk(path):
-        for f in files:
-            yield Path(dir_path, f)
-
-
-def extract_uuid(path: Path):
-    """
-    Gets the project UUID from the path
-
-    >>> extract_uuid(Path('~/load-project.jesse/projects/51a21599-a014-5c5a-9760-d5bdeb80f741/geo'))
-    51a21599-a014-5c5a-9760-d5bdeb80f741
-    """
-    uuid_index = path.parts.index('projects') + 1
-    return path.parts[uuid_index]
-
-
-def is_mtx(p: Path):
-    return p.name.endswith('.mtx') or p.name.endswith('.mtx.gz')
-
-
-def geo_dir(project_dir: Path) -> Path:
-    return project_dir / 'geo'
-
-
-def bundle_dir(project_dir: Path) -> Path:
-    return project_dir / 'bundle'
-
-
-def final_matrix_file(project_dir: Path) -> Path:
-    return bundle_dir(project_dir) / 'matrix.mtx.zip'
-
-
-@contextmanager
-def read_maybe_gz(filename, **kwargs):
-    m_type, encoding = mimetypes.guess_type(filename)
-    if encoding == 'gzip':
-        open_ = gzip.open(filename, 'rt', encoding='utf-8', **kwargs)
-    else:
-        open_ = open(filename, 'r', newline='', **kwargs)
-    try:
-        with open_ as f:
-            yield f
-    except UnicodeDecodeError:
-        log.warning(f'Cannot open `{filename}` since it is not text nor gzip. Maybe tar?')
-
-
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
                         level=logging.DEBUG)
 
     # To download some projects for testing run:
     # scp -r ubuntu@skunk.dev.explore.data.humancellatlas.org:/home/ubuntu/load-project/projects/0* ./test/projects
-    synthesize_matrices(Path('test/projects'))
+    input_dir = sys.argv[1]
+    synthesize_matrices(Path(input_dir))
