@@ -781,13 +781,13 @@ def generate_specimen_from_organism_jsons(wb, output_dir, bundle_uuid):
     data = parse_specimen_from_organism_data_from_xlsx(wb)
     # specimens = [specimen for specimen in data['biomaterial_core.biomaterial_id'] if specimen]
     file_number = 0
-    seen_organs = []
+    seen_organs = set()
     for specimen_number, organ in enumerate(data['organ.text']):
         if organ not in seen_organs:
             if organ:
                 generate_specimen_from_organism_json(data, output_dir, specimen_number, file_number, bundle_uuid)
                 file_number += 1
-            seen_organs.append(organ)
+            seen_organs.add(organ)
     if file_number == 0:
         generate_specimen_from_organism_json(data, output_dir, 0, 0, bundle_uuid)
 
@@ -903,7 +903,7 @@ def generate_donor_organism_json(data, output_dir, donor_number, bundle_uuid):
     print(f'"{output_dir}/{file_name}" successfully written.')
 
 
-def run(xlsx, output_dir=None):
+def run(xlsx, output_dir=None, clear=True):
     wb = load_workbook(xlsx)
 
     project_data = parse_project_data_from_xlsx(wb)
@@ -912,6 +912,9 @@ def run(xlsx, output_dir=None):
     root = f'projects/{project_uuid}'
     matrix_file = f'{root}/bundle/matrix.mtx.zip'
     output_dir = f'{root}/bundle' if not output_dir else output_dir
+
+    if clear and os.path.exists(output_dir):
+        remove_previous_metadata(output_dir=output_dir)
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
@@ -949,6 +952,14 @@ def run(xlsx, output_dir=None):
     generate_links_json(output_dir)
 
 
+def remove_previous_metadata(output_dir):
+    for root, dirs, files in os.walk(output_dir):
+        for name in files:
+            if name.strip().endswith('.json'):
+                os.remove(os.path.join(root, name))
+    print(f'All previous jsons cleared from {output_dir}.')
+
+
 def main(argv):
     parser = argparse.ArgumentParser(description='Turn an xlsx file into the json files necessary for a complete '
                                                  'bundle to be uploaded into the DSS and serve as a minimal project.')
@@ -957,9 +968,18 @@ def main(argv):
                              "Example: 'data/test_project_000.xlsx'")
     parser.add_argument("--output_dir", type=str,
                         help="Path to an output directory.")
+    parser.add_argument("--no-clean",
+                        dest='clean', action='store_false', required=False,
+                        help="Whether not to delete already present jsons from the output directory "
+                             "prior to populating.")
+    parser.add_argument("--clean",
+                        dest='clean', action='store_true', required=False,
+                        help="Whether to delete already present jsons from the output directory prior to populating.")
+    parser.set_defaults(clean=True)
 
     args = parser.parse_args(argv)
-    run(args.xlsx, args.output_dir)
+
+    run(args.xlsx, args.output_dir, args.clear)
 
 
 if __name__ == "__main__":
