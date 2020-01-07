@@ -527,7 +527,7 @@ def parse_ncbi_taxon_ids(ids):
     elif isinstance(ids, str):
         return [int(i) for i in ids.split(',') if i.strip()]
     else:
-        raise RuntimeError('This should never happen.')
+        raise RuntimeError(f'This should never happen.  ({type(ids)})')
 
 
 def create_donor_organism_json(data, file_uuid, i=0):
@@ -779,13 +779,21 @@ def generate_cell_suspension_json(wb, output_dir, cell_count, bundle_uuid):
 
 def generate_specimen_from_organism_jsons(wb, output_dir, bundle_uuid):
     data = parse_specimen_from_organism_data_from_xlsx(wb)
-    specimens = [specimen for specimen in data['biomaterial_core.biomaterial_id'] if specimen]
-    for specimen_number in range(len(specimens)):
-        generate_specimen_from_organism_json(data, output_dir, specimen_number, bundle_uuid)
+    # specimens = [specimen for specimen in data['biomaterial_core.biomaterial_id'] if specimen]
+    file_number = 0
+    seen_organs = []
+    for specimen_number, organ in enumerate(data['organ.text']):
+        if organ not in seen_organs:
+            if organ:
+                generate_specimen_from_organism_json(data, output_dir, specimen_number, file_number, bundle_uuid)
+                file_number += 1
+            seen_organs.append(organ)
+    if file_number == 0:
+        generate_specimen_from_organism_json(data, output_dir, 0, 0, bundle_uuid)
 
 
-def generate_specimen_from_organism_json(data, output_dir, specimen_number, bundle_uuid):
-    file_name = f'specimen_from_organism_{specimen_number}.json'
+def generate_specimen_from_organism_json(data, output_dir, specimen_number, file_number, bundle_uuid):
+    file_name = f'specimen_from_organism_{file_number}.json'
     specimen_from_organism_json = create_specimen_from_organism_json(
         data=data,
         file_uuid=generate_file_uuid(bundle_uuid, file_name),
