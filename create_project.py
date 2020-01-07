@@ -957,6 +957,7 @@ def remove_previous_metadata(output_dir):
         for name in files:
             if name.strip().endswith('.json'):
                 os.remove(os.path.join(root, name))
+    print(f'All previous jsons cleared from {output_dir}.')
 
 
 def main(argv):
@@ -967,9 +968,14 @@ def main(argv):
                              "Example: 'data/test_project_000.xlsx'")
     parser.add_argument("--output_dir", type=str,
                         help="Path to an output directory.")
-    parser.add_argument("--clear", type=bool,
-                        default=True,
+    parser.add_argument("--no-clean",
+                        dest='clean', action='store_false', required=False,
+                        help="Whether not to delete already present jsons from the output directory "
+                             "prior to populating.")
+    parser.add_argument("--clean",
+                        dest='clean', action='store_true', required=False,
                         help="Whether to delete already present jsons from the output directory prior to populating.")
+    parser.set_defaults(clean=True)
 
     args = parser.parse_args(argv)
 
