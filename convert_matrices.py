@@ -324,11 +324,7 @@ class GSE86469(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(
-                "GSE86469_GEO.islet.single.cell.processed.data.RSEM.raw.expected.counts.csv.gz",
-                sep=',',
-                rows_are_genes=True
-            ),
+            CSV("GSE86469_GEO.islet.single.cell.processed.data.RSEM.raw.expected.counts.csv.gz"),
         ])
 
 
@@ -1225,34 +1221,34 @@ class GSE73727(Converter):
 
 
 def main(projects: Path):
-    not_implemented_projects = {}
-    failed_projects = {}
-    succeeded_projects = set()
-    for project_dir in projects.iterdir():
+    not_implemented_projects = []
+    failed_projects = []
+    succeeded_projects = []
+    for project_dir in sorted(projects.iterdir()):
         if project_dir.is_symlink():
             try:
                 converter_class = globals()[project_dir.name]
                 converter = converter_class(project_dir)
                 converter.convert()
-            except NotImplementedError as e:
-                not_implemented_projects[project_dir] = e
-            except Exception as e:
-                failed_projects[project_dir] = e
+            except NotImplementedError:
+                not_implemented_projects.append(project_dir)
+            except Exception:
+                failed_projects.append(project_dir)
                 log.exception('Failed to process project', exc_info=True)
             else:
-                succeeded_projects.add(project_dir)
+                succeeded_projects.append(project_dir)
 
-    print('\nNot implemented projects', file=sys.stderr)
-    for p in not_implemented_projects:
-        print(p, file=sys.stderr)
+    print_projects('not implemented', not_implemented_projects, file=sys.stderr)
+    print_projects('failed', failed_projects, file=sys.stderr)
+    print_projects('succeeded', succeeded_projects)
 
-    print('\nFailed projects', file=sys.stderr)
-    for p in failed_projects:
-        print(p, file=sys.stderr)
 
-    print('\nSucceeded projects')
-    for project_dir in succeeded_projects:
-        print(project_dir)
+def print_projects(title, projects, file=None):
+    if len(projects) > 0:
+        print('Projects', title, file=file)
+        for p in projects:
+            print(p, file=file)
+        print()
 
 
 if __name__ == '__main__':
