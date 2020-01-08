@@ -1073,34 +1073,34 @@ class GSE73727(Converter):
 
 
 def main(projects: Path):
-    not_implemented_projects = {}
-    failed_projects = {}
-    succeeded_projects = set()
-    for project_dir in projects.iterdir():
-        if project_dir.is_symlink():
+    not_implemented_projects = []
+    failed_projects = []
+    succeeded_projects = []
+    for p in sorted(projects.iterdir()):
+        if p.is_symlink():
             try:
-                converter_class = globals()[project_dir.name]
-                converter = converter_class(project_dir)
+                converter_class = globals()[p.name]
+                converter = converter_class(p)
                 converter.convert()
-            except NotImplementedError as e:
-                not_implemented_projects[project_dir] = e
-            except Exception as e:
-                failed_projects[project_dir] = e
+            except NotImplementedError:
+                not_implemented_projects.append(p)
+            except Exception:
+                failed_projects.append(p)
                 log.exception('Failed to process project', exc_info=True)
             else:
-                succeeded_projects.add(project_dir)
+                succeeded_projects.append(p)
 
-    print('\nNot implemented projects', file=sys.stderr)
-    for p in not_implemented_projects:
-        print(p, file=sys.stderr)
+    print_projects('not implemented', not_implemented_projects, file=sys.stderr)
+    print_projects('failed', failed_projects, file=sys.stderr)
+    print_projects('succeeded', succeeded_projects)
 
-    print('\nFailed projects', file=sys.stderr)
-    for p in failed_projects:
-        print(p, file=sys.stderr)
 
-    print('\nSucceeded projects')
-    for project_dir in succeeded_projects:
-        print(project_dir)
+def print_projects(title, projects, file=None):
+    if len(projects) > 0:
+        print('Projects', title, file=file)
+        for p in projects:
+            print(p, file=file)
+        print()
 
 
 if __name__ == '__main__':
