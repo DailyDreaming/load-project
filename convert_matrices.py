@@ -195,7 +195,7 @@ class GSE114557(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError()
+        raise PostponedImplementationError('No recognizable CSVs / MTXs.')
 
 
 class GSE131736(Converter):
@@ -213,7 +213,7 @@ class GSE67835(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError()
+        raise PostponedImplementationError('Contains separate CSV for each cell')
 
 
 class GSE102580(Converter):
@@ -235,8 +235,7 @@ class GSE102580(Converter):
             self._csv('GSE102580_meta_raw_counts_mouse.tsv.gz'),
         ])
         """
-        # Skipping because first lines of tsv starts with a comment line `# ....`
-        raise PostponedImplementationError()
+        raise PostponedImplementationError('Skipping because first lines of tsv starts with a comment line `# ....`')
 
     def _csv(self, name):
         return CSV(name, sep='\t', rows_are_genes=True)
