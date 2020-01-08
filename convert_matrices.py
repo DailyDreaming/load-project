@@ -139,6 +139,14 @@ def idempotent_link(src: Path, dst: Path):
         os.link(src.as_posix(), dst.as_posix())
 
 
+class NothingToConvertError(RuntimeError):
+    pass
+
+
+class HDF5ConversionError(NotImplementedError):
+    """A placeholder until we have HDF5 conversion integrated"""
+
+
 class GSE107909(Converter):
     """
     04ba7269-1301-5758-8f13-025565326f66
@@ -187,7 +195,7 @@ class GSE114557(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise NothingToConvertError()
 
 
 class GSE131736(Converter):
@@ -196,7 +204,7 @@ class GSE131736(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise HDF5ConversionError()
 
 
 class GSE67835(Converter):
