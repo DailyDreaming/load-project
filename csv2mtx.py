@@ -7,7 +7,10 @@ from pathlib import Path
 from shutil import copyfileobj
 import sys
 from typing import (
+    Callable,
     Iterable,
+    List,
+    Optional,
     Union,
 )
 
@@ -15,13 +18,19 @@ from util import open_maybe_gz
 
 logging.basicConfig(level=logging.INFO)
 
+RowFilter = Callable[[List[str]], None]
+
 
 class CSV2MTXConverter(Iterable):
     """
     Convert a csv file to a matrix.mtx, barcodes.tsv, and genes.tsv set of files
     """
 
-    def __init__(self, input_file: Path, delimiter: str = ',', rows_are_genes: bool = True):
+    def __init__(self,
+                 input_file: Path,
+                 delimiter: str = ',',
+                 rows_are_genes: bool = True,
+                 row_filter: Optional[RowFilter] = None):
         """
         :param input_file: The input csv file
         :param delimiter: Delimiter character in csv
@@ -30,6 +39,10 @@ class CSV2MTXConverter(Iterable):
         self.input_file = input_file
         self.delimiter = delimiter
         self.rows_are_genes = rows_are_genes
+        if row_filter is None:
+            def row_filter(_):
+                pass
+        self.row_filter = row_filter
         self.x_axis_values = []
         self.y_axis_values = []
         self.num_values = 0
@@ -38,8 +51,10 @@ class CSV2MTXConverter(Iterable):
         with open_maybe_gz(self.input_file, 'rt', newline='') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=self.delimiter)
             header = next(csv_reader)  # grab first line for the header values
+            self.row_filter(header)
             self.x_axis_values = header[1:]
             for row in csv_reader:
+                self.row_filter(row)
                 self.y_axis_values.append(row[0])
                 for col, value in enumerate(row[1:]):
                     if float(value):
@@ -58,7 +73,11 @@ class CSV2MTXConverter(Iterable):
         return self.x_axis_values if self.rows_are_genes else self.y_axis_values
 
 
-def convert_csv_to_mtx(input_file: Path, output_dir: Path, delimiter: str = ',', rows_are_genes: bool = True):
+def convert_csv_to_mtx(input_file: Path,
+                       output_dir: Path,
+                       delimiter: str = ',',
+                       rows_are_genes: bool = True,
+                       row_filter: Optional[RowFilter] = None):
     """
     Convert a csv file to a matrix.mtx, barcodes.tsv, and genes.tsv set of files
 
@@ -66,8 +85,9 @@ def convert_csv_to_mtx(input_file: Path, output_dir: Path, delimiter: str = ',',
     :param output_dir: The location to save the output files
     :param delimiter: Delimiter character in csv
     :param rows_are_genes: True if csv rows are genes, False if csv cols are barcodes
+    :param row_filter: callable to pre-process lines in the CSV
     """
-    csv_converter = CSV2MTXConverter(input_file, delimiter, rows_are_genes)
+    csv_converter = CSV2MTXConverter(input_file, delimiter, rows_are_genes, row_filter)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     mtx_body_file = output_dir / 'matrix.mtx.body.gz'
