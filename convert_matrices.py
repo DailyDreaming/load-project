@@ -763,7 +763,17 @@ class GSE76312(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(name='GSE76312_Giustacchini_Thongjuea_et.al_Nat.Med.RPKM.txt.gz', sep='\t', row_filter=self._filter)
+        ])
+
+    def _filter(self, row: List[str]):
+        if len(row) == 2287:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 2288:
+            pass
+        else:
+            assert False, len(row)
 
 
 class GSE93593(Converter):
@@ -772,7 +782,10 @@ class GSE93593(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        # ignoring GSE93593_tpm.csv.gz
+        self._convert_csvs([
+            CSV(name='GSE93593_counts.csv.gz')
+        ])
 
 
 class GSE92280(Converter):
@@ -781,7 +794,7 @@ class GSE92280(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('No files downloaded from GEO')
 
 
 class GSE103354(Converter):
@@ -790,7 +803,128 @@ class GSE103354(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._link_matrices([
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314330_Tp0_Rep1_GFP_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314330_Tp0_Rep1_GFP_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314330_Tp0_Rep1_GFP_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314331_Tp0_Rep1_Tom_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314331_Tp0_Rep1_Tom_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314331_Tp0_Rep1_Tom_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314332_Tp0_Rep2_GFP_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314332_Tp0_Rep2_GFP_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314332_Tp0_Rep2_GFP_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314333_Tp0_Rep2_Tom_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314333_Tp0_Rep2_Tom_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314333_Tp0_Rep2_Tom_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314334_Tp0_Rep3_GFP_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314334_Tp0_Rep3_GFP_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314334_Tp0_Rep3_GFP_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314335_Tp0_Rep3_Tom_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314335_Tp0_Rep3_Tom_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314335_Tp0_Rep3_Tom_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314336_Tp30_Rep1_GFP_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314336_Tp30_Rep1_GFP_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314336_Tp30_Rep1_GFP_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314337_Tp30_Rep1_Tom_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314337_Tp30_Rep1_Tom_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314337_Tp30_Rep1_Tom_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314338_Tp30_Rep2_GFP_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314338_Tp30_Rep2_GFP_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314338_Tp30_Rep2_GFP_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314339_Tp30_Rep2_Tom_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314339_Tp30_Rep2_Tom_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314339_Tp30_Rep2_Tom_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314340_Tp30_Rep3_GFP_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314340_Tp30_Rep3_GFP_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314340_Tp30_Rep3_GFP_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314341_Tp30_Rep3_Tom_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314341_Tp30_Rep3_Tom_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314341_Tp30_Rep3_Tom_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314342_Tp60_Rep1_GFP_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314342_Tp60_Rep1_GFP_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314342_Tp60_Rep1_GFP_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314343_Tp60_Rep1_Tom_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314343_Tp60_Rep1_Tom_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314343_Tp60_Rep1_Tom_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314344_Tp60_Rep2_GFP_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314344_Tp60_Rep2_GFP_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314344_Tp60_Rep2_GFP_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314345_Tp60_Rep2_Tom_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314345_Tp60_Rep2_Tom_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314345_Tp60_Rep2_Tom_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314346_Tp60_Rep3_GFP_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314346_Tp60_Rep3_GFP_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314346_Tp60_Rep3_GFP_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314347_Tp60_Rep3_Tom_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314347_Tp60_Rep3_Tom_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314347_Tp60_Rep3_Tom_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314348_M1_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314348_M1_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314348_M1_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314349_M2_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314349_M2_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314349_M2_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314350_M3_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314350_M3_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314350_M3_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314351_M4_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314351_M4_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314351_M4_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314352_M5_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314352_M5_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314352_M5_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103354_RAW/GSM3314353_M6_barcodes.tsv.gz',
+                genes='GSE103354_RAW/GSM3314353_M6_genes.tsv.gz',
+                mtx='GSE103354_RAW/GSM3314353_M6_matrix.mtx.gz',
+            ),
+        ])
 
 
 class GSE102596(Converter):
@@ -799,7 +933,17 @@ class GSE102596(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(name='GSE102596_RAW/GSM2741551_count-table-human16w.tsv.gz', sep='\t', row_filter=self._filter)
+        ])
+
+    def _filter(self, row: List[str]):
+        if len(row) == 3745:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 3746:
+            pass
+        else:
+            assert False, len(row)
 
 
 class GSE44183(Converter):
@@ -808,7 +952,15 @@ class GSE44183(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(name='GSE44183_human_expression_mat.txt.gz', sep='\t'),
+            CSV(name='GSE44183_mouse_expression_mat.txt.gz', sep='\t', row_filter=self._filter),
+        ])
+
+    def _filter(self, row: List[str]):
+        for i, v in enumerate(row):
+            if v == '':
+                row[i] = '0'
 
 
 class GSE103275(Converter):
