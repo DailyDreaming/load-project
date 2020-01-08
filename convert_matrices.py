@@ -139,11 +139,11 @@ def idempotent_link(src: Path, dst: Path):
         os.link(src.as_posix(), dst.as_posix())
 
 
-class NothingToConvertError(RuntimeError):
-    pass
+class PostponedImplementationError(NotImplementedError):
+    """This project has been examined, but postponed for some reason"""
 
 
-class HDF5ConversionError(NotImplementedError):
+class HDF5ConversionError(PostponedImplementationError):
     """A placeholder until we have HDF5 conversion integrated"""
 
 
@@ -195,7 +195,7 @@ class GSE114557(Converter):
     """
 
     def _convert(self):
-        raise NothingToConvertError()
+        raise PostponedImplementationError()
 
 
 class GSE131736(Converter):
@@ -975,6 +975,7 @@ class GSE73727(Converter):
 
 
 def main(projects: Path):
+    not_implemented_projects = {}
     failed_projects = {}
     succeeded_projects = set()
     for project_dir in projects.iterdir():
@@ -983,13 +984,19 @@ def main(projects: Path):
                 converter_class = globals()[project_dir.name]
                 converter = converter_class(project_dir)
                 converter.convert()
+            except NotImplementedError as e:
+                not_implemented_projects[project_dir] = e
             except Exception as e:
                 failed_projects[project_dir] = e
                 log.exception('Failed to process project', exc_info=True)
             else:
                 succeeded_projects.add(project_dir)
 
-    print('Failed projects', file=sys.stderr)
+    print('\nNot implemented projects', file=sys.stderr)
+    for p in not_implemented_projects:
+        print(p, file=sys.stderr)
+
+    print('\nFailed projects', file=sys.stderr)
     for p in failed_projects:
         print(p, file=sys.stderr)
 
