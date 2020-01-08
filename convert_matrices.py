@@ -723,7 +723,12 @@ class GSE75140(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE75140_hOrg.fetal.master.data.frame.txt', rows_are_genes=False, sep='\t', row_filter=self._filter)
+        ])
+
+    def _filter(self, row: List[str]):
+        del row[-1]
 
 
 class GSE130473(Converter):
@@ -732,7 +737,9 @@ class GSE130473(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV("GSE130473_Series_count_matrix.csv.gz")
+        ])
 
 
 class GSE96583(Converter):
@@ -741,7 +748,28 @@ class GSE96583(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._link_matrices([
+            Matrix(
+                mtx="GSE96583_RAW/GSM2560245_A.mat.gz",
+                genes="GSE96583_batch1.genes.tsv.gz",
+                barcodes="GSE96583_RAW/GSM2560245_barcodes.tsv.gz"),
+            Matrix(
+                mtx="GSE96583_RAW/GSM2560246_B.mat.gz",
+                genes="GSE96583_batch1.genes.tsv.gz",
+                barcodes="GSE96583_RAW/GSM2560246_barcodes.tsv.gz"),
+            Matrix(
+                mtx="GSE96583_RAW/GSM2560247_C.mat.gz",
+                genes="GSE96583_batch1.genes.tsv.gz",
+                barcodes="GSE96583_RAW/GSM2560247_barcodes.tsv.gz"),
+            Matrix(
+                mtx="GSE96583_RAW/GSM2560248_2.1.mtx.gz",
+                genes="GSE96583_batch2.genes.tsv.gz",
+                barcodes="GSE96583_RAW/GSM2560248_barcodes.tsv.gz"),
+            Matrix(
+                mtx="GSE96583_RAW/GSM2560249_2.2.mtx.gz",
+                genes="GSE96583_batch2.genes.tsv.gz",
+                barcodes="GSE96583_RAW/GSM2560249_barcodes.tsv.gz"),
+        ])
 
 
 class GSE90806(Converter):
@@ -750,7 +778,9 @@ class GSE90806(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE90806_RIP-Cre_ARC_GeneCounts.csv.gz', rows_are_genes=True)
+        ])
 
 
 class GSE76312(Converter):
