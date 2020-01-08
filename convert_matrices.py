@@ -195,7 +195,7 @@ class GSE114557(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError()
+        raise PostponedImplementationError('No recognizable CSVs / MTXs.')
 
 
 class GSE131736(Converter):
@@ -213,7 +213,7 @@ class GSE67835(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('Contains separate CSV for each cell')
 
 
 class GSE102580(Converter):
@@ -222,7 +222,23 @@ class GSE102580(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        """
+        self._convert_csvs([
+            self._csv('GSE102580_filtered_normalized_counts_human.tsv.gz'),
+            self._csv('GSE102580_filtered_normalized_counts_human_viral_transduction.tsv.gz'),
+            self._csv('GSE102580_filtered_normalized_counts_mouse.tsv.gz'),
+            self._csv('GSE102580_meta_filtered_counts_human.tsv.gz'),
+            self._csv('GSE102580_meta_filtered_counts_human_viral_transduction.tsv.gz'),
+            self._csv('GSE102580_meta_filtered_counts_mouse.tsv.gz'),
+            self._csv('GSE102580_meta_raw_counts_human.tsv.gz'),
+            self._csv('GSE102580_meta_raw_counts_human_viral_transduction.tsv.gz'),
+            self._csv('GSE102580_meta_raw_counts_mouse.tsv.gz'),
+        ])
+        """
+        raise PostponedImplementationError('Skipping because first lines of tsv starts with a comment line `# ....`')
+
+    def _csv(self, name):
+        return CSV(name, sep='\t', rows_are_genes=True)
 
 
 class GSE107585(Converter):
@@ -231,7 +247,9 @@ class GSE107585(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV("GSE107585_Mouse_kidney_single_cell_datamatrix.txt.gz", sep='\t', rows_are_genes=True),
+        ])
 
 
 class GSE106273(Converter):
@@ -255,7 +273,48 @@ class GSE130430(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._link_matrices([
+            Matrix(
+                barcodes='GSE130430_RAW/GSM3738536_24y_F_BM_barcodes.tsv.gz',
+                genes='GSE130430_RAW/GSM3738536_24y_F_BM_genes.tsv.gz',
+                mtx='GSE130430_RAW/GSM3738536_24y_F_BM_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE130430_RAW/GSM3738537_25y_F_1_BM_barcodes.tsv.gz',
+                genes='GSE130430_RAW/GSM3738537_25y_F_1_BM_genes.tsv.gz',
+                mtx='GSE130430_RAW/GSM3738537_25y_F_1_BM_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE130430_RAW/GSM3738538_25y_F_2_BM_barcodes.tsv.gz',
+                genes='GSE130430_RAW/GSM3738538_25y_F_2_BM_genes.tsv.gz',
+                mtx='GSE130430_RAW/GSM3738538_25y_F_2_BM_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE130430_RAW/GSM3738539_26y_F_BM_barcodes.tsv.gz',
+                genes='GSE130430_RAW/GSM3738539_26y_F_BM_genes.tsv.gz',
+                mtx='GSE130430_RAW/GSM3738539_26y_F_BM_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE130430_RAW/GSM3738540_25y_M_BM_barcodes.tsv.gz',
+                genes='GSE130430_RAW/GSM3738540_25y_M_BM_genes.tsv.gz',
+                mtx='GSE130430_RAW/GSM3738540_25y_M_BM_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE130430_RAW/GSM3738541_35y_M_BM_barcodes.tsv.gz',
+                genes='GSE130430_RAW/GSM3738541_35y_M_BM_genes.tsv.gz',
+                mtx='GSE130430_RAW/GSM3738541_35y_M_BM_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE130430_RAW/GSM3738542_25y_F_2_PB_barcodes.tsv.gz',
+                genes='GSE130430_RAW/GSM3738542_25y_F_2_PB_genes.tsv.gz',
+                mtx='GSE130430_RAW/GSM3738542_25y_F_2_PB_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE130430_RAW/GSM3738543_26y_F_PB_barcodes.tsv.gz',
+                genes='GSE130430_RAW/GSM3738543_26y_F_PB_genes.tsv.gz',
+                mtx='GSE130430_RAW/GSM3738543_26y_F_PB_matrix.mtx.gz',
+            ),
+        ])
 
 
 class GSE86469(Converter):
@@ -264,7 +323,13 @@ class GSE86469(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(
+                "GSE86469_GEO.islet.single.cell.processed.data.RSEM.raw.expected.counts.csv.gz",
+                sep=',',
+                rows_are_genes=True
+            ),
+        ])
 
 
 class GSE129798(Converter):
