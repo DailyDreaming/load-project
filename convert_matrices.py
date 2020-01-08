@@ -9,6 +9,8 @@ import shutil
 import sys
 from typing import NamedTuple
 
+from csv2mtx import convert_csv_to_mtx
+
 log = logging.getLogger(__file__)
 
 
@@ -16,11 +18,6 @@ class Matrix(NamedTuple):
     mtx: str
     genes: str
     barcodes: str
-
-
-# noinspection PyUnusedLocal
-def convert_csv_to_mtx(input_file: Path, output_dir: Path, delimiter: str = ',', rows_are_genes: bool = True):
-    raise NotImplementedError()
 
 
 class Converter(metaclass=ABCMeta):
