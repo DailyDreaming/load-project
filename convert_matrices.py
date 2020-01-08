@@ -324,11 +324,7 @@ class GSE86469(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(
-                "GSE86469_GEO.islet.single.cell.processed.data.RSEM.raw.expected.counts.csv.gz",
-                sep=',',
-                rows_are_genes=True
-            ),
+            CSV("GSE86469_GEO.islet.single.cell.processed.data.RSEM.raw.expected.counts.csv.gz"),
         ])
 
 
