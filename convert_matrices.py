@@ -965,7 +965,38 @@ class GSE103275(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._link_matrices([
+            Matrix(
+                barcodes='GSE103275_RAW/GSM2510616_P4-barcodes.tsv.gz',
+                genes='GSE103275_RAW/GSM2510616_P4-genes.tsv.gz',
+                mtx='GSE103275_RAW/GSM2510616_P4-matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103275_RAW/GSM2510617_P7-barcodes.tsv.gz',
+                genes='GSE103275_RAW/GSM2510617_P7-genes.tsv.gz',
+                mtx='GSE103275_RAW/GSM2510617_P7-matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103275_RAW/GSM2759554_5wk-1-barcodes.tsv.gz',
+                genes='GSE103275_RAW/GSM2759554_5wk-1-genes.tsv.gz',
+                mtx='GSE103275_RAW/GSM2759554_5wk-1-matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103275_RAW/GSM2759555_5wk-2-barcodes.tsv.gz',
+                genes='GSE103275_RAW/GSM2759555_5wk-2-genes.tsv.gz',
+                mtx='GSE103275_RAW/GSM2759555_5wk-2-matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103275_RAW/GSM2759556_P7D-barcodes.tsv.gz',
+                genes='GSE103275_RAW/GSM2759556_P7D-genes.tsv.gz',
+                mtx='GSE103275_RAW/GSM2759556_P7D-matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE103275_RAW/GSM2759557_P7E-barcodes.tsv.gz',
+                genes='GSE103275_RAW/GSM2759557_P7E-genes.tsv.gz',
+                mtx='GSE103275_RAW/GSM2759557_P7E-matrix.mtx.gz',
+            ),
+        ])
 
 
 class GSE110154(Converter):
@@ -974,7 +1005,7 @@ class GSE110154(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('~1800 CSVs, and 1 indecipherable file')
 
 
 class GSE86473(Converter):
@@ -983,7 +1014,7 @@ class GSE86473(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('No supplementary files')
 
 
 class GSE114374(Converter):
@@ -992,7 +1023,12 @@ class GSE114374(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE114374_Human_HC_expression_matrix.txt.gz', sep='\t'),
+            CSV('GSE114374_Human_UC_expression_matrix.txt.gz', sep='\t'),
+            CSV('GSE114374_Mouse_DSS_expression_matrix.txt.gz', sep='\t'),
+            CSV('GSE114374_Mouse_HC_expression_matrix.txt.gz', sep='\t'),
+        ])
 
 
 class GSE89322(Converter):
@@ -1001,7 +1037,10 @@ class GSE89322(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE89322_bulk_counts.txt.gz', sep='\t'),
+            CSV('GSE89322_single_cell_counts.txt.gz', sep='\t'),
+        ])
 
 
 class GSE86146(Converter):
@@ -1010,7 +1049,51 @@ class GSE86146(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE86146_RAW/GSM2295850_F_10W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2295851_F_14W_embryo1_1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2295852_F_14W_embryo1_2_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2295853_F_14W_embryo1_3_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2295854_F_18W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306011_F_5W_embryo1_and_2_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306012_F_7W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306013_F_8W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306014_F_12W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306015_F_18W_embryo2_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306016_F_20W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306017_F_20W_embryo2_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306018_F_23W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306019_F_23W_embryo2_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306020_F_24W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306021_F_24W_embryo2_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306022_F_26W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306023_M_4W_embryo1_and_F_11W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306024_M_9W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306025_M_10W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306026_M_10W_embryo2_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306027_M_12W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306028_M_19W_embryo1_101_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306029_M_19W_embryo1_24_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306030_M_19W_embryo1_26_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306031_M_19W_embryo2_102_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306032_M_19W_embryo2_103_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306033_M_19W_embryo2_104_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306034_M_20W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306035_M_21W_embryo1_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306036_M_21W_embryo2_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306037_M_21W_embryo3_10_2_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306038_M_21W_embryo3_10_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306039_M_21W_embryo3_17_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306040_M_25W_embryo1_101_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306041_M_25W_embryo1_102_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306042_M_25W_embryo1_103_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306043_M_25W_embryo1_104_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306044_M_25W_embryo1_105_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306045_M_25W_embryo1_106_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306046_M_25W_embryo1_107_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306047_M_25W_embryo1_24_gene_expression.txt.gz', sep='\t'),
+            CSV('GSE86146_RAW/GSM2306048_M_25W_embryo1_26_gene_expression.txt.gz', sep='\t'),
+        ])
 
 
 class GSE99795(Converter):
@@ -1019,7 +1102,7 @@ class GSE99795(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('No gene by cell matrices.')
 
 
 class GSE81547(Converter):
@@ -1028,7 +1111,7 @@ class GSE81547(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('Contains 2.5k single col CSVs.')
 
 
 class GSE115469(Converter):
@@ -1037,7 +1120,9 @@ class GSE115469(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE115469_Data.csv.gz')
+        ])
 
 
 class GSE111586(Converter):
@@ -1046,7 +1131,7 @@ class GSE111586(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('Similar, but not gene by cell matrices.')
 
 
 class GSE132040(Converter):
