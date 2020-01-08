@@ -1,10 +1,12 @@
+from abc import (
+    ABCMeta,
+    abstractmethod,
+)
 import logging
+import os
+from pathlib import Path
 import shutil
 import sys
-from abc import abstractmethod, ABCMeta
-from pathlib import Path
-
-import os
 from typing import NamedTuple
 
 log = logging.getLogger(__file__)
@@ -889,7 +891,7 @@ class GSE73727(Converter):
         raise NotImplementedError()
 
 
-def synthesize_matrices(projects: Path):
+def main(projects: Path):
     failed_projects = {}
     succeeded_projects = set()
     for project_dir in projects.iterdir():
@@ -916,5 +918,4 @@ def synthesize_matrices(projects: Path):
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
                         level=logging.DEBUG)
-    input_dir = sys.argv[1]
-    synthesize_matrices(Path(input_dir))
+    main(Path.cwd() / 'projects')

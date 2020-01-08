@@ -13,8 +13,8 @@ download:
 extract:
 	python3 extract.py
 
-merge:
-	@echo 'Replace with merge matrix script'
+matrices:
+	python3 convert_matrices.py
 
 count:
 	python3 count_cells.py --write-all
