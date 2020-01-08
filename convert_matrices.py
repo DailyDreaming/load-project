@@ -108,10 +108,23 @@ def atomic_make_archive(dst: Path, root_dir: Path):
         os.rename(Path(tmp), dst)
 
 
+def inode(file: Path, missing_ok=False) -> Optional[int]:
+    try:
+        return file.stat().st_ino
+    except FileNotFoundError:
+        if missing_ok:
+            return None
+        else:
+            raise
+
+
 def idempotent_link(src: Path, dst: Path):
-    if src.stat().st_ino != dst.stat().st_ino:
-        dst.unlink()
-        os.link(src, dst)
+    if inode(src) != inode(dst, missing_ok=True):
+        try:
+            dst.unlink()
+        except FileNotFoundError:
+            pass
+        os.link(src.as_posix(), dst.as_posix())
 
 
 class GSE107909(Converter):
