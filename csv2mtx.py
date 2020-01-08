@@ -43,7 +43,7 @@ class CSV2MTXConverter(Iterable):
             def row_filter(_):
                 pass
         self.row_filter = row_filter
-        self.x_axis_values = []
+        self.x_axis_values = None
         self.y_axis_values = []
         self.num_values = 0
 
@@ -52,8 +52,9 @@ class CSV2MTXConverter(Iterable):
             csv_reader = csv.reader(csv_file, delimiter=self.delimiter)
             for row in csv_reader:
                 filter_status = self.row_filter(row)
-                if not filter_status:  # A True filter_status tells us to skip the entire row
-                    if not self.x_axis_values:  # Get header values once
+                assert(filter_status is None or filter_status is True)
+                if not filter_status:
+                    if self.x_axis_values is None:  # Get header values once
                         self.x_axis_values = row[1:]
                     else:
                         self.y_axis_values.append(row[0])
