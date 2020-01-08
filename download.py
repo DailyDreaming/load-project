@@ -175,6 +175,7 @@ def download_file(url: str, path: Path):
                     f.write(chunk)
             except:
                 Path(f.name).unlink()
+                raise
             else:
                 Path(f.name).rename(path)
 

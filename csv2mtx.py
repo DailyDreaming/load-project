@@ -1,15 +1,18 @@
 import argparse
 import csv
 import gzip
-from typing import Union, Iterable
+import logging
 import os
 from pathlib import Path
 from shutil import copyfileobj
 import sys
+from typing import (
+    Iterable,
+    Union,
+)
 
 from util import open_maybe_gz
 
-import logging
 logging.basicConfig(level=logging.INFO)
 
 
@@ -67,15 +70,16 @@ def convert_csv_to_mtx(input_file: Path, output_dir: Path, delimiter: str = ',',
     csv_converter = CSV2MTXConverter(input_file, delimiter, rows_are_genes)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    temp_mtx_body_file = output_dir / 'matrix.mtx.temp.gz'
+    mtx_body_file = output_dir / 'matrix.mtx.body.gz'
     mtx_file = output_dir / 'matrix.mtx.gz'
 
     # Fully consume the iterator by writing the body of the mtx file to a temp file
-    write_gzip_file(temp_mtx_body_file, csv_converter)
+    write_gzip_file(mtx_body_file, csv_converter)
 
     # Write the completed mtx file using correct header information and the body we wrote to the temp file
     rows_cols_count_line = f'{len(csv_converter.genes)} {len(csv_converter.barcodes)} {csv_converter.num_values}'
-    write_mtx_file(rows_cols_count_line, temp_mtx_body_file, mtx_file)
+    write_mtx_file(rows_cols_count_line, mtx_body_file, mtx_file)
+    mtx_body_file.unlink()
 
     # Write the two remaining files using the properties from the fully consumed iterator
     write_gzip_file(output_dir / 'barcodes.tsv.gz', ['barcodes'] + csv_converter.barcodes)
@@ -88,39 +92,52 @@ def write_gzip_file(output_file: Path, lines: Union[Iterable, list]):
     """
     Create/overwrite a gzipped text file
 
-    :param output_file: File to create ('.gz' extension is added if not included)
+    :param output_file: File to create
     :param lines: List/Iterator of strings to write to file (a '\n' is added to each line)
     """
-    if not output_file.name.endswith('.gz'):
-        output_file = Path(str(output_file) + '.gz')
-    print(f'Writing {output_file}...')
-    temp_output_file = Path(str(output_file) + '.temp')
+    temp_output_file = output_file.with_suffix(output_file.suffix + '.tmp')
+    print(f'Writing {temp_output_file} ...')
     try:
         with gzip.open(temp_output_file, 'wb') as f:
             for line in lines:
                 f.write((str(line) + '\n').encode())
     except:
-        temp_output_file.unlink()
+        try:
+            temp_output_file.unlink()
+        except FileNotFoundError:
+            pass
+        raise
     else:
+        print(f'Renaming {temp_output_file} to {output_file} ...')
         temp_output_file.rename(output_file)
 
 
-def write_mtx_file(rows_cols_count_line: str, temp_mtx_body_file: Path, output_file: Path):
+def write_mtx_file(rows_cols_count_line: str, mtx_body_file: Path, output_file: Path):
     """
     Write the final mtx file with comment header line, the rows_cols_count line, and
     the mtx body from previously written temp file
 
     :param rows_cols_count_line: String containing "{num_genes} {num_cells} {total_values}"
-    :param temp_mtx_body_file: Path of the temp file containing data to be written to the body mtx file
+    :param mtx_body_file: Path of the temp file containing data to be written to the body mtx file
     :param output_file: Path of the mtx file to be written
     """
-    with gzip.open(output_file, 'wb') as out_file:
-        header_line = '%%MatrixMarket matrix coordinate integer general' + '\n'
-        out_file.write(header_line.encode())
-        out_file.write((rows_cols_count_line + '\n').encode())
-        with open_maybe_gz(temp_mtx_body_file, 'rb') as temp_data:
-            copyfileobj(temp_data, out_file)
-    os.unlink(str(temp_mtx_body_file))
+    temp_output_file = output_file.with_suffix(output_file.suffix + '.tmp')
+    try:
+        with gzip.open(temp_output_file, 'wb') as f:
+            header_line = '%%MatrixMarket matrix coordinate integer general\n'
+            f.write(header_line.encode())
+            f.write((rows_cols_count_line + '\n').encode())
+            with open_maybe_gz(mtx_body_file, 'rb') as temp_data:
+                copyfileobj(temp_data, f)
+    except:
+        try:
+            temp_output_file.unlink()
+        except FileNotFoundError:
+            pass
+        raise
+    else:
+        print(f'Renaming {temp_output_file} to {output_file} ...')
+        temp_output_file.rename(output_file)
 
 
 def main(argv):
