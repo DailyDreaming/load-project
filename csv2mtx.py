@@ -51,9 +51,9 @@ class CSV2MTXConverter(Iterable):
         with open_maybe_gz(self.input_file, 'rt', newline='') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=self.delimiter)
             for row in csv_reader:
-                self.row_filter(row)
-                if row:
-                    if not self.x_axis_values:  # get header values once
+                filter_status = self.row_filter(row)
+                if not filter_status:  # A True filter_status tells us to skip the entire row
+                    if not self.x_axis_values:  # Get header values once
                         self.x_axis_values = row[1:]
                     else:
                         self.y_axis_values.append(row[0])
