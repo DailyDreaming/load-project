@@ -50,19 +50,20 @@ class CSV2MTXConverter(Iterable):
     def __iter__(self):
         with open_maybe_gz(self.input_file, 'rt', newline='') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=self.delimiter)
-            header = next(csv_reader)  # grab first line for the header values
-            self.row_filter(header)
-            self.x_axis_values = header[1:]
             for row in csv_reader:
                 self.row_filter(row)
-                self.y_axis_values.append(row[0])
-                for col, value in enumerate(row[1:]):
-                    if float(value):
-                        self.num_values += 1
-                        gene_index = len(self.y_axis_values) if self.rows_are_genes else col + 1
-                        barcode_index = col + 1 if self.rows_are_genes else len(self.y_axis_values)
-                        return_string = f'{gene_index} {barcode_index} {value}'
-                        yield return_string
+                if row:
+                    if not self.x_axis_values:  # get header values once
+                        self.x_axis_values = row[1:]
+                    else:
+                        self.y_axis_values.append(row[0])
+                        for col, value in enumerate(row[1:]):
+                            if float(value):
+                                self.num_values += 1
+                                gene_index = len(self.y_axis_values) if self.rows_are_genes else col + 1
+                                barcode_index = col + 1 if self.rows_are_genes else len(self.y_axis_values)
+                                return_string = f'{gene_index} {barcode_index} {value}'
+                                yield return_string
 
     @property
     def genes(self):
