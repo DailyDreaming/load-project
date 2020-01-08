@@ -18,7 +18,7 @@ from util import open_maybe_gz
 
 logging.basicConfig(level=logging.INFO)
 
-RowFilter = Callable[[List[str]], None]
+RowFilter = Callable[[List[str]], Optional[bool]]
 
 
 class CSV2MTXConverter(Iterable):
@@ -41,7 +41,7 @@ class CSV2MTXConverter(Iterable):
         self.rows_are_genes = rows_are_genes
         if row_filter is None:
             def row_filter(_):
-                pass
+                return False
         self.row_filter = row_filter
         self.x_axis_values = None
         self.y_axis_values = []
@@ -52,8 +52,7 @@ class CSV2MTXConverter(Iterable):
             csv_reader = csv.reader(csv_file, delimiter=self.delimiter)
             for row in csv_reader:
                 filter_status = self.row_filter(row)
-                assert(filter_status is None or filter_status is True)
-                if not filter_status:
+                if filter_status is None or filter_status is False:
                     if self.x_axis_values is None:  # Get header values once
                         self.x_axis_values = row[1:]
                     else:
@@ -65,6 +64,10 @@ class CSV2MTXConverter(Iterable):
                                 barcode_index = col + 1 if self.rows_are_genes else len(self.y_axis_values)
                                 return_string = f'{gene_index} {barcode_index} {value}'
                                 yield return_string
+                elif filter_status is True:
+                    pass
+                else:
+                    assert False, f"Invalid row_filter return type {type(filter_status)}"
 
     @property
     def genes(self):
