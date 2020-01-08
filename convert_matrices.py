@@ -68,7 +68,7 @@ class Converter(metaclass=ABCMeta):
             self._create_zip()
 
     def _create_zip(self):
-        os.makedirs(self.zip_file.parent, exist_ok=True)
+        os.makedirs(self.zip_file.parent.as_posix(), exist_ok=True)
         atomic_make_archive(self.zip_file, root_dir=self.matrices_dir)
 
     @abstractmethod
@@ -105,7 +105,7 @@ def atomic_make_archive(dst: Path, root_dir: Path):
         tmp.unlink()
         raise e
     else:
-        os.rename(Path(tmp), dst)
+        tmp.rename(dst)
 
 
 def inode(file: Path, missing_ok=False) -> Optional[int]:
