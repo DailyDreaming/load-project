@@ -19,12 +19,9 @@ def get_bundles(dss_client, project_uuid: str):
 
 def get_project_json_uuid(dss_client, bundle_uuid: str):
     manifest = dss_client.get_bundle(uuid=bundle_uuid,replica='aws')
-    files = manifest['bundle']['files']
-    found = None
-    for file in files:
+    for file in manifest['bundle']['files']:
         if 'project' in file.get('name'):
-            found = file
-    return found
+            return found
 
 def get_date_submission(dss_client, file_uuid: str):
     file_metadata = dss_client.get_file(uuid=file_uuid,replica='aws')
