@@ -127,7 +127,7 @@ def get_project_cell_count(accession_id: str) -> Union[int, None]:
         return None
     total_count = 0
     for file in Path(f'projects/{accession_id}/matrices').glob('**/*'):
-        if file.name.endswith(('.mtx', '.mtx.gz')):
+        if file.is_file() and file.name.endswith(('.mtx', '.mtx.gz')):
             cell_count = count_cells(file)
             logging.info('Cell count in %s is %s', file, cell_count)
             total_count += cell_count
