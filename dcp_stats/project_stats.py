@@ -1,13 +1,20 @@
 ## Prod Project Rereival
 
 import requests, pprint, hca, csv, os
-urls = { "prod" : {"azul":'https://service.explore.data.humancellatlas.org/repository/projects?size=200',
+urls = {"prod" : {"azul":'https://service.explore.data.humancellatlas.org/repository/projects?size=200',
                     "dss": 'https://dss.data.humancellatlas.org/v1/swagger.json'},
-         "dev" : {"azul":'https://service.skunk.dev.explore.data.humancellatlas.org/repository/projects?size=200',
-                    "dss": 'https://dss.dev.data.humancellatlas.org/v1/swagger.json'},
-         }
+        "dev" : {"azul":'https://service.skunk.dev.explore.data.humancellatlas.org/repository/projects?size=200',
+                    "dss": 'https://dss.dev.data.humancellatlas.org/v1/swagger.json'}
+        }
 
-
+manual_counts  = {"116965f3-f094-4769-9d28-ae675c1b569c": 15744,
+                  "2043c65a-1cf8-4828-a656-9e247d4e64f1": 1733,
+                  "4a95101c-9ffc-4f30-a809-f04518a23803": 267360,
+                  "f83165c5-e2ea-4d15-a5cf-33f3550bffde": 546183,
+                  "abe1a013-af7a-45ed-8c26-f3793c24a1f4": 341079,
+                  "a9c022b4-c771-4468-b769-cabcf9738de3": 40993
+                  }
+#thanks 2 lon <3
 
 
 def get_bundles(dss_client, project_uuid: str):
@@ -21,7 +28,7 @@ def get_project_json_uuid(dss_client, bundle_uuid: str):
     manifest = dss_client.get_bundle(uuid=bundle_uuid,replica='aws')
     for file in manifest['bundle']['files']:
         if 'project' in file.get('name'):
-            return found
+            return file
 
 def get_date_submission(dss_client, file_uuid: str):
     file_metadata = dss_client.get_file(uuid=file_uuid,replica='aws')
@@ -44,11 +51,15 @@ def run(stage):
     # get all the projects
     for x in res.json().get('hits'):
         project_uuid = x.get('entryId')
-        cellSuspension = [suspension.get('totalCells') for suspension in x.get('cellSuspensions')]
-        cell_count = sum(cellSuspension)
+        if project_uuid in manual_counts:
+            cell_count = manual_counts[project_uuid]
+        else:
+            cellSuspension = [suspension.get('totalCells') for suspension in x.get('cellSuspensions')]
+            cell_count = sum(cellSuspension)
         project_info.append({ "project_uuid": project_uuid, "total_cells": cell_count })
 
-    # need to get ingestion date, can be found from elasticsearch?...  if not we do the long way....
+
+    # this is the long way to do it
     for project in project_info:
         project_bundles = get_bundles(dss_client, project['project_uuid'])
         file = None
