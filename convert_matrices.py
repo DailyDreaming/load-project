@@ -9,6 +9,7 @@ import shutil
 import sys
 from typing import (
     Iterable,
+    List,
     Optional,
 )
 
@@ -17,7 +18,10 @@ from dataclasses import (
     dataclass,
 )
 
-from csv2mtx import convert_csv_to_mtx
+from csv2mtx import (
+    RowFilter,
+    convert_csv_to_mtx,
+)
 
 log = logging.getLogger(__file__)
 
@@ -34,6 +38,7 @@ class CSV:
     name: str
     sep: str = ','
     rows_are_genes: bool = True
+    row_filter: Optional[RowFilter] = None
 
 
 class Converter(metaclass=ABCMeta):
@@ -98,7 +103,8 @@ class Converter(metaclass=ABCMeta):
             convert_csv_to_mtx(input_file=self.geo_dir / csv.name,
                                output_dir=self.matrix_dir(csv.name),
                                delimiter=csv.sep,
-                               rows_are_genes=csv.rows_are_genes)
+                               rows_are_genes=csv.rows_are_genes,
+                               row_filter=csv.row_filter)
 
 
 def atomic_make_archive(dst: Path, root_dir: Path):
@@ -304,7 +310,10 @@ class GSE110499(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV("GSE110499_GEO_processed_MM_10X_raw_UMI_count_martix.txt.gz", sep='\t'),
+            CSV("GSE110499_GEO_processed_MM_raw_TPM_matrix.txt.gz", sep='\t'),
+        ])
 
 
 class GSE36552(Converter):
@@ -322,7 +331,23 @@ class GSE132044(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._link_matrices([
+            Matrix(
+                mtx='GSE132044_cortex_mm10_count_matrix.mtx.gz',
+                genes='GSE132044_cortex_mm10_gene.tsv.gz',
+                barcodes='GSE132044_cortex_mm10_cell.tsv.gz',
+            ),
+            Matrix(
+                mtx='GSE132044_mixture_hg19_mm10_count_matrix.mtx.gz',
+                genes='GSE132044_mixture_hg19_mm10_gene.tsv.gz',
+                barcodes='GSE132044_mixture_hg19_mm10_cell.tsv.gz',
+            ),
+            Matrix(
+                mtx='GSE132044_pbmc_hg38_count_matrix.mtx.gz',
+                genes='GSE132044_pbmc_hg38_gene.tsv.gz',
+                barcodes='GSE132044_pbmc_hg38_cell.tsv.gz',
+            ),
+        ])
 
 
 class GSE130636(Converter):
@@ -331,7 +356,20 @@ class GSE130636(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            self._csv('GSE130636_RAW/GSM3745992_fovea_donor_1_expression.tsv.gz'),
+            self._csv('GSE130636_RAW/GSM3745993_fovea_donor_2_expression.tsv.gz'),
+            self._csv('GSE130636_RAW/GSM3745994_fovea_donor_3_expression.tsv.gz'),
+            self._csv('GSE130636_RAW/GSM3745995_peripheral_donor_1_expression.tsv.gz'),
+            self._csv('GSE130636_RAW/GSM3745996_peripheral_donor_2_expression.tsv.gz'),
+            self._csv('GSE130636_RAW/GSM3745997_peripheral_donor_3_expression.tsv.gz'),
+        ])
+
+    def _csv(self, name):
+        return CSV(name, sep='\t', rows_are_genes=False, row_filter=self._filter)
+
+    def _filter(self, row: List[str]):
+        del row[1]
 
 
 class GSE81383(Converter):
