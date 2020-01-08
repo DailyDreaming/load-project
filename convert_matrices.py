@@ -7,17 +7,33 @@ import os
 from pathlib import Path
 import shutil
 import sys
-from typing import NamedTuple
+from typing import (
+    Iterable,
+    Optional,
+)
+
+from dataclasses import (
+    astuple,
+    dataclass,
+)
 
 from csv2mtx import convert_csv_to_mtx
 
 log = logging.getLogger(__file__)
 
 
-class Matrix(NamedTuple):
+@dataclass(frozen=True)
+class Matrix:
     mtx: str
     genes: str
     barcodes: str
+
+
+@dataclass(frozen=True)
+class CSV:
+    name: str
+    sep: str = ','
+    rows_are_genes: bool = True
 
 
 class Converter(metaclass=ABCMeta):
@@ -62,7 +78,7 @@ class Converter(metaclass=ABCMeta):
     def _link_matrix(self, matrix: 'Matrix'):
         matrix_dir = self.matrix_dir(matrix.mtx)
         matrix_dir.mkdir(parents=True, exist_ok=True)
-        assert all(name.endswith('.gz') for name in matrix)
+        assert all(name.endswith('.gz') for name in astuple(matrix))
         idempotent_link(self.geo_dir / matrix.mtx, matrix_dir / 'matrix.mtx.gz')
         idempotent_link(self.geo_dir / matrix.genes, matrix_dir / 'genes.tsv.gz')
         idempotent_link(self.geo_dir / matrix.barcodes, matrix_dir / 'barcodes.tsv.gz')
@@ -70,6 +86,13 @@ class Converter(metaclass=ABCMeta):
     def _link_matrices(self, matrices):
         for matrix in matrices:
             self._link_matrix(matrix)
+
+    def _convert_csvs(self, csvs: Iterable[CSV]):
+        for csv in csvs:
+            convert_csv_to_mtx(input_file=self.geo_dir / csv.name,
+                               output_dir=self.matrix_dir(csv.name),
+                               delimiter=csv.sep,
+                               rows_are_genes=csv.rows_are_genes)
 
 
 def atomic_make_archive(dst: Path, root_dir: Path):
@@ -97,12 +120,10 @@ class GSE107909(Converter):
     """
 
     def _convert(self):
-        csvs = [
-            "GSE107909_RAW/GSM2883183_PLNr9c.csv.gz",
-            "GSE107909_RAW/GSM2883182_PLN++.csv.gz"
-        ]
-        for csv in csvs:
-            convert_csv_to_mtx(self.geo_dir / csv, self.matrix_dir(csv), ',', rows_are_genes=True)
+        self._convert_csvs([
+            CSV("GSE107909_RAW/GSM2883183_PLNr9c.csv.gz"),
+            CSV("GSE107909_RAW/GSM2883182_PLN++.csv.gz")
+        ])
 
 
 class GSE117089(Converter):
