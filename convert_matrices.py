@@ -1072,19 +1072,19 @@ def main(projects: Path):
     not_implemented_projects = []
     failed_projects = []
     succeeded_projects = []
-    for p in sorted(projects.iterdir()):
-        if p.is_symlink():
+    for project_dir in sorted(projects.iterdir()):
+        if project_dir.is_symlink():
             try:
-                converter_class = globals()[p.name]
-                converter = converter_class(p)
+                converter_class = globals()[project_dir.name]
+                converter = converter_class(project_dir)
                 converter.convert()
             except NotImplementedError:
-                not_implemented_projects.append(p)
+                not_implemented_projects.append(project_dir)
             except Exception:
-                failed_projects.append(p)
+                failed_projects.append(project_dir)
                 log.exception('Failed to process project', exc_info=True)
             else:
-                succeeded_projects.append(p)
+                succeeded_projects.append(project_dir)
 
     print_projects('not implemented', not_implemented_projects, file=sys.stderr)
     print_projects('failed', failed_projects, file=sys.stderr)
