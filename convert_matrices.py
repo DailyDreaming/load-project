@@ -584,7 +584,13 @@ class GSE130606(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._link_matrices([
+            Matrix(
+                mtx='GSE130606_matrix.mtx.gz',
+                genes='GSE130606_genes.tsv.gz',
+                barcodes='GSE130606_barcodes.tsv.gz'
+            )
+        ])
 
 
 class GSE75688(Converter):
@@ -593,7 +599,17 @@ class GSE75688(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(
+                name='GSE75688_GEO_processed_Breast_Cancer_raw_TPM_matrix.txt.gz',
+                sep='\t',
+                row_filter=self._filter,
+            )
+        ])
+
+    def _filter(self, row: List[str]):
+        del row[2]  # gene_type
+        del row[0]  # gene_id, we'll use gene name (row[1])
 
 
 class GSE89232(Converter):
@@ -602,7 +618,17 @@ class GSE89232(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(name='GSE89232_expMatrix.txt.gz', sep='\t', row_filter=self._filter)
+        ])
+
+    def _filter(self, row: List[str]):
+        if len(row) == 957:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 958:
+            pass
+        else:
+            assert False, len(row)
 
 
 class GSE107618(Converter):
@@ -611,7 +637,14 @@ class GSE107618(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(name='GSE107618_Merge.TPM.csv.gz', row_filter=self._filter)
+        ])
+
+    def _filter(self, row: List[str]):
+        for i, v in enumerate(row):
+            if v == '':
+                row[i] = '0'
 
 
 class GSE132802(Converter):
@@ -620,7 +653,7 @@ class GSE132802(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise HDF5ConversionError()
 
 
 class GSE75140(Converter):
