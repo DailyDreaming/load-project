@@ -75,13 +75,19 @@ class Converter(metaclass=ABCMeta):
     def _convert(self):
         raise NotImplementedError()
 
-    def _link_matrix(self, matrix: 'Matrix'):
-        matrix_dir = self.matrix_dir(matrix.mtx)
-        matrix_dir.mkdir(parents=True, exist_ok=True)
-        assert all(name.endswith('.gz') for name in astuple(matrix))
-        idempotent_link(self.geo_dir / matrix.mtx, matrix_dir / 'matrix.mtx.gz')
-        idempotent_link(self.geo_dir / matrix.genes, matrix_dir / 'genes.tsv.gz')
-        idempotent_link(self.geo_dir / matrix.barcodes, matrix_dir / 'barcodes.tsv.gz')
+    std_matrix = Matrix(
+        mtx='matrix.mtx.gz',
+        genes='genes.tsv.gz',
+        barcodes='barcodes.tsv.gz'
+    )
+
+    def _link_matrix(self, src: 'Matrix'):
+        assert all(name.endswith('.gz') for name in astuple(src))
+        dst_dir = self.matrix_dir(src.mtx)
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        dst = self.std_matrix
+        for src_name, dst_name in zip(astuple(src), astuple(dst)):
+            idempotent_link(self.geo_dir / src_name, dst_dir / dst_name)
 
     def _link_matrices(self, matrices):
         for matrix in matrices:
