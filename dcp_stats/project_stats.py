@@ -1,4 +1,6 @@
-## Prod Project Rereival
+# Prod Project Rereival
+# see spreadsheet at https://docs.google.com/spreadsheets/d/1AKVIPG6TQ0FmQBGg_C41KYQmdcO2IuV9_fslTTzoZ_8/edit?usp=sharing
+
 
 import requests, pprint, hca, csv, os
 urls = {"prod" : {"azul":'https://service.explore.data.humancellatlas.org/repository/projects?size=200',
