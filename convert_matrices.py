@@ -779,7 +779,7 @@ class GSE90806(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV('GSE90806_RIP-Cre_ARC_GeneCounts.csv.gz', rows_are_genes=True)
+            CSV('GSE90806_RIP-Cre_ARC_GeneCounts.csv.gz')
         ])
 
 
