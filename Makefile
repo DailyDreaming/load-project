@@ -16,6 +16,9 @@ extract:
 matrices:
 	python3 convert_matrices.py
 
+clean_matrices:
+	rm -rf projects/*/matrices projects/*/bundle/matrix.mtx.zip
+
 count:
 	python3 count_cells.py --write-all
 
