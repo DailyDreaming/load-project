@@ -334,7 +334,20 @@ class GSE129798(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        # https://github.com/DailyDreaming/load-project/issues/66
+        raise PostponedImplementationError('Inputs are not gzipped')
+        # There are two matrices present but the smaller one has 100% barcode
+        # overlap with the larger one. The larger one is also named "final" so
+        # I'm only including the larger one.
+        # noinspection PyUnreachableCode
+        prefix = 'GSE129798_Mouse_Adult_DGE_final/Mouse_Adult_DGE_final'
+        self._link_matrix(
+            Matrix(
+                mtx=prefix + '/matrix.mtx',
+                genes=prefix + '/genes.tsv',
+                barcodes=prefix + '/barcodes.tsv'
+            )
+        )
 
 
 class GSE126836(Converter):
@@ -343,7 +356,26 @@ class GSE126836(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        # Excluding only_Mal and only_Fem since they have 100% barcode overlap
+        # with region_neur_Mal and region_neur_Fem respectively
+        self._link_matrices([
+            Matrix(
+                mtx=prefix + '_matrix.mtx.gz',
+                genes=prefix + '_genes.csv.gz',
+                barcodes=prefix + '_barcodes.csv.gz'
+            )
+            for prefix in (
+                'GSE126836_BNST_region_neur_Fem',
+                'GSE126836_BNST_region_neur_Mal',
+                'GSE126836_SN_MD5534',
+                'GSE126836_SN_MD5828',
+                'GSE126836_SN_MD5840',
+                'GSE126836_SN_MD5862',
+                'GSE126836_SN_MD5893',
+                'GSE126836_SN_MD6060',
+                'GSE126836_SN_MD6063'
+            )
+        ])
 
 
 class GSE81608(Converter):
@@ -352,7 +384,9 @@ class GSE81608(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE81608_human_islets_rpkm.txt.gz', sep='\t', rows_are_genes=True)
+        ])
 
 
 class GSE97104(Converter):
@@ -361,7 +395,16 @@ class GSE97104(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('Invalid CSV syntax')
+        # NOTE: this file contains a comment (#) and multiple blank lines at the beginning,
+        # not sure if Daniel's script handles this
+
+        # There are other files in RAW but the comments claims that this one is
+        # the result of their concatenation
+        # noinspection PyUnreachableCode
+        self._convert_csvs([
+            CSV('GSE97104_all_umi.mtx.txt.gz', sep='\t', rows_are_genes=True)
+        ])
 
 
 class GSE113197(Converter):
@@ -370,7 +413,7 @@ class GSE113197(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError("individual cell files (871 'csv's with one column each)")
 
 
 class GSE110499(Converter):
@@ -447,7 +490,12 @@ class GSE81383(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        # There are 2 csvs with identical data, one just has quotes around the
+        # values.
+
+        self._convert_csvs([
+            CSV('GSE81383_data_melanoma_scRNAseq_BT_2015-07-02.txt.gz', sep='\t', rows_are_genes=True)
+        ])
 
 
 class GSE116237(Converter):
@@ -456,7 +504,10 @@ class GSE116237(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        # This one has \r for line breaks so this will probably fail
+        self._convert_csvs([
+            CSV('GSE116237_scRNAseq_expressionMatrix.txt.gz', sep=',', rows_are_genes=True)
+        ])
 
 
 class GSE114802(Converter):
@@ -465,7 +516,18 @@ class GSE114802(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._link_matrices([
+            Matrix(
+                mtx=prefix + 'matrix.mtx.gz',
+                barcodes=prefix + 'barcodes.tsv.gz',
+                genes=prefix + 'genes.tsv.gz'
+            )
+            for prefix
+            in [
+                'GSE114802_org4_',
+                'GSE114802_org_'
+            ]
+        ])
 
 
 class GSE124472(Converter):
@@ -474,7 +536,31 @@ class GSE124472(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        # https://github.com/DailyDreaming/load-project/issues/66
+        raise PostponedImplementationError('Inputs are not gzipped')
+        # noinspection PyUnreachableCode
+        self._link_matrices([
+            Matrix(
+                mtx=str(prefix / 'matrix.mtx'),
+                genes=str(prefix / 'genes.tsv'),
+                barcodes=str(prefix / 'barcodes.tsv')
+            )
+            for prefix
+            in [
+                Path('GSE124472_RAW') / p
+                for p
+                in [
+                    'GSM3534656_H17w_Z1_raw_counts',
+                    'GSM3534657_H17w_Z2_raw_counts',
+                    'GSM3534658_H15w_Z1_raw_counts',
+                    'GSM3534659_H15w_Z2_raw_counts',
+                    'GSM3534660_HuOrg_D16_1_raw_counts',
+                    'GSM3534661_HuOrg_D16_2_raw_counts',
+                    'GSM3534662_HuOrg_D28_1_raw_counts',
+                    'GSM3534663_HuOrg_D28_2_raw_counts'
+                ]
+            ]
+        ])
 
 
 class GSE84465(Converter):
@@ -483,7 +569,9 @@ class GSE84465(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE84465_GBM_All_data.csv.gz', sep=' ', rows_are_genes=True)
+        ])
 
 
 class GSE134881(Converter):
@@ -492,7 +580,9 @@ class GSE134881(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE134881_RISKfpkmAll.csv.gz', sep=',', rows_are_genes=True)
+        ])
 
 
 class GSE128639(Converter):
@@ -501,7 +591,8 @@ class GSE128639(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        # Seems that the same samples are spread across 3 files with different genes in each?
+        raise PostponedImplementationError('Confusing organisation of files')
 
 
 class GSE118127(Converter):
@@ -510,7 +601,7 @@ class GSE118127(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise HDF5ConversionError()
 
 
 class GSE81905(Converter):
@@ -519,7 +610,7 @@ class GSE81905(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('BAM files, (probably not expression data)')
 
 
 class GSE94820(Converter):
@@ -528,7 +619,13 @@ class GSE94820(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(csv, sep='\t', rows_are_genes=True)
+            for csv in (
+                'GSE94820_raw.expMatrix_DCnMono.discovery.set.submission.txt.gz',
+                'GSE94820_raw.expMatrix_deeper.characterization.set.submission.txt.gz'
+            )
+        ])
 
 
 class GSE81904(Converter):
@@ -537,7 +634,9 @@ class GSE81904(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE81904_BipolarUMICounts_Cell2016.txt.gz', sep='\t', rows_are_genes=True)
+        ])
 
 
 class GSE116470(Converter):
@@ -546,7 +645,8 @@ class GSE116470(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        # Might be like. An mtx with the genes and barcodes defined in comments????
+        raise PostponedImplementationError("this one's freaking weird")
 
 
 class GSE124494(Converter):
@@ -555,7 +655,26 @@ class GSE124494(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._link_matrices([
+            Matrix(
+                mtx=prefix + 'matrix.mtx.gz',
+                genes=prefix + 'genes.tsv.gz',
+                barcodes=prefix + 'barcodes.tsv.gz'
+            )
+            for prefix
+            in [
+                f'GSE124494_RAW/{p}'
+                for p
+                in [
+                    'GSM3535276_AXLN1_',
+                    'GSM3535277_AXLN2_',
+                    'GSM3535278_AXLN3_',
+                    'GSM3535279_AXLN4_',
+                    'GSM3535280_HNLN1_',
+                    'GSM3535281_HNLN2_'
+                ]
+            ]
+        ])
 
 
 class GSE135889(Converter):
@@ -564,6 +683,7 @@ class GSE135889(Converter):
     """
 
     def _convert(self):
+        # Doesn't seem to be any data in this one
         raise NotImplementedError()
 
 
@@ -573,6 +693,7 @@ class GSE111727(Converter):
     """
 
     def _convert(self):
+        # SKipped this one because I'm tired and couldn;t figure out file relations
         raise NotImplementedError()
 
 
@@ -582,6 +703,7 @@ class GSE84147(Converter):
     """
 
     def _convert(self):
+        # Couldn;t understand file formats
         raise NotImplementedError()
 
 
@@ -591,7 +713,9 @@ class GSE93374(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE93374_Merged_all_020816_DGE.txt.gz', sep='\t', rows_are_genes=True)
+        ])
 
 
 class GSE127969(Converter):
@@ -600,7 +724,11 @@ class GSE127969(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('Fails with a UnicodeError due to fancy quotation marks (0x93 0x94)')
+        # noinspection PyUnreachableCode
+        self._convert_csvs([
+            CSV('GSE127969_counts_TPM_ALL.csv.gz', sep='\t', rows_are_genes=True)
+        ])
 
 
 class GSE75478(Converter):
@@ -609,7 +737,13 @@ class GSE75478(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(csv, sep=',', rows_are_genes=True)
+            for csv in (
+                'GSE75478_transcriptomics_raw_filtered_I1.csv.gz',
+                'GSE75478_transcriptomics_raw_filtered_I2.csv.gz'
+            )
+        ])
 
 
 class GSE100618(Converter):
@@ -618,7 +752,7 @@ class GSE100618(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([CSV('GSE100618_HTSeq_counts.txt.gz', sep=' ', rows_are_genes=True)])
 
 
 class GSE75367(Converter):
@@ -627,7 +761,9 @@ class GSE75367(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE75367_readCounts.txt.gz', sep='\t', rows_are_genes=True)
+        ])
 
 
 class GSE70580(Converter):
@@ -636,7 +772,7 @@ class GSE70580(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('hundreds of cell files')
 
 
 class GSE130606(Converter):
@@ -1170,7 +1306,9 @@ class GSE132040(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE132040_190214_A00111_0269_AHH3J3DSXX_190214_A00111_0270_BHHMFWDSXX.csv.gz')
+        ])
 
 
 class GSE84133(Converter):
@@ -1179,7 +1317,18 @@ class GSE84133(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError("non-numeric descriptive columns")
+        # noinspection PyUnreachableCode
+        self._convert_csvs([
+            CSV('GSE84133_RAW/' + csv, sep=',', rows_are_genes=False)
+            for csv in (
+                'GSM2230757_human1_umifm_counts.csv.gz',
+                'GSM2230758_human2_umifm_counts.csv.gz',
+                'GSM2230759_human3_umifm_counts.csv.gz',
+                'GSM2230760_human4_umifm_counts.csv.gz',
+                'GSM2230761_mouse1_umifm_counts.csv.gz',
+                'GSM2230762_mouse2_umifm_counts.csv.gz'
+            )])
 
 
 class GSE75659(Converter):
@@ -1188,7 +1337,7 @@ class GSE75659(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('hundreds of cell files')
 
 
 class GSE109822(Converter):
@@ -1197,7 +1346,14 @@ class GSE109822(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(csv, sep=',', rows_are_genes=True)
+            for csv in (
+                'GSE109822_CD3145.csv.gz',
+                'GSE109822_CD90.csv.gz',
+                'GSE109822_dermis.csv.gz'
+            )
+        ])
 
 
 class GSE109979(Converter):
@@ -1269,7 +1425,7 @@ class GSE83139(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('looks like a SAM file??')
 
 
 class GSE76381(Converter):
@@ -1278,7 +1434,7 @@ class GSE76381(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('.cef files with multi-line column headers')
 
 
 class GSE117498(Converter):
@@ -1287,7 +1443,22 @@ class GSE117498(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE117498_RAW/' + csv, sep='\t', rows_are_genes=True)
+            for csv in (
+                'GSM3305359_HSC.raw_counts.tsv.gz',
+                'GSM3305360_MPP.raw_counts.tsv.gz',
+                'GSM3305361_MLP.raw_counts.tsv.gz',
+                'GSM3305362_PreBNK.raw_counts.tsv.gz',
+                'GSM3305363_MEP.raw_counts.tsv.gz',
+                'GSM3305364_CMP.raw_counts.tsv.gz',
+                'GSM3305365_GMP.raw_counts.tsv.gz',
+                'GSM3305366_LinNegCD34PosCD164Pos.raw_counts.tsv.gz',
+                'GSM3305367_LinNegCD34NegCD164high.raw_counts.tsv.gz',
+                'GSM3305368_LinNegCD34lowCD164high.raw_counts.tsv.gz',
+                'GSM3305369_LinNegCD34NegCD164low.raw_counts.tsv.gz'
+            )
+        ])
 
 
 class GSE114396(Converter):
@@ -1296,7 +1467,9 @@ class GSE114396(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE114396_RAW/GSM3141011_ILC_count.csv.gz', sep=',', rows_are_genes=True)
+        ])
 
 
 class GSE109488(Converter):
@@ -1305,7 +1478,81 @@ class GSE109488(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV(f'GSE109488_RAW/{csv}_gene_expression_TPM.txt.gz', sep='\t', rows_are_genes=True)
+            for csv in (
+                'GSM2944263_HEK7W2C1',
+                'GSM2944264_HEK7W2C2',
+                'GSM2944265_HEK7W2D1',
+                'GSM2944266_HEK7W2D2',
+                'GSM2944267_HEK7W2P1',
+                'GSM2944268_HEK7W2P2',
+                'GSM2944269_HEK9WC1',
+                'GSM2944270_HEK9WC2',
+                'GSM2944271_HEK9WD1',
+                'GSM2944272_HEK9WD2',
+                'GSM2944273_HEK9WP1',
+                'GSM2944274_HEK9WP2',
+                'GSM2944275_HEK13WA',
+                'GSM2944276_HEK13WB',
+                'GSM2944277_HEK19W1C1',
+                'GSM2944278_HEK19W1C2',
+                'GSM2944279_HEK19W1D1',
+                'GSM2944280_HEK19W1D2',
+                'GSM2944281_HEK19W1P1',
+                'GSM2944282_HEK19W1P2',
+                'GSM2944283_HEK19W2C1',
+                'GSM2944284_HEK19W2C2',
+                'GSM2944285_HEK19W2D1',
+                'GSM2944286_HEK19W2D2',
+                'GSM2944287_HEK19W2P1',
+                'GSM2944288_HEK19W2P2',
+                'GSM2944289_HEK25WC1',
+                'GSM2944290_HEK25WC2',
+                'GSM2944291_HEK25WD1',
+                'GSM2944292_HEK25WD2',
+                'GSM2944293_HEK25WP1',
+                'GSM2944294_HEK25WP2',
+                'GSM2944295_K7W1C1',
+                'GSM2944296_K7W1C2',
+                'GSM2944297_K7W1D1',
+                'GSM2944298_K7W1D2',
+                'GSM2944299_K7W1P1',
+                'GSM2944300_K7W1P2',
+                'GSM2944301_K8W1A1',
+                'GSM2944302_K8W1B1',
+                'GSM2944303_K8W1B2',
+                'GSM2944304_K10W2C1',
+                'GSM2944305_K10W2C2',
+                'GSM2944306_K10W2D1',
+                'GSM2944307_K10W2D2',
+                'GSM2944308_K10W2P1',
+                'GSM2944309_K10W2P2',
+                'GSM2944310_K22W2C11',
+                'GSM2944311_K22W2C12',
+                'GSM2944312_K22W2C21',
+                'GSM2944313_K22W2C22',
+                'GSM2944314_K22W2C31',
+                'GSM2944315_K22W2C32',
+                'GSM2944316_K22W2D11',
+                'GSM2944317_K22W2D12',
+                'GSM2944318_K22W2D21',
+                'GSM2944319_K22W2D22',
+                'GSM2944320_K22W2D31',
+                'GSM2944321_K22W2D32',
+                'GSM2944322_K22W2P11',
+                'GSM2944323_K22W2P12',
+                'GSM2944324_K22W2P21',
+                'GSM2944325_K22W2P22',
+                'GSM2944326_K22W2P31',
+                'GSM2944327_K22W2P32',
+                'GSM2944328_K24W1C',
+                'GSM2944329_K24W1D',
+                'GSM2944330_K24W1P',
+                'GSM2944331_K801',
+                'GSM2944332_K802'
+            )
+        ])
 
 
 class GSE57872(Converter):
@@ -1357,6 +1604,7 @@ def main(projects: Path):
     succeeded_projects = []
     for project_dir in sorted(projects.iterdir()):
         if project_dir.is_symlink():
+            # noinspection PyBroadException
             try:
                 converter_class = globals()[project_dir.name]
                 converter = converter_class(project_dir)
