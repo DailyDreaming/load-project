@@ -1656,24 +1656,27 @@ def main(projects: Path):
     not_implemented_projects = []
     failed_projects = []
     succeeded_projects = []
-    for project_dir in sorted(projects.iterdir()):
-        if project_dir.is_symlink():
-            # noinspection PyBroadException
-            try:
-                converter_class = globals()[project_dir.name]
-                converter = converter_class(project_dir)
-                converter.convert()
-            except NotImplementedError:
-                not_implemented_projects.append(project_dir)
-            except Exception:
-                failed_projects.append(project_dir)
-                log.exception('Failed to process project', exc_info=True)
-            else:
-                succeeded_projects.append(project_dir)
-
-    print_projects('not implemented', not_implemented_projects, file=sys.stderr)
-    print_projects('failed', failed_projects, file=sys.stderr)
-    print_projects('succeeded', succeeded_projects)
+    try:
+        for project_dir in sorted(projects.iterdir()):
+            if project_dir.is_symlink():
+                # noinspection PyBroadException
+                try:
+                    converter_class = globals()[project_dir.name]
+                    converter = converter_class(project_dir)
+                    converter.convert()
+                except NotImplementedError:
+                    not_implemented_projects.append(project_dir)
+                except BaseException as e:
+                    failed_projects.append(project_dir)
+                    log.exception('Failed to process project', exc_info=True)
+                    if not isinstance(e, Exception):
+                        raise e
+                else:
+                    succeeded_projects.append(project_dir)
+    finally:
+        print_projects('not implemented', not_implemented_projects, file=sys.stderr)
+        print_projects('failed', failed_projects, file=sys.stderr)
+        print_projects('succeeded', succeeded_projects)
 
 
 def print_projects(title, projects, file=None):
