@@ -238,7 +238,7 @@ class GSE102580(Converter):
         raise PostponedImplementationError('Skipping because first lines of tsv starts with a comment line `# ....`')
 
     def _csv(self, name):
-        return CSV(name, sep='\t', rows_are_genes=True)
+        return CSV(name, sep='\t')
 
 
 class GSE107585(Converter):
@@ -248,7 +248,7 @@ class GSE107585(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV('GSE107585_Mouse_kidney_single_cell_datamatrix.txt.gz', sep='\t', rows_are_genes=True),
+            CSV('GSE107585_Mouse_kidney_single_cell_datamatrix.txt.gz', sep='\t'),
         ])
 
 
@@ -384,7 +384,7 @@ class GSE81608(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV('GSE81608_human_islets_rpkm.txt.gz', sep='\t', rows_are_genes=True)
+            CSV('GSE81608_human_islets_rpkm.txt.gz', sep='\t')
         ])
 
 
@@ -402,7 +402,7 @@ class GSE97104(Converter):
         # the result of their concatenation
         # noinspection PyUnreachableCode
         self._convert_csvs([
-            CSV('GSE97104_all_umi.mtx.txt.gz', sep='\t', rows_are_genes=True)
+            CSV('GSE97104_all_umi.mtx.txt.gz', sep='\t')
         ])
 
 
@@ -493,7 +493,7 @@ class GSE81383(Converter):
         # values.
 
         self._convert_csvs([
-            CSV('GSE81383_data_melanoma_scRNAseq_BT_2015-07-02.txt.gz', sep='\t', rows_are_genes=True)
+            CSV('GSE81383_data_melanoma_scRNAseq_BT_2015-07-02.txt.gz', sep='\t')
         ])
 
 
@@ -505,7 +505,7 @@ class GSE116237(Converter):
     def _convert(self):
         # This one has \r for line breaks so this will probably fail
         self._convert_csvs([
-            CSV('GSE116237_scRNAseq_expressionMatrix.txt.gz', sep=',', rows_are_genes=True)
+            CSV('GSE116237_scRNAseq_expressionMatrix.txt.gz')
         ])
 
 
@@ -568,7 +568,7 @@ class GSE84465(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV('GSE84465_GBM_All_data.csv.gz', sep=' ', rows_are_genes=True)
+            CSV('GSE84465_GBM_All_data.csv.gz', sep=' ')
         ])
 
 
@@ -579,7 +579,7 @@ class GSE134881(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV('GSE134881_RISKfpkmAll.csv.gz', sep=',', rows_are_genes=True)
+            CSV('GSE134881_RISKfpkmAll.csv.gz')
         ])
 
 
@@ -618,7 +618,7 @@ class GSE94820(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(csv, sep='\t', rows_are_genes=True)
+            CSV(csv, sep='\t')
             for csv in (
                 'GSE94820_raw.expMatrix_DCnMono.discovery.set.submission.txt.gz',
                 'GSE94820_raw.expMatrix_deeper.characterization.set.submission.txt.gz'
@@ -633,7 +633,7 @@ class GSE81904(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV('GSE81904_BipolarUMICounts_Cell2016.txt.gz', sep='\t', rows_are_genes=True)
+            CSV('GSE81904_BipolarUMICounts_Cell2016.txt.gz', sep='\t')
         ])
 
 
@@ -712,7 +712,7 @@ class GSE93374(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV('GSE93374_Merged_all_020816_DGE.txt.gz', sep='\t', rows_are_genes=True)
+            CSV('GSE93374_Merged_all_020816_DGE.txt.gz', sep='\t')
         ])
 
 
@@ -726,7 +726,7 @@ class GSE127969(Converter):
         raise PostponedImplementationError('Not UTF-8')
         # noinspection PyUnreachableCode
         self._convert_csvs([
-            CSV('GSE127969_counts_TPM_ALL.csv.gz', sep='\t', rows_are_genes=True)
+            CSV('GSE127969_counts_TPM_ALL.csv.gz', sep='\t')
         ])
 
 
@@ -737,7 +737,7 @@ class GSE75478(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(csv, sep=',', rows_are_genes=True)
+            CSV(csv)
             for csv in (
                 'GSE75478_transcriptomics_raw_filtered_I1.csv.gz',
                 'GSE75478_transcriptomics_raw_filtered_I2.csv.gz'
@@ -751,7 +751,7 @@ class GSE100618(Converter):
     """
 
     def _convert(self):
-        self._convert_csvs([CSV('GSE100618_HTSeq_counts.txt.gz', sep=' ', rows_are_genes=True)])
+        self._convert_csvs([CSV('GSE100618_HTSeq_counts.txt.gz', sep=' ')])
 
 
 class GSE75367(Converter):
@@ -761,7 +761,7 @@ class GSE75367(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV('GSE75367_readCounts.txt.gz', sep='\t', rows_are_genes=True)
+            CSV('GSE75367_readCounts.txt.gz', sep='\t')
         ])
 
 
@@ -797,7 +797,7 @@ class GSE75688(Converter):
     def _convert(self):
         self._convert_csvs([
             CSV(
-                name='GSE75688_GEO_processed_Breast_Cancer_raw_TPM_matrix.txt.gz',
+                'GSE75688_GEO_processed_Breast_Cancer_raw_TPM_matrix.txt.gz',
                 sep='\t',
                 row_filter=self._filter,
             )
@@ -815,7 +815,7 @@ class GSE89232(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(name='GSE89232_expMatrix.txt.gz', sep='\t', row_filter=self._filter)
+            CSV('GSE89232_expMatrix.txt.gz', sep='\t', row_filter=self._filter)
         ])
 
     def _filter(self, row: List[str]):
@@ -834,7 +834,7 @@ class GSE107618(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(name='GSE107618_Merge.TPM.csv.gz', row_filter=self._filter)
+            CSV('GSE107618_Merge.TPM.csv.gz', row_filter=self._filter)
         ])
 
     def _filter(self, row: List[str]):
@@ -925,7 +925,7 @@ class GSE76312(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(name='GSE76312_Giustacchini_Thongjuea_et.al_Nat.Med.RPKM.txt.gz', sep='\t', row_filter=self._filter)
+            CSV('GSE76312_Giustacchini_Thongjuea_et.al_Nat.Med.RPKM.txt.gz', sep='\t', row_filter=self._filter)
         ])
 
     def _filter(self, row: List[str]):
@@ -945,7 +945,7 @@ class GSE93593(Converter):
     def _convert(self):
         # ignoring GSE93593_tpm.csv.gz
         self._convert_csvs([
-            CSV(name='GSE93593_counts.csv.gz')
+            CSV('GSE93593_counts.csv.gz')
         ])
 
 
@@ -1095,7 +1095,7 @@ class GSE102596(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(name='GSE102596_RAW/GSM2741551_count-table-human16w.tsv.gz', sep='\t', row_filter=self._filter)
+            CSV('GSE102596_RAW/GSM2741551_count-table-human16w.tsv.gz', sep='\t', row_filter=self._filter)
         ])
 
     def _filter(self, row: List[str]):
@@ -1114,8 +1114,8 @@ class GSE44183(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(name='GSE44183_human_expression_mat.txt.gz', sep='\t'),
-            CSV(name='GSE44183_mouse_expression_mat.txt.gz', sep='\t', row_filter=self._filter),
+            CSV('GSE44183_human_expression_mat.txt.gz', sep='\t'),
+            CSV('GSE44183_mouse_expression_mat.txt.gz', sep='\t', row_filter=self._filter),
         ])
 
     def _filter(self, row: List[str]):
@@ -1319,7 +1319,7 @@ class GSE84133(Converter):
         raise PostponedImplementationError('non-numeric descriptive columns')
         # noinspection PyUnreachableCode
         self._convert_csvs([
-            CSV('GSE84133_RAW/' + csv, sep=',', rows_are_genes=False)
+            CSV('GSE84133_RAW/' + csv, rows_are_genes=False)
             for csv in (
                 'GSM2230757_human1_umifm_counts.csv.gz',
                 'GSM2230758_human2_umifm_counts.csv.gz',
@@ -1346,7 +1346,7 @@ class GSE109822(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(csv, sep=',', rows_are_genes=True)
+            CSV(csv)
             for csv in (
                 'GSE109822_CD3145.csv.gz',
                 'GSE109822_CD90.csv.gz',
@@ -1362,7 +1362,7 @@ class GSE109979(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(name='GSE109979_329Cell_RPKM.txt.gz', sep='\t', row_filter=self._filter),
+            CSV('GSE109979_329Cell_RPKM.txt.gz', sep='\t', row_filter=self._filter),
         ])
 
     def _filter(self, row: List[str]):
@@ -1380,9 +1380,9 @@ class GSE131181(Converter):
         # ignoring GSE131181_e10.5.meta.data.csv.gz
         # ignoring GSE131181_e13.5.meta.data.csv.gz
         self._convert_csvs([
-            CSV(name='GSE131181_e10.5.raw.data.csv.gz', row_filter=self._filter1),
-            # CSV(name='GSE131181_e10.5.scale.data.csv.gz', row_filter=self._filter2),  # 4gb too big?
-            CSV(name='GSE131181_e13.5.raw.data.csv.gz', row_filter=self._filter3),
+            CSV('GSE131181_e10.5.raw.data.csv.gz', row_filter=self._filter1),
+            # CSV('GSE131181_e10.5.scale.data.csv.gz', row_filter=self._filter2),  # 4gb too big?
+            CSV('GSE131181_e13.5.raw.data.csv.gz', row_filter=self._filter3),
         ])
 
     def _filter1(self, row: List[str]):
@@ -1417,7 +1417,7 @@ class GSE107746(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(name='GSE107746_Folliculogenesis_FPKM.log2.txt.gz', sep='\t'),
+            CSV('GSE107746_Folliculogenesis_FPKM.log2.txt.gz', sep='\t'),
         ])
 
 
@@ -1470,7 +1470,7 @@ class GSE106540(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(name='GSE106540_SC_raw_counts.txt.gz', sep='\t'),
+            CSV('GSE106540_SC_raw_counts.txt.gz', sep='\t'),
         ])
 
 
@@ -1508,7 +1508,7 @@ class GSE117498(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV('GSE117498_RAW/' + csv, sep='\t', rows_are_genes=True)
+            CSV('GSE117498_RAW/' + csv, sep='\t')
             for csv in (
                 'GSM3305359_HSC.raw_counts.tsv.gz',
                 'GSM3305360_MPP.raw_counts.tsv.gz',
@@ -1532,7 +1532,7 @@ class GSE114396(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV('GSE114396_RAW/GSM3141011_ILC_count.csv.gz', sep=',', rows_are_genes=True)
+            CSV('GSE114396_RAW/GSM3141011_ILC_count.csv.gz')
         ])
 
 
@@ -1543,7 +1543,7 @@ class GSE109488(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV(f'GSE109488_RAW/{csv}_gene_expression_TPM.txt.gz', sep='\t', rows_are_genes=True)
+            CSV(f'GSE109488_RAW/{csv}_gene_expression_TPM.txt.gz', sep='\t')
             for csv in (
                 'GSM2944263_HEK7W2C1',
                 'GSM2944264_HEK7W2C2',
