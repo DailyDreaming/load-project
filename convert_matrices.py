@@ -213,7 +213,7 @@ class GSE67835(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('Contains separate CSV for each cell')
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
 
 
 class GSE102580(Converter):
@@ -334,8 +334,7 @@ class GSE129798(Converter):
     """
 
     def _convert(self):
-        # https://github.com/DailyDreaming/load-project/issues/66
-        raise PostponedImplementationError('Inputs are not gzipped')
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/66')
         # There are two matrices present but the smaller one has 100% barcode
         # overlap with the larger one. The larger one is also named "final" so
         # I'm only including the larger one.
@@ -413,7 +412,7 @@ class GSE113197(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError("individual cell files (871 'csv's with one column each)")
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
 
 
 class GSE110499(Converter):
@@ -423,8 +422,8 @@ class GSE110499(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV("GSE110499_GEO_processed_MM_10X_raw_UMI_count_martix.txt.gz", sep='\t'),
-            CSV("GSE110499_GEO_processed_MM_raw_TPM_matrix.txt.gz", sep='\t'),
+            CSV('GSE110499_GEO_processed_MM_10X_raw_UMI_count_martix.txt.gz', sep='\t'),
+            CSV('GSE110499_GEO_processed_MM_raw_TPM_matrix.txt.gz', sep='\t'),
         ])
 
 
@@ -536,8 +535,7 @@ class GSE124472(Converter):
     """
 
     def _convert(self):
-        # https://github.com/DailyDreaming/load-project/issues/66
-        raise PostponedImplementationError('Inputs are not gzipped')
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/66')
         # noinspection PyUnreachableCode
         self._link_matrices([
             Matrix(
@@ -646,7 +644,7 @@ class GSE116470(Converter):
 
     def _convert(self):
         # Might be like. An mtx with the genes and barcodes defined in comments????
-        raise PostponedImplementationError("this one's freaking weird")
+        raise PostponedImplementationError('Confusing data')
 
 
 class GSE124494(Converter):
@@ -724,7 +722,8 @@ class GSE127969(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('Fails with a UnicodeError due to fancy quotation marks (0x93 0x94)')
+        # Fails with a UnicodeError due to fancy quotation marks (0x93 0x94)
+        raise PostponedImplementationError('Not UTF-8')
         # noinspection PyUnreachableCode
         self._convert_csvs([
             CSV('GSE127969_counts_TPM_ALL.csv.gz', sep='\t', rows_are_genes=True)
@@ -772,7 +771,7 @@ class GSE70580(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('hundreds of cell files')
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
 
 
 class GSE130606(Converter):
@@ -956,7 +955,7 @@ class GSE92280(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('No files downloaded from GEO')
+        raise PostponedImplementationError('No supplementary files')
 
 
 class GSE103354(Converter):
@@ -1171,7 +1170,7 @@ class GSE110154(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('~1800 CSVs, and 1 indecipherable file')
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
 
 
 class GSE86473(Converter):
@@ -1277,7 +1276,7 @@ class GSE81547(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('Contains 2.5k single col CSVs.')
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
 
 
 class GSE115469(Converter):
@@ -1317,7 +1316,7 @@ class GSE84133(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError("non-numeric descriptive columns")
+        raise PostponedImplementationError('non-numeric descriptive columns')
         # noinspection PyUnreachableCode
         self._convert_csvs([
             CSV('GSE84133_RAW/' + csv, sep=',', rows_are_genes=False)
@@ -1337,7 +1336,7 @@ class GSE75659(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('hundreds of cell files')
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
 
 
 class GSE109822(Converter):
@@ -1481,229 +1480,8 @@ class GSE132566(Converter):
     """
 
     def _convert(self):
-        self._convert_csvs([
-            CSV(name='GSE132566_RAW/GSM3874730_RHP6370.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874731_RHP6371.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874732_RHP6372.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874733_RHP6373.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874734_RHP6374.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874735_RHP6375.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874736_RHP6376.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874737_RHP6377.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874738_RHP6378.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874739_RHP6379.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874740_RHP6380.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874741_RHP6381.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874742_RHP6382.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874743_RHP6383.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874744_RHP6384.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874745_RHP6385.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874746_RHP6386.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874747_RHP6387.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874748_RHP6388.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874749_RHP6389.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874750_RHP6390.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874751_RHP6391.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874752_RHP6392.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874753_RHP6393.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874754_RHP6394.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874755_RHP6395.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874756_RHP6396.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874757_RHP6397.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874758_RHP6398.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874759_RHP6399.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874760_RHP6400.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874761_RHP6401.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874762_RHP6402.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874763_RHP6403.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874764_RHP6404.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874765_RHP6405.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874766_RHP6406.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874767_RHP6407.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874768_RHP6408.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874769_RHP6409.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874770_RHP6410.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874771_RHP6411.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874772_RHP6412.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874773_RHP6413.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874774_RHP6414.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874775_RHP6415.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874776_RHP6416.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874777_RHP6417.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874778_RHP6418.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874779_RHP6419.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874780_RHP6420.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874781_RHP6421.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874782_RHP6422.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874783_RHP6423.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874784_RHP6424.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874785_RHP6425.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874786_RHP6426.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874787_RHP6427.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874788_RHP6428.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874789_RHP6429.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874790_RHP6430.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874791_RHP6431.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874792_RHP6432.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874793_RHP6433.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874794_RHP6434.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874795_RHP6435.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874796_RHP6436.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874797_RHP6437.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874798_RHP6438.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874799_RHP6439.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874800_RHP6440.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874801_RHP6441.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874802_RHP6442.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874803_RHP6443.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874804_RHP6444.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874805_RHP6445.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874806_RHP6446.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874807_RHP6447.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874808_RHP6448.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874809_RHP6449.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874810_RHP6450.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874811_RHP6451.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874812_RHP6452.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874813_RHP6453.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874814_RHP6454.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874815_RHP6455.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874816_RHP6456.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874817_RHP6457.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874818_RHP6458.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874819_RHP6459.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874820_RHP6460.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874821_RHP6461.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874822_RHP6462.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874823_RHP6463.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874824_RHP6464.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874825_RHP6465.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874826_RHP6466.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874827_RHP6467.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874828_RHP6468.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874829_RHP6469.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874830_RHP6470.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874831_RHP6471.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874832_RHP6472.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874833_RHP6473.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874834_RHP6474.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874835_RHP6475.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874836_RHP6476.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874837_RHP6477.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874838_RHP6478.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874839_RHP6479.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874840_RHP6480.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874841_RHP6481.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874842_RHP6482.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874843_RHP6483.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874844_RHP6484.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874845_RHP6485.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874846_RHP6486.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874847_RHP6487.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874848_RHP6488.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874849_RHP6489.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874850_RHP6490.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874851_RHP6491.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874852_RHP6492.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874853_RHP6493.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874854_RHP6494.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874855_RHP6495.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874856_RHP6496.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874857_RHP6497.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874858_RHP6498.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874859_RHP6499.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874860_RHP6500.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874861_RHP6501.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874862_RHP6502.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874863_RHP6503.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874864_RHP6504.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874865_RHP6505.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874866_RHP6506.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874867_RHP6507.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874868_RHP6508.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874869_RHP6509.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874870_RHP6510.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874871_RHP6511.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874872_RHP6512.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874873_RHP6513.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874874_RHP6514.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874875_RHP6515.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874876_RHP6516.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874877_RHP6517.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874878_RHP6518.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874879_RHP6519.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874880_RHP6520.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874881_RHP6521.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874882_RHP6522.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874883_RHP6523.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874884_RHP6524.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874885_RHP6525.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874886_RHP6526.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874887_RHP6527.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874888_RHP6528.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874889_RHP6529.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874890_RHP6530.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874891_RHP6531.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874892_RHP6532.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874893_RHP6533.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874894_RHP6534.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874895_RHP6535.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874896_RHP6536.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874897_RHP6537.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874898_RHB6979.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874899_RHB6980.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874900_RHB6981.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874901_RHB6982.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874902_RHB6983.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874903_RHB6984.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874904_RHB6985.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874905_RHB6986.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874906_RHB6987.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874907_RHB6988.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874908_RHB6989.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874909_RHB6990.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874910_RHB6991.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874911_RHB6992.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874912_RHB6993.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874913_RHB6994.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874914_RHB6995.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874915_RHB6996.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874916_RHB6997.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874917_RHB6998.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874918_RHB6999.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874919_RHB7000.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874920_RHB7001.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874921_RHB7002.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874922_RHB7003.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874923_RHB7004.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874924_RHB7005.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874925_RHB7006.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874926_RHB7007.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874927_RHB7008.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874928_RHB7009.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874929_RHB7010.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874930_RHB7011.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874931_RHB7012.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874932_RHB7013.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874933_RHB7014.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874934_RHB7015.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874935_RHB7016.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874936_RHB7017.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874937_RHB7018.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874938_RHB7019.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874939_RHB7020.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874940_RHB7021.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874941_RHB7022.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874942_RHB7023.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874943_RHB7024.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874944_RHB7025.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874945_RHB7026.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874946_RHB7027.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874947_RHB7028.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874948_RHB7029.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874949_RHB7030.txt.gz', sep='\t'),
-            CSV(name='GSE132566_RAW/GSM3874950_RHB7031.txt.gz', sep='\t'),
-        ])
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+
 
 
 class GSE83139(Converter):
