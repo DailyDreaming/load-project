@@ -1284,7 +1284,9 @@ class GSE57872(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._convert_csvs([
+            CSV('GSE57872_GBM_data_matrix.txt.gz', sep='\t')
+        ])
 
 
 class GSE108291(Converter):
@@ -1293,7 +1295,21 @@ class GSE108291(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        self._link_matrices([
+            Matrix(
+                barcodes='GSE108291_kid_barcodes.tsv.gz',
+                genes='GSE108291_kid_genes.tsv.gz',
+                mtx='GSE108291_kid_matrix.mtx.gz',
+            ),
+            Matrix(
+                barcodes='GSE108291_org4_barcodes.tsv.gz',
+                genes='GSE108291_org4_genes.tsv.gz',
+                mtx='GSE108291_org4_matrix.mtx.gz',
+            ),
+        ])
+        self._convert_csvs([
+            CSV('GSE108291_org_counts.csv.gz')
+        ])
 
 
 class GSE73727(Converter):
@@ -1302,7 +1318,7 @@ class GSE73727(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('No recognizable matrices.')
 
 
 def main(projects: Path):
