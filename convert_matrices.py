@@ -218,22 +218,17 @@ class GSE102580(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('Skipping because first lines of tsv starts with a comment line `# ....`')
-        # noinspection PyUnreachableCode
-        self._convert_csvs(
-            self._csv('GSE102580_filtered_normalized_counts_human.tsv.gz'),
-            self._csv('GSE102580_filtered_normalized_counts_human_viral_transduction.tsv.gz'),
-            self._csv('GSE102580_filtered_normalized_counts_mouse.tsv.gz'),
-            self._csv('GSE102580_meta_filtered_counts_human.tsv.gz'),
-            self._csv('GSE102580_meta_filtered_counts_human_viral_transduction.tsv.gz'),
-            self._csv('GSE102580_meta_filtered_counts_mouse.tsv.gz'),
-            self._csv('GSE102580_meta_raw_counts_human.tsv.gz'),
-            self._csv('GSE102580_meta_raw_counts_human_viral_transduction.tsv.gz'),
-            self._csv('GSE102580_meta_raw_counts_mouse.tsv.gz'),
-        )
+        self._convert_csvs(*[
+            CSV(name=f, sep='\t', row_filter=self._filter) for f in (
+                'GSE102580_filtered_normalized_counts_human.tsv.gz',
+                'GSE102580_filtered_normalized_counts_human_viral_transduction.tsv.gz',
+                'GSE102580_filtered_normalized_counts_mouse.tsv.gz',
+            )])
 
-    def _csv(self, name):
-        return CSV(name, sep='\t')
+    def _filter(self, row: List[str]):
+        # Skip lines that start with #
+        if row[0].startswith('#'):
+            return True
 
 
 class GSE107585(Converter):
