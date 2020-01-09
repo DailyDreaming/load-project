@@ -1,3 +1,4 @@
+import gzip
 from abc import (
     ABCMeta,
     abstractmethod,
@@ -85,14 +86,23 @@ class Converter(metaclass=ABCMeta):
         barcodes='barcodes.tsv.gz'
     )
 
-    def _link_matrices(self, *matrices: Matrix):
+    def _copy_matrices(self, *matrices: Matrix):
+        """
+        Compress if necessary, otherwise just link
+        :param matrices:
+        :return:
+        """
         for matrix in matrices:
-            assert all(name.endswith('.gz') for name in astuple(matrix))
+            # assert all(name.endswith('.gz') for name in astuple(matrix))
             dst_dir = self.matrix_dir(matrix.mtx)
             dst_dir.mkdir(parents=True, exist_ok=True)
             dst = self.std_matrix
             for src_name, dst_name in zip(astuple(matrix), astuple(dst)):
-                idempotent_link(self.geo_dir / src_name, dst_dir / dst_name)
+                if not src_name.endswith('.gz'):
+                    log.warning('Matrix file `%s` was not gzipped. Compressing...', src_name)
+                    idempotent_gzip_file(self.geo_dir / src_name, dst_dir / dst_name)
+                else:
+                    idempotent_link(self.geo_dir / src_name, dst_dir / dst_name)
 
     def _convert_csvs(self, *csvs: CSV):
         for csv in csvs:
@@ -101,6 +111,23 @@ class Converter(metaclass=ABCMeta):
                                delimiter=csv.sep,
                                rows_are_genes=csv.rows_are_genes,
                                row_filter=csv.row_filter)
+
+
+def idempotent_gzip_file(src_name: Path, dst_name: Path):
+    if not dst_name.exists():
+        tmp = dst_name.parent / (dst_name.name + '.tmp')
+        try:
+            with open(src_name, 'rb') as read_fh:
+                with gzip.open(tmp, 'wb') as write_fh:
+                    chunk = read_fh.read(1024 ** 2)
+                    while chunk:
+                        chunk = read_fh.read(1024 ** 2)
+                        write_fh.write(chunk)
+        except Exception:
+            tmp.unlink()
+            raise
+        else:
+            tmp.rename(dst_name)
 
 
 def atomic_make_archive(dst: Path, root_dir: Path):
@@ -161,7 +188,7 @@ class GSE117089(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 barcodes='GSE117089_RAW/GSM3271042_RNA_only_A549_cell.txt.gz',
                 genes='GSE117089_RAW/GSM3271042_RNA_only_A549_gene.txt.gz',
@@ -253,7 +280,7 @@ class GSE106273(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 mtx='GSE106273_combined_matrix.tsv.gz',
                 genes='GSE106273_combined_genes.tsv.gz',
@@ -268,7 +295,7 @@ class GSE130430(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 barcodes='GSE130430_RAW/GSM3738536_24y_F_BM_barcodes.tsv.gz',
                 genes='GSE130430_RAW/GSM3738536_24y_F_BM_genes.tsv.gz',
@@ -329,13 +356,13 @@ class GSE129798(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/66')
+        # raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/66')
         # There are two matrices present but the smaller one has 100% barcode
         # overlap with the larger one. The larger one is also named "final" so
         # I'm only including the larger one.
         # noinspection PyUnreachableCode
         prefix = 'GSE129798_Mouse_Adult_DGE_final/Mouse_Adult_DGE_final'
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 mtx=prefix + '/matrix.mtx',
                 genes=prefix + '/genes.tsv',
@@ -352,7 +379,7 @@ class GSE126836(Converter):
     def _convert(self):
         # Excluding only_Mal and only_Fem since they have 100% barcode overlap
         # with region_neur_Mal and region_neur_Fem respectively
-        self._link_matrices(*[
+        self._copy_matrices(*[
             Matrix(
                 mtx=prefix + '_matrix.mtx.gz',
                 genes=prefix + '_genes.csv.gz',
@@ -437,7 +464,7 @@ class GSE132044(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 mtx='GSE132044_cortex_mm10_count_matrix.mtx.gz',
                 genes='GSE132044_cortex_mm10_gene.tsv.gz',
@@ -510,7 +537,7 @@ class GSE114802(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(*[
+        self._copy_matrices(*[
             Matrix(
                 mtx=prefix + 'matrix.mtx.gz',
                 barcodes=prefix + 'barcodes.tsv.gz',
@@ -531,7 +558,7 @@ class GSE124472(Converter):
     def _convert(self):
         raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/66')
         # noinspection PyUnreachableCode
-        self._link_matrices([
+        self._copy_matrices([
             Matrix(
                 mtx=str(prefix / 'matrix.mtx'),
                 genes=str(prefix / 'genes.tsv'),
@@ -648,7 +675,7 @@ class GSE124494(Converter):
 
     def _convert(self):
         dir_ = 'GSE124494_RAW/'
-        self._link_matrices(*[
+        self._copy_matrices(*[
             Matrix(
                 mtx=dir_ + prefix + 'matrix.mtx.gz',
                 genes=dir_ + prefix + 'genes.tsv.gz',
@@ -770,7 +797,7 @@ class GSE130606(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 mtx='GSE130606_matrix.mtx.gz',
                 genes='GSE130606_genes.tsv.gz',
@@ -873,7 +900,7 @@ class GSE96583(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 mtx='GSE96583_RAW/GSM2560245_A.mat.gz',
                 genes='GSE96583_batch1.genes.tsv.gz',
@@ -954,7 +981,7 @@ class GSE103354(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 barcodes='GSE103354_RAW/GSM3314330_Tp0_Rep1_GFP_barcodes.tsv.gz',
                 genes='GSE103354_RAW/GSM3314330_Tp0_Rep1_GFP_genes.tsv.gz',
@@ -1120,7 +1147,7 @@ class GSE103275(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 barcodes='GSE103275_RAW/GSM2510616_P4-barcodes.tsv.gz',
                 genes='GSE103275_RAW/GSM2510616_P4-genes.tsv.gz',
@@ -1417,7 +1444,7 @@ class GSE131685(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 barcodes='GSE131685_RAW/GSM4145204_kidney1_barcodes.tsv.gz',
                 genes='GSE131685_RAW/GSM4145204_kidney1_features.tsv.gz',
@@ -1626,7 +1653,7 @@ class GSE108291(Converter):
     """
 
     def _convert(self):
-        self._link_matrices(
+        self._copy_matrices(
             Matrix(
                 barcodes='GSE108291_kid_barcodes.tsv.gz',
                 genes='GSE108291_kid_genes.tsv.gz',
