@@ -154,8 +154,8 @@ class GSE107909(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV("GSE107909_RAW/GSM2883183_PLNr9c.csv.gz"),
-            CSV("GSE107909_RAW/GSM2883182_PLN++.csv.gz")
+            CSV('GSE107909_RAW/GSM2883183_PLNr9c.csv.gz'),
+            CSV('GSE107909_RAW/GSM2883182_PLN++.csv.gz')
         ])
 
 
@@ -248,7 +248,7 @@ class GSE107585(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV("GSE107585_Mouse_kidney_single_cell_datamatrix.txt.gz", sep='\t', rows_are_genes=True),
+            CSV('GSE107585_Mouse_kidney_single_cell_datamatrix.txt.gz', sep='\t', rows_are_genes=True),
         ])
 
 
@@ -324,7 +324,7 @@ class GSE86469(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV("GSE86469_GEO.islet.single.cell.processed.data.RSEM.raw.expected.counts.csv.gz"),
+            CSV('GSE86469_GEO.islet.single.cell.processed.data.RSEM.raw.expected.counts.csv.gz'),
         ])
 
 
@@ -873,7 +873,7 @@ class GSE130473(Converter):
 
     def _convert(self):
         self._convert_csvs([
-            CSV("GSE130473_Series_count_matrix.csv.gz")
+            CSV('GSE130473_Series_count_matrix.csv.gz')
         ])
 
 
@@ -885,25 +885,25 @@ class GSE96583(Converter):
     def _convert(self):
         self._link_matrices([
             Matrix(
-                mtx="GSE96583_RAW/GSM2560245_A.mat.gz",
-                genes="GSE96583_batch1.genes.tsv.gz",
-                barcodes="GSE96583_RAW/GSM2560245_barcodes.tsv.gz"),
+                mtx='GSE96583_RAW/GSM2560245_A.mat.gz',
+                genes='GSE96583_batch1.genes.tsv.gz',
+                barcodes='GSE96583_RAW/GSM2560245_barcodes.tsv.gz'),
             Matrix(
-                mtx="GSE96583_RAW/GSM2560246_B.mat.gz",
-                genes="GSE96583_batch1.genes.tsv.gz",
-                barcodes="GSE96583_RAW/GSM2560246_barcodes.tsv.gz"),
+                mtx='GSE96583_RAW/GSM2560246_B.mat.gz',
+                genes='GSE96583_batch1.genes.tsv.gz',
+                barcodes='GSE96583_RAW/GSM2560246_barcodes.tsv.gz'),
             Matrix(
-                mtx="GSE96583_RAW/GSM2560247_C.mat.gz",
-                genes="GSE96583_batch1.genes.tsv.gz",
-                barcodes="GSE96583_RAW/GSM2560247_barcodes.tsv.gz"),
+                mtx='GSE96583_RAW/GSM2560247_C.mat.gz',
+                genes='GSE96583_batch1.genes.tsv.gz',
+                barcodes='GSE96583_RAW/GSM2560247_barcodes.tsv.gz'),
             Matrix(
-                mtx="GSE96583_RAW/GSM2560248_2.1.mtx.gz",
-                genes="GSE96583_batch2.genes.tsv.gz",
-                barcodes="GSE96583_RAW/GSM2560248_barcodes.tsv.gz"),
+                mtx='GSE96583_RAW/GSM2560248_2.1.mtx.gz',
+                genes='GSE96583_batch2.genes.tsv.gz',
+                barcodes='GSE96583_RAW/GSM2560248_barcodes.tsv.gz'),
             Matrix(
-                mtx="GSE96583_RAW/GSM2560249_2.2.mtx.gz",
-                genes="GSE96583_batch2.genes.tsv.gz",
-                barcodes="GSE96583_RAW/GSM2560249_barcodes.tsv.gz"),
+                mtx='GSE96583_RAW/GSM2560249_2.2.mtx.gz',
+                genes='GSE96583_batch2.genes.tsv.gz',
+                barcodes='GSE96583_RAW/GSM2560249_barcodes.tsv.gz'),
         ])
 
 
@@ -1481,7 +1481,6 @@ class GSE132566(Converter):
 
     def _convert(self):
         raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
-
 
 
 class GSE83139(Converter):
