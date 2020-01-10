@@ -709,10 +709,12 @@ class GSE81383(Converter):
 
     def _convert(self):
         # There are 2 csvs with identical data, one just has quotes around the
-        # values.
+        # values. We use the unquoted one because the quotes contain spaces
+        # that causes pandas to detect extra columns in the space-separated
+        # mtx file.
 
         self._convert_matrices(
-            CSV('GSE81383_data_melanoma_scRNAseq_BT_2015-07-02.txt.gz', sep='\t')
+            CSV('GSE81383_data_melanoma_scRNAseq_BT_Mel.txt.gz', sep='\t', row_filter=self._fix_short_rows(308))
         )
 
 
@@ -1059,8 +1061,7 @@ class GSE75688(Converter):
         )
 
     def _filter(self, row: List[str]):
-        del row[2]  # gene_type
-        del row[0]  # gene_id, we'll use gene name (row[1])
+        del row[1:3]  # gene_type and gene name. We'll use gene_id (names are not unique)
 
 
 class GSE89232(Converter):
