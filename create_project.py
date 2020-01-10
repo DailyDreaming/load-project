@@ -971,7 +971,7 @@ def main(argv):
 
     args = parser.parse_args(argv)
 
-    run(args.xlsx, args.output_dir, args.clear)
+    run(args.xlsx, args.output_dir, args.clean)
 
 
 if __name__ == "__main__":
