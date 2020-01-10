@@ -871,7 +871,7 @@ class GSE75140(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE75140_hOrg.fetal.master.data.frame.txt', rows_are_genes=False, sep='\t', row_filter=self._filter)
+            CSV('GSE75140_hOrg.fetal.master.data.frame.txt.gz', rows_are_genes=False, sep='\t', row_filter=self._filter)
         )
 
     def _filter(self, row: List[str]):
