@@ -113,7 +113,7 @@ def convert_csv_to_mtx(input_file: Path,
     print('Done.')
 
 
-def write_gzip_file(output_file: Path, lines: Union[Iterable, list]):
+def write_gzip_file(output_file: Path, lines: Iterable):
     """
     Create/overwrite a gzipped text file
 
@@ -123,9 +123,14 @@ def write_gzip_file(output_file: Path, lines: Union[Iterable, list]):
     temp_output_file = output_file.with_suffix(output_file.suffix + '.tmp')
     print(f'Writing {temp_output_file} ...')
     try:
-        with gzip.open(temp_output_file, 'wb') as f:
-            for line in lines:
-                f.write((str(line) + '\n').encode())
+        with open(temp_output_file, 'wb') as f:
+            # Using gzip.open(temp) will cause `gunzip -N` to create a file
+            # with the temp as the file name (even if the archive name is
+            # different). Therefore we must set the internal filename manually
+            # and pass in the file object for writing.
+            with gzip.GzipFile(filename=output_file, fileobj=f) as z:
+                for line in lines:
+                    z.write((str(line) + '\n').encode())
     except:
         try:
             temp_output_file.unlink()
