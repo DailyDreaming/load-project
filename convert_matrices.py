@@ -584,8 +584,17 @@ class GSE84465(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE84465_GBM_All_data.csv.gz', sep=' ')
+            CSV('GSE84465_GBM_All_data.csv.gz', sep=' ', row_filter=self._filter)
         )
+
+    def _filter(self, row: List[str]):
+        if len(row) == 3589:
+            row.insert(0, '')  # header row is one short.
+        elif len(row) == 3590:
+            pass
+        else:
+            assert False, len(row)
+
 
 
 class GSE134881(Converter):
