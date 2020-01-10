@@ -253,9 +253,16 @@ class GSE102580(Converter):
             )])
 
     def _filter(self, row: List[str]):
+        lens = [19767, 2971, 14164]
         # Skip lines that start with #
         if row[0].startswith('#'):
             return True
+        elif len(row) -1 in lens:
+            row,insert(0, '')
+        elif len(row) in lens:
+            pass
+        else:
+            assert False, len(row)
 
 
 class GSE107585(Converter):
@@ -265,8 +272,16 @@ class GSE107585(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE107585_Mouse_kidney_single_cell_datamatrix.txt.gz', sep='\t'),
+            CSV('GSE107585_Mouse_kidney_single_cell_datamatrix.txt.gz', sep='\t', row_filter=self._filter),
         )
+
+    def _filter(self, row: List[str]):
+        if len(row) == 43745:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 43746:
+            pass
+        else:
+            assert False, len(row)
 
 
 class GSE106273(Converter):
@@ -658,9 +673,16 @@ class GSE81904(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE81904_BipolarUMICounts_Cell2016.txt.gz', sep='\t')
+            CSV('GSE81904_BipolarUMICounts_Cell2016.txt.gz', sep='\t', row_filter=self._filter)
         )
 
+    def _filter(self, row: List[str]):
+        if len(row) == 44994:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 44995:
+            pass
+        else:
+            assert False, len(row)
 
 class GSE116470(Converter):
     """
@@ -1210,11 +1232,43 @@ class GSE114374(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE114374_Human_HC_expression_matrix.txt.gz', sep='\t'),
-            CSV('GSE114374_Human_UC_expression_matrix.txt.gz', sep='\t'),
-            CSV('GSE114374_Mouse_DSS_expression_matrix.txt.gz', sep='\t'),
-            CSV('GSE114374_Mouse_HC_expression_matrix.txt.gz', sep='\t'),
+            CSV('GSE114374_Human_HC_expression_matrix.txt.gz', sep='\t', row_filter=self._filter1),
+            CSV('GSE114374_Human_UC_expression_matrix.txt.gz', sep='\t', row_filter=self._filter2),
+            CSV('GSE114374_Mouse_DSS_expression_matrix.txt.gz', sep='\t', row_filter=self._filter3),
+            CSV('GSE114374_Mouse_HC_expression_matrix.txt.gz', sep='\t', row_filter=self._filter4),
         )
+
+    def _filter1(self, row: List[str]):
+        if len(row) == 4378:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 4379:
+            pass
+        else:
+            assert False, len(row)
+
+    def _filter2(self, row: List[str]):
+        if len(row) == 4903:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 4904:
+            pass
+        else:
+            assert False, len(row)
+
+    def _filter3(self, row: List[str]):
+        if len(row) == 3491:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 3492:
+            pass
+        else:
+            assert False, len(row)
+
+    def _filter4(self, row: List[str]):
+        if len(row) == 3760:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 3761:
+            pass
+        else:
+            assert False, len(row)
 
 
 class GSE89322(Converter):
@@ -1224,9 +1278,26 @@ class GSE89322(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE89322_bulk_counts.txt.gz', sep='\t'),
-            CSV('GSE89322_single_cell_counts.txt.gz', sep='\t'),
+            CSV('GSE89322_bulk_counts.txt.gz', sep='\t', row_filter=self._filter1),
+            CSV('GSE89322_single_cell_counts.txt.gz', sep='\t', row_filter=self._filter2),
         )
+    
+    def _filter1(self, row: List[str]):
+        if len(row) == 12:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 13:
+            pass
+        else:
+            assert False, len(row)
+
+    def _filter2(self, row: List[str]):
+        if len(row) == 188:
+            row.insert(0, '')  # header row is one short
+        elif len(row) == 189:
+            pass
+        else:
+            assert False, len(row)
+
 
 
 class GSE86146(Converter):
