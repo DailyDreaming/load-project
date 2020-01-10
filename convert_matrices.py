@@ -1687,12 +1687,13 @@ def main(projects: Path):
     not_implemented_projects = []
     failed_projects = []
     succeeded_projects = []
+    converter_classes = {k: v for k, v in globals().items() if k.startswith('GSE')}
     try:
         for project_dir in sorted(projects.iterdir()):
             if project_dir.is_symlink():
                 # noinspection PyBroadException
                 try:
-                    converter_class = globals()[project_dir.name]
+                    converter_class = converter_classes.pop(project_dir.name)
                     converter = converter_class(project_dir)
                     converter.convert()
                 except NotImplementedError:
@@ -1708,6 +1709,8 @@ def main(projects: Path):
         print_projects('not implemented', not_implemented_projects, file=sys.stderr)
         print_projects('failed', failed_projects, file=sys.stderr)
         print_projects('succeeded', succeeded_projects)
+        for k, v in converter_classes.items():
+            log.warning('Unused converter `%s` with UUID `%s`', k, v.__doc__.strip())
 
 
 def print_projects(title, projects, file=None):
