@@ -144,7 +144,10 @@ def idempotent_gzip_file(src_name: Path, dst_name: Path):
                         chunk = read_fh.read(1024 ** 2)
                         write_fh.write(chunk)
         except Exception:
-            tmp.unlink()
+            try:
+                tmp.unlink()
+            except FileNotFoundError:
+                pass
             raise
         else:
             tmp.rename(dst_name)
@@ -486,7 +489,7 @@ class GSE36552(Converter):
     """
 
     def _convert(self):
-        raise NotImplementedError()
+        raise PostponedImplementationError('What are .bed files??? and .tdf?')
 
 
 class GSE132044(Converter):
@@ -623,7 +626,6 @@ class GSE84465(Converter):
             CSV('GSE84465_GBM_All_data.csv.gz', sep=' ', row_filter=self._fix_short_rows(3590))
         )
 
-
 class GSE134881(Converter):
     """
     3fe16b18-e782-542b-b308-de9b26e7f69c
@@ -642,7 +644,10 @@ class GSE128639(Converter):
 
     def _convert(self):
         # Seems that the same samples are spread across 3 files with different genes in each?
-        raise PostponedImplementationError('Confusing organisation of files')
+        # On a second pass I (Jesse), noticed an expression file that seems usable
+        self._convert_csvs(
+            CSV('GSE128639_RAW/GSM3681518_MNC_RNA_counts.tsv.gz', sep='\t')
+        )
 
 
 class GSE118127(Converter):
