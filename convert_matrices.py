@@ -258,7 +258,7 @@ class GSE102580(Converter):
         if row[0].startswith('#'):
             return True
         elif len(row) -1 in lens:
-            row,insert(0, '')
+            row.insert(0, '')
         elif len(row) in lens:
             pass
         else:
