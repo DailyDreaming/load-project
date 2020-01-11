@@ -1,8 +1,9 @@
-import gzip
 from abc import (
     ABCMeta,
     abstractmethod,
 )
+from functools import partial
+import gzip
 import logging
 import os
 from pathlib import Path
@@ -11,6 +12,7 @@ import sys
 from typing import (
     List,
     Optional,
+    cast,
 )
 
 from dataclasses import (
@@ -111,6 +113,24 @@ class Converter(metaclass=ABCMeta):
                                delimiter=csv.sep,
                                rows_are_genes=csv.rows_are_genes,
                                row_filter=csv.row_filter)
+
+    def _fix_short_rows(self, row_length: int) -> RowFilter:
+        """
+        Returns a row filter that inserts an empty cell at the beginning of a
+        row if that row is missing one cell. The returned filter can be used
+        to handle CSV where the header is missing the first cell.
+
+        :param row_length: the expected, correct row length.
+        """
+        return cast(RowFilter, partial(self._fix_short_rows_filter, row_length))
+
+    def _fix_short_rows_filter(self, row_length: int, row: List[str]) -> None:
+        if len(row) == row_length:
+            pass
+        elif len(row) == row_length - 1:
+            row.insert(0, '')
+        else:
+            assert False, len(row)
 
 
 def idempotent_gzip_file(src_name: Path, dst_name: Path):
@@ -245,24 +265,30 @@ class GSE102580(Converter):
     """
 
     def _convert(self):
-        self._convert_csvs(*[
-            CSV(name=f, sep='\t', row_filter=self._filter) for f in (
+        self._convert_csvs(
+            CSV(
                 'GSE102580_filtered_normalized_counts_human.tsv.gz',
+                sep='\t',
+                row_filter=self._fix_short_rows(2971)
+            ),
+            CSV(
                 'GSE102580_filtered_normalized_counts_human_viral_transduction.tsv.gz',
+                sep='\t',
+                row_filter=self._fix_short_rows(19767)
+            ),
+            CSV(
                 'GSE102580_filtered_normalized_counts_mouse.tsv.gz',
-            )])
+                sep='\t',
+                row_filter=self._fix_short_rows(14164)
+            ),
+        )
 
-    def _filter(self, row: List[str]):
-        lens = [19767, 2971, 14164]
+    def _fix_short_rows_filter(self, row_length: int, row: List[str]) -> Optional[bool]:
         # Skip lines that start with #
         if row[0].startswith('#'):
             return True
-        elif len(row) -1 in lens:
-            row.insert(0, '')
-        elif len(row) in lens:
-            pass
         else:
-            assert False, len(row)
+            return super()._fix_short_rows_filter(row_length, row)
 
 
 class GSE107585(Converter):
@@ -272,16 +298,12 @@ class GSE107585(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE107585_Mouse_kidney_single_cell_datamatrix.txt.gz', sep='\t', row_filter=self._filter),
+            CSV(
+                'GSE107585_Mouse_kidney_single_cell_datamatrix.txt.gz',
+                sep='\t',
+                row_filter=self._fix_short_rows(43746)
+            ),
         )
-
-    def _filter(self, row: List[str]):
-        if len(row) == 43745:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 43746:
-            pass
-        else:
-            assert False, len(row)
 
 
 class GSE106273(Converter):
@@ -366,7 +388,6 @@ class GSE129798(Converter):
     """
 
     def _convert(self):
-        # raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/66')
         # There are two matrices present but the smaller one has 100% barcode
         # overlap with the larger one. The larger one is also named "final" so
         # I'm only including the larger one.
@@ -599,17 +620,8 @@ class GSE84465(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE84465_GBM_All_data.csv.gz', sep=' ', row_filter=self._filter)
+            CSV('GSE84465_GBM_All_data.csv.gz', sep=' ', row_filter=self._fix_short_rows(3590))
         )
-
-    def _filter(self, row: List[str]):
-        if len(row) == 3589:
-            row.insert(0, '')  # header row is one short.
-        elif len(row) == 3590:
-            pass
-        else:
-            assert False, len(row)
-
 
 
 class GSE134881(Converter):
@@ -673,16 +685,9 @@ class GSE81904(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE81904_BipolarUMICounts_Cell2016.txt.gz', sep='\t', row_filter=self._filter)
+            CSV('GSE81904_BipolarUMICounts_Cell2016.txt.gz', sep='\t', row_filter=self._fix_short_rows(44995))
         )
 
-    def _filter(self, row: List[str]):
-        if len(row) == 44994:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 44995:
-            pass
-        else:
-            assert False, len(row)
 
 class GSE116470(Converter):
     """
@@ -858,16 +863,8 @@ class GSE89232(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE89232_expMatrix.txt.gz', sep='\t', row_filter=self._filter)
+            CSV('GSE89232_expMatrix.txt.gz', sep='\t', row_filter=self._fix_short_rows(958))
         )
-
-    def _filter(self, row: List[str]):
-        if len(row) == 957:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 958:
-            pass
-        else:
-            assert False, len(row)
 
 
 class GSE107618(Converter):
@@ -968,16 +965,12 @@ class GSE76312(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE76312_Giustacchini_Thongjuea_et.al_Nat.Med.RPKM.txt.gz', sep='\t', row_filter=self._filter)
+            CSV(
+                'GSE76312_Giustacchini_Thongjuea_et.al_Nat.Med.RPKM.txt.gz',
+                sep='\t',
+                row_filter=self._fix_short_rows(2288)
+            )
         )
-
-    def _filter(self, row: List[str]):
-        if len(row) == 2287:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 2288:
-            pass
-        else:
-            assert False, len(row)
 
 
 class GSE93593(Converter):
@@ -1138,16 +1131,12 @@ class GSE102596(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE102596_RAW/GSM2741551_count-table-human16w.tsv.gz', sep='\t', row_filter=self._filter)
+            CSV(
+                'GSE102596_RAW/GSM2741551_count-table-human16w.tsv.gz',
+                sep='\t',
+                row_filter=self._fix_short_rows(3746)
+            )
         )
-
-    def _filter(self, row: List[str]):
-        if len(row) == 3745:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 3746:
-            pass
-        else:
-            assert False, len(row)
 
 
 class GSE44183(Converter):
@@ -1232,43 +1221,11 @@ class GSE114374(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE114374_Human_HC_expression_matrix.txt.gz', sep='\t', row_filter=self._filter1),
-            CSV('GSE114374_Human_UC_expression_matrix.txt.gz', sep='\t', row_filter=self._filter2),
-            CSV('GSE114374_Mouse_DSS_expression_matrix.txt.gz', sep='\t', row_filter=self._filter3),
-            CSV('GSE114374_Mouse_HC_expression_matrix.txt.gz', sep='\t', row_filter=self._filter4),
+            CSV('GSE114374_Human_HC_expression_matrix.txt.gz', sep='\t', row_filter=self._fix_short_rows(4379)),
+            CSV('GSE114374_Human_UC_expression_matrix.txt.gz', sep='\t', row_filter=self._fix_short_rows(4904)),
+            CSV('GSE114374_Mouse_DSS_expression_matrix.txt.gz', sep='\t', row_filter=self._fix_short_rows(3492)),
+            CSV('GSE114374_Mouse_HC_expression_matrix.txt.gz', sep='\t', row_filter=self._fix_short_rows(3761)),
         )
-
-    def _filter1(self, row: List[str]):
-        if len(row) == 4378:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 4379:
-            pass
-        else:
-            assert False, len(row)
-
-    def _filter2(self, row: List[str]):
-        if len(row) == 4903:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 4904:
-            pass
-        else:
-            assert False, len(row)
-
-    def _filter3(self, row: List[str]):
-        if len(row) == 3491:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 3492:
-            pass
-        else:
-            assert False, len(row)
-
-    def _filter4(self, row: List[str]):
-        if len(row) == 3760:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 3761:
-            pass
-        else:
-            assert False, len(row)
 
 
 class GSE89322(Converter):
@@ -1278,26 +1235,9 @@ class GSE89322(Converter):
 
     def _convert(self):
         self._convert_csvs(
-            CSV('GSE89322_bulk_counts.txt.gz', sep='\t', row_filter=self._filter1),
-            CSV('GSE89322_single_cell_counts.txt.gz', sep='\t', row_filter=self._filter2),
+            CSV('GSE89322_bulk_counts.txt.gz', sep='\t', row_filter=self._fix_short_rows(13)),
+            CSV('GSE89322_single_cell_counts.txt.gz', sep='\t', row_filter=self._fix_short_rows(189)),
         )
-    
-    def _filter1(self, row: List[str]):
-        if len(row) == 12:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 13:
-            pass
-        else:
-            assert False, len(row)
-
-    def _filter2(self, row: List[str]):
-        if len(row) == 188:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 189:
-            pass
-        else:
-            assert False, len(row)
-
 
 
 class GSE86146(Converter):
@@ -1472,34 +1412,10 @@ class GSE131181(Converter):
         # ignoring GSE131181_e10.5.meta.data.csv.gz
         # ignoring GSE131181_e13.5.meta.data.csv.gz
         self._convert_csvs(
-            CSV('GSE131181_e10.5.raw.data.csv.gz', row_filter=self._filter1),
-            # CSV('GSE131181_e10.5.scale.data.csv.gz', row_filter=self._filter2),  # 4gb too big?
-            CSV('GSE131181_e13.5.raw.data.csv.gz', row_filter=self._filter3),
+            CSV('GSE131181_e10.5.raw.data.csv.gz', row_filter=self._fix_short_rows(31480)),
+            # CSV('GSE131181_e10.5.scale.data.csv.gz', row_filter=self._fix_short_header(22686)),  # 4gb too big?
+            CSV('GSE131181_e13.5.raw.data.csv.gz', row_filter=self._fix_short_rows(63103)),
         )
-
-    def _filter1(self, row: List[str]):
-        if len(row) == 31479:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 31480:
-            pass
-        else:
-            assert False, len(row)
-
-    def _filter2(self, row: List[str]):
-        if len(row) == 22685:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 22686:
-            pass
-        else:
-            assert False, len(row)
-
-    def _filter3(self, row: List[str]):
-        if len(row) == 63102:
-            row.insert(0, '')  # header row is one short
-        elif len(row) == 63103:
-            pass
-        else:
-            assert False, len(row)
 
 
 class GSE107746(Converter):
