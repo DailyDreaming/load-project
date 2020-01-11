@@ -117,7 +117,7 @@ def idempotent_gzip_file(src_name: Path, dst_name: Path):
     if not dst_name.exists():
         tmp = dst_name.parent / (dst_name.name + '.tmp')
         try:
-            with open(src_name, 'rb') as read_fh:
+            with open(src_name.as_posix(), 'rb') as read_fh:
                 with gzip.open(tmp, 'wb') as write_fh:
                     chunk = read_fh.read(1024 ** 2)
                     while chunk:
