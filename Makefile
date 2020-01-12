@@ -31,4 +31,7 @@ bundles:
 assets:
 	python3 upload_assets.py
 
+report:
+	python3 overview_report.py
+
 .PHONY: all download extract merge count metadata bundles assets

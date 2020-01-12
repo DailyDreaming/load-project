@@ -77,11 +77,11 @@ def get_accession_ids() -> Sequence[str]:
     Return a list of the accession ids
     """
     accession_ids = []
-    for item in os.listdir('projects'):
-        path = f'projects/{item}'
-        logging.debug('Checking: %s', path)
-        if os.path.isdir(path) and os.path.islink(path):
-            accession_ids.append(item)
+    for p in Path('projects').iterdir():
+        logging.debug('Checking: %s', p)
+        if p.is_dir() and p.is_symlink():
+            accession_ids.append(p.name)
+            logging.debug('Found: %s', p.name)
     return accession_ids
 
 
