@@ -1,6 +1,7 @@
 import argparse
 import csv
 import gzip
+import io
 import logging
 import os
 from pathlib import Path
@@ -129,8 +130,9 @@ def write_gzip_file(output_file: Path, lines: Iterable):
             # different). Therefore we must set the internal filename manually
             # and pass in the file object for writing.
             with gzip.GzipFile(filename=output_file, fileobj=f) as z:
-                for line in lines:
-                    z.write((str(line) + '\n').encode())
+                with io.TextIOWrapper(z) as b:
+                    for line in lines:
+                        b.write(line + '\n')
     except:
         try:
             temp_output_file.unlink()
