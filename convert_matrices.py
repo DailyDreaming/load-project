@@ -26,6 +26,7 @@ from copy_static_project import populate_all_static_projects
 from csv2mtx import (
     RowFilter,
     convert_csv_to_mtx,
+    convert_cell_files_to_mtx,
 )
 from h5_to_mtx import convert_h5_to_mtx
 from util import (
@@ -142,6 +143,11 @@ class Converter(metaclass=ABCMeta):
                     log.warning('Found partial conversion results. Missing files: %s', expected_files - actual_files)
                 log.info('Started conversion for `%s`', input.name)
                 input.to_mtx(input_dir=self.geo_dir, output_dir=output_dir)
+
+    def _convert_cell_files(self, input_dir: str = '', delimiter: str = ','):
+        convert_cell_files_to_mtx(input_dir=self.geo_dir / input_dir,
+                                  output_dir=self.matrix_dir(input_dir),
+                                  delimiter=delimiter)
 
     def _fix_short_rows(self, row_length: int) -> RowFilter:
         """
@@ -301,7 +307,7 @@ class GSE67835(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        self._convert_cell_files('GSE67835_RAW', '\t')
 
 
 class GSE102580(Converter):
@@ -516,7 +522,7 @@ class GSE113197(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        self._convert_cell_files()
 
 
 class GSE110499(Converter):
@@ -904,7 +910,7 @@ class GSE70580(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        self._convert_cell_files()
 
 
 class GSE130606(Converter):
@@ -1305,7 +1311,7 @@ class GSE110154(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        self._convert_cell_files()
 
 
 class GSE86473(Converter):
@@ -1480,7 +1486,7 @@ class GSE75659(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        self._convert_cell_files()
 
 
 class GSE109822(Converter):
@@ -1598,7 +1604,7 @@ class GSE132566(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        self._convert_cell_files()
 
 
 class GSE83139(Converter):

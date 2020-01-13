@@ -14,6 +14,7 @@ from typing import (
     Optional,
 )
 
+import pandas as pd
 from util import open_maybe_gz
 
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +22,56 @@ logging.basicConfig(level=logging.INFO)
 RowFilter = Callable[[List[str]], Optional[bool]]
 
 
-class CSV2MTXConverter(Iterable):
+class RowConverter(Iterable):
+
+    def __init__(self,
+                 row_provider: Iterable[List[str]],
+                 rows_are_genes: bool,
+                 row_filter: Optional[RowFilter] = None):
+        """
+        :param rows_are_genes: True if csv rows are genes, False if csv cols are barcodes
+        :param row_filter: callable to process or skip nonconforming rows.
+        """
+        self.row_provider = row_provider
+        self.rows_are_genes = rows_are_genes
+        if row_filter is None:
+            def row_filter(_): return False
+        self.row_filter = row_filter
+        self.x_axis_values = None
+        self.y_axis_values = []
+        self.num_values = 0
+
+    def __iter__(self):
+
+        for row in self.row_provider:
+            filter_status = self.row_filter(row)
+            if filter_status is None or filter_status is False:
+                if self.x_axis_values is None:  # Get header values once
+                    self.x_axis_values = row[1:]
+                else:
+                    self.y_axis_values.append(row[0])
+                    for col, value in enumerate(row[1:]):
+                        if float(value):
+                            self.num_values += 1
+                            gene_index = len(self.y_axis_values) if self.rows_are_genes else col + 1
+                            barcode_index = col + 1 if self.rows_are_genes else len(self.y_axis_values)
+                            return_string = f'{gene_index} {barcode_index} {value}'
+                            yield return_string
+            elif filter_status is True:
+                pass
+            else:
+                assert False, f"Invalid row_filter return type {type(filter_status)}"
+
+    @property
+    def genes(self):
+        return self.y_axis_values if self.rows_are_genes else self.x_axis_values
+
+    @property
+    def barcodes(self):
+        return self.x_axis_values if self.rows_are_genes else self.y_axis_values
+
+
+class CSV2MTXConverter(RowConverter):
     """
     Convert a csv file to a matrix.mtx, barcodes.tsv, and genes.tsv set of files
     """
@@ -34,48 +84,40 @@ class CSV2MTXConverter(Iterable):
         """
         :param input_file: The input csv file
         :param delimiter: Delimiter character in csv
-        :param rows_are_genes: True if csv rows are genes, False if csv cols are barcodes
         """
+
+        # Delay provider initialization until file is opened
+        # noinspection PyTypeChecker
+        super().__init__(None, rows_are_genes, row_filter)
         self.input_file = input_file
         self.delimiter = delimiter
-        self.rows_are_genes = rows_are_genes
-        if row_filter is None:
-            def row_filter(_):
-                return False
-        self.row_filter = row_filter
-        self.x_axis_values = None
-        self.y_axis_values = []
-        self.num_values = 0
 
     def __iter__(self):
         with open_maybe_gz(self.input_file, 'rt', newline='') as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=self.delimiter)
-            for row in csv_reader:
-                filter_status = self.row_filter(row)
-                if filter_status is None or filter_status is False:
-                    if self.x_axis_values is None:  # Get header values once
-                        self.x_axis_values = row[1:]
-                    else:
-                        self.y_axis_values.append(row[0])
-                        for col, value in enumerate(row[1:]):
-                            if float(value):
-                                self.num_values += 1
-                                gene_index = len(self.y_axis_values) if self.rows_are_genes else col + 1
-                                barcode_index = col + 1 if self.rows_are_genes else len(self.y_axis_values)
-                                return_string = f'{gene_index} {barcode_index} {value}'
-                                yield return_string
-                elif filter_status is True:
-                    pass
-                else:
-                    assert False, f"Invalid row_filter return type {type(filter_status)}"
+            self.row_provider = csv.reader(csv_file, delimiter=self.delimiter)
+            return super().__iter__()
 
-    @property
-    def genes(self):
-        return self.y_axis_values if self.rows_are_genes else self.x_axis_values
 
-    @property
-    def barcodes(self):
-        return self.x_axis_values if self.rows_are_genes else self.y_axis_values
+def convert_to_mtx(converter: RowConverter,
+                   output_dir: Path):
+    output_dir.mkdir(parents=True, exist_ok=True) # FIXME: move to convert_matrices.py
+
+    mtx_body_file = output_dir / 'matrix.mtx.body.gz'
+    mtx_file = output_dir / 'matrix.mtx.gz'
+
+    # Fully consume the iterator by writing the body of the mtx file to a temp file
+    write_gzip_file(mtx_body_file, converter)
+
+    # Write the completed mtx file using correct header information and the body we wrote to the temp file
+    rows_cols_count_line = f'{len(converter.genes)} {len(converter.barcodes)} {converter.num_values}'
+    write_mtx_file(rows_cols_count_line, mtx_body_file, mtx_file)
+    mtx_body_file.unlink()
+
+    # Write the two remaining files using the properties from the fully consumed iterator
+    write_gzip_file(output_dir / 'barcodes.tsv.gz', ['barcodes'] + converter.barcodes)
+    write_gzip_file(output_dir / 'genes.tsv.gz', ['genes'] + converter.genes)
+
+    print('Done.')
 
 
 def convert_csv_to_mtx(input_file: Path,
@@ -93,24 +135,38 @@ def convert_csv_to_mtx(input_file: Path,
     :param row_filter: callable to pre-process lines in the CSV
     """
     csv_converter = CSV2MTXConverter(input_file, delimiter, rows_are_genes, row_filter)
-    output_dir.mkdir(parents=True, exist_ok=True)  # FIXME: move to convert_matrices.py
+    convert_to_mtx(csv_converter, output_dir)
 
-    mtx_body_file = output_dir / 'matrix.mtx.body.gz'
-    mtx_file = output_dir / 'matrix.mtx.gz'
 
-    # Fully consume the iterator by writing the body of the mtx file to a temp file
-    write_gzip_file(mtx_body_file, csv_converter)
+def convert_cell_files_to_mtx(input_dir: Path,
+                              output_dir: Path,
+                              delimiter: str = ','):
+    """
+    Convert a series of files to mtx where each file is expression for a single cell.
+    :param delimiter: what separates genes from their expression in the cell files.
+    :param input_dir: directory containing the cell files.
+    :param output_dir: The location to save the output files
+    :return:
+    """
+    def iter_files():
+        first = True
+        for file_path in input_dir.iterdir():
+            cell = pd.read_csv(file_path, sep=delimiter, compression='infer')
+            if first:
+                first = False
+                # provide header (gene names) with empty first column
+                genes = ['']
+                genes.extend(cell[0])
+                yield genes
+            # provide expression values with barcodes
+            data = [file_path.name]
+            data.extend(cell[1])
+            yield data
 
-    # Write the completed mtx file using correct header information and the body we wrote to the temp file
-    rows_cols_count_line = f'{len(csv_converter.genes)} {len(csv_converter.barcodes)} {csv_converter.num_values}'
-    write_mtx_file(rows_cols_count_line, mtx_body_file, mtx_file)
-    mtx_body_file.unlink()
+    cell_file_converter = RowConverter(iter_files(),
+                                       rows_are_genes=False)
 
-    # Write the two remaining files using the properties from the fully consumed iterator
-    write_gzip_file(output_dir / 'barcodes.tsv.gz', ['barcodes'] + csv_converter.barcodes)
-    write_gzip_file(output_dir / 'genes.tsv.gz', ['genes'] + csv_converter.genes)
-
-    print('Done.')
+    convert_to_mtx(cell_file_converter, output_dir)
 
 
 def write_gzip_file(output_file: Path, lines: Iterable):
