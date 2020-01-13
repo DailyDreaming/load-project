@@ -1,5 +1,4 @@
 import argparse
-import csv
 from dataclasses import dataclass
 import logging
 from pathlib import Path
@@ -27,62 +26,57 @@ projects_path = Path('projects')
 @dataclass
 class ProjectReport:
     uuid: UUID = None
-    accession_id: str = None
+    accession: str = None
     project_path: Path = None  # projects/{uuid}
-    accession_symlink: Path = None  # projects/{accession} symlink to project_path
+    symlink: Path = None  # projects/{accession} symlink to project_path
     spreadsheet: Path = None  # spreadsheets/(new|existing)/{accession}.0.xlsx
-    geo_files_count: int = 0  # number of downloaded geo files in projects/{uuid}/geo
-    matrices_count: int = 0  # number of matrices in projects/{uuid}/matrices
+    geo_files: int = 0  # number of downloaded geo files in projects/{uuid}/geo
+    num_matrices: int = 0  # number of matrices in projects/{uuid}/matrices
     zipped_matrix: Path = None  # projects/{uuid}/bundle/matrix.mtx.zip
     cell_count: int = 0  # value of cell count in cell_counts.json
-    metadata_json_count: int = 0  # number of metadata JSON files in projects/{uuid}/bundle
+    num_metadata_files: int = 0  # number of metadata JSON files in projects/{uuid}/bundle
 
     @classmethod
     def tsv_header(cls) -> Sequence[str]:
         return [
-            'UUID',
-            'Accession ID',
-            'Project path',
-            'Accession symlink',
-            'Spreadsheet',
-            'Geo files count',
-            'Matrices count',
-            'Zipped matrix',
-            'Cell count',
-            'Metadata JSON count',
+            'uuid',
+            'accession',
+            'project_path',
+            'symlink',
+            'spreadsheet',
+            'geo_files',
+            'num_matrices',
+            'zipped_matrix',
+            'cell_count',
+            'num_metadata_files',
         ]
 
     def tsv_row(self) -> Sequence[str]:
-        return [
+        return ['-' if x is None else str(x) for x in [
             self.uuid,
-            self.accession_id,
+            self.accession,
             self.project_path,
-            self.accession_symlink,
+            self.symlink,
             self.spreadsheet,
-            self.geo_files_count,
-            self.matrices_count,
+            self.geo_files,
+            self.num_matrices,
             self.zipped_matrix,
             self.cell_count,
-            self.metadata_json_count,
-        ]
+            self.num_metadata_files,
+        ]]
 
 
-def write_report_to_tsv(report: Mapping[UUID, ProjectReport], output_file: Path):
+def write_report_as_tsv(report: Mapping[UUID, ProjectReport]):
     """
-    Write a report to a tsv file
+    Write a report as a tsv to stdout
 
     :param report: A dict mapping UUIDs to objects containing project details
-    :param output_file: A path to the desired output file
     """
-    logging.debug('Opening %s for tsv writing', str(output_file))
-    with open(str(output_file), 'w', newline='') as f:
-        writer = csv.writer(f, delimiter='\t')
-        logging.debug('Writting tsv header row')
-        writer.writerow(ProjectReport.tsv_header())
-        for uuid, project in report.items():
-            logging.debug('Writting tsv row for uuid %s', str(uuid))
-            writer.writerow(project.tsv_row())
-    logging.debug('Closed %s', str(output_file))
+    logging.debug('Starting tsv output')
+    print('\t'.join(ProjectReport.tsv_header()))
+    for uuid, project in report.items():
+        print('\t'.join(project.tsv_row()))
+    logging.debug('Finished tsv output')
 
 
 def overview_report() -> Mapping[UUID, ProjectReport]:
@@ -96,10 +90,10 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
 
     # ---
     logging.debug('Searching for project uuids in the projects path ...')
-    for uuid_from_symlink in get_project_uuids():
-        project_path = projects_path / str(uuid_from_symlink)
-        report[uuid_from_symlink] = ProjectReport(uuid=uuid_from_symlink,
-                                                  project_path=project_path)
+    for uuid in get_project_uuids():
+        project_path = projects_path / str(uuid)
+        report[uuid] = ProjectReport(uuid=uuid,
+                                     project_path=project_path)
 
     # ---
     logging.debug('Searching for accession ids in the projects path ...')
@@ -121,25 +115,25 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
             uuid_from_symlink = None  # Value from symlink target wasn't a valid UUID
         if uuid_from_symlink:
             if uuid_from_symlink in report:  # Update existing project in report with accession info
-                report[uuid_from_symlink].accession_id = accession_id
-                report[uuid_from_symlink].accession_symlink = accession_symlink
+                report[uuid_from_symlink].accession = accession_id
+                report[uuid_from_symlink].symlink = accession_symlink
             else:  # Create a new project in the report using the uuid from symlink's target
                 assert not (projects_path / str(uuid_from_symlink)).exists(), \
                     f'get_project_uuids() failed to find {str(uuid_from_symlink)}'
                 logging.debug('New accession %s found as accession with symlink, adding uuid %s',
                               accession_id, str(uuid_from_symlink))
                 report[uuid_from_symlink] = ProjectReport(uuid=uuid_from_symlink,
-                                                          accession_id=accession_id,
-                                                          accession_symlink=accession_symlink)
+                                                          accession=accession_id,
+                                                          symlink=accession_symlink)
         else:
             uuid_from_accession_id = UUID(generate_project_uuid(accession_id))
             if uuid_from_accession_id in report:  # update existing project in report
-                report[uuid_from_accession_id].accession_id = accession_id
+                report[uuid_from_accession_id].accession = accession_id
             else:
                 logging.debug('New accession %s found as accession without symlink, adding uuid %s',
                               accession_id, str(uuid_from_accession_id))
                 report[uuid_from_accession_id] = ProjectReport(uuid=uuid_from_accession_id,
-                                                               accession_id=accession_id)
+                                                               accession=accession_id)
 
     # ---
     logging.debug('Searching for spreadsheets ...')
@@ -147,53 +141,53 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
         for file in get_spreadsheet_paths(Path(f'spreadsheets/{sub_dir}')):
             logging.debug('Checking: %s', file)
             accession_id = file.name[:-len('.0.xlsx')]
-            uuid_from_symlink = UUID(generate_project_uuid(accession_id))
+            uuid = UUID(generate_project_uuid(accession_id))
             try:
-                report[uuid_from_symlink].spreadsheet = file
+                report[uuid].spreadsheet = file
             except KeyError:
                 logging.debug('New accession %s found in spreadsheets, adding uuid %s',
-                              accession_id, str(uuid_from_symlink))
-                report[uuid_from_symlink] = ProjectReport(uuid=uuid_from_symlink,
-                                                          accession_id=accession_id,
-                                                          spreadsheet=file)
+                              accession_id, str(uuid))
+                report[uuid] = ProjectReport(uuid=uuid,
+                                             accession=accession_id,
+                                             spreadsheet=file)
 
     # ---
     logging.debug('Reading cell_counts.json ...')
     for accession_id, cell_count in get_cell_counts().items():
-        uuid_from_symlink = UUID(generate_project_uuid(accession_id))
+        uuid = UUID(generate_project_uuid(accession_id))
         try:
-            report[uuid_from_symlink].cell_count = cell_count
+            report[uuid].cell_count = cell_count
         except KeyError:
             logging.debug('New accession %s found in cell_counts.json, adding uuid %s',
-                          accession_id, str(uuid_from_symlink))
-            report[uuid_from_symlink] = ProjectReport(uuid=uuid_from_symlink,
-                                                      accession_id=accession_id,
-                                                      cell_count=cell_count)
+                          accession_id, str(uuid))
+            report[uuid] = ProjectReport(uuid=uuid,
+                                         accession=accession_id,
+                                         cell_count=cell_count)
 
     # ---
     logging.debug('Counting geo files ...')
-    for uuid_from_symlink in report:
-        path = projects_path / str(uuid_from_symlink) / 'geo'
-        report[uuid_from_symlink].geo_files_count = get_file_count(path, glob='**/*')
+    for uuid in report:
+        path = projects_path / str(uuid) / 'geo'
+        report[uuid].geo_files = get_file_count(path, glob='**/*')
 
     # ---
     logging.debug('Counting matrices ...')
-    for uuid_from_symlink in report:
-        path = projects_path / str(uuid_from_symlink) / 'matrices'
-        report[uuid_from_symlink].matrices_count = get_file_count(path, glob='**/matrix.mtx.gz')
+    for uuid in report:
+        path = projects_path / str(uuid) / 'matrices'
+        report[uuid].num_matrices = get_file_count(path, glob='**/matrix.mtx.gz')
 
     # ---
     logging.debug('Checking for zipped_matrix ...')
-    for uuid_from_symlink in report:
-        zipped_matrix = projects_path / str(uuid_from_symlink) / 'bundle' / 'matrix.mtx.zip'
+    for uuid in report:
+        zipped_matrix = projects_path / str(uuid) / 'bundle' / 'matrix.mtx.zip'
         if zipped_matrix.is_file():
-            report[uuid_from_symlink].zipped_matrix = zipped_matrix
+            report[uuid].zipped_matrix = zipped_matrix
 
     # ---
     logging.debug('Checking for metadata_json_count ...')
-    for uuid_from_symlink in report:
-        path = projects_path / str(uuid_from_symlink) / 'bundle'
-        report[uuid_from_symlink].metadata_json_count = get_file_count(path, glob='*.json')
+    for uuid in report:
+        path = projects_path / str(uuid) / 'bundle'
+        report[uuid].num_metadata_files = get_file_count(path, glob='*.json')
 
     return report
 
@@ -241,8 +235,8 @@ def main(argv):
     args = parser.parse_args(argv)
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
-    write_report_to_tsv(overview_report(), Path('overview_report.tsv'))
-    print("File written: ./overview_report.tsv")
+    write_report_as_tsv(overview_report())
+    # print("Done.")
 
 
 if __name__ == '__main__':
