@@ -160,7 +160,8 @@ def write_mtx_file(rows_cols_count_line: str, mtx_body_file: Path, output_file: 
             f.write(header_line.encode())
             f.write((rows_cols_count_line + '\n').encode())
             with open_maybe_gz(mtx_body_file, 'rb') as temp_data:
-                copyfileobj(temp_data, f)
+                # Using 1MiB buffer should be faster than the default of 16KiB
+                copyfileobj(temp_data, f, length=2 ** 20)
     except:
         try:
             temp_output_file.unlink()
