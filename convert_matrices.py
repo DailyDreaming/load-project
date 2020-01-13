@@ -1413,7 +1413,7 @@ class GSE131181(Converter):
         # ignoring GSE131181_e13.5.meta.data.csv.gz
         self._convert_csvs(
             CSV('GSE131181_e10.5.raw.data.csv.gz', row_filter=self._fix_short_rows(31480)),
-            # CSV('GSE131181_e10.5.scale.data.csv.gz', row_filter=self._fix_short_header(22686)),  # 4gb too big?
+            # CSV('GSE131181_e10.5.scale.data.csv.gz', row_filter=self._fix_short_rows(22686)),  # 4gb too big?
             CSV('GSE131181_e13.5.raw.data.csv.gz', row_filter=self._fix_short_rows(63103)),
         )
 
