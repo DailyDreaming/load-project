@@ -1,6 +1,7 @@
 import argparse
 import csv
 import gzip
+import io
 import logging
 import os
 from pathlib import Path
@@ -113,7 +114,7 @@ def convert_csv_to_mtx(input_file: Path,
     print('Done.')
 
 
-def write_gzip_file(output_file: Path, lines: Union[Iterable, list]):
+def write_gzip_file(output_file: Path, lines: Iterable):
     """
     Create/overwrite a gzipped text file
 
@@ -123,9 +124,15 @@ def write_gzip_file(output_file: Path, lines: Union[Iterable, list]):
     temp_output_file = output_file.with_suffix(output_file.suffix + '.tmp')
     print(f'Writing {temp_output_file} ...')
     try:
-        with gzip.open(temp_output_file, 'wb') as f:
-            for line in lines:
-                f.write((str(line) + '\n').encode())
+        with open(temp_output_file, 'wb') as f:
+            # Using gzip.open(temp) will cause `gunzip -N` to create a file
+            # with the temp as the file name (even if the archive name is
+            # different). Therefore we must set the internal filename manually
+            # and pass in the file object for writing.
+            with gzip.GzipFile(filename=output_file, fileobj=f) as z:
+                with io.TextIOWrapper(z) as b:
+                    for line in lines:
+                        b.write(line + '\n')
     except:
         try:
             temp_output_file.unlink()
@@ -153,7 +160,8 @@ def write_mtx_file(rows_cols_count_line: str, mtx_body_file: Path, output_file: 
             f.write(header_line.encode())
             f.write((rows_cols_count_line + '\n').encode())
             with open_maybe_gz(mtx_body_file, 'rb') as temp_data:
-                copyfileobj(temp_data, f)
+                # Using 1MiB buffer should be faster than the default of 16KiB
+                copyfileobj(temp_data, f, length=2 ** 20)
     except:
         try:
             temp_output_file.unlink()
