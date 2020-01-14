@@ -16,14 +16,14 @@ Otherwise it will just parse the excel files and generate all of the matrix and 
 from pathlib import Path
 
 from create_project import (
-    get_spreadsheet_paths,
     run,
 )
+from util import get_target_spreadsheets
 
-for sub_dir in 'existing', 'new':
-    src_dir = Path('spreadsheets') / sub_dir
-    projects = get_spreadsheet_paths(src_dir)
-    for i, project in enumerate(projects):
-        print(f'\n% Progress: {i + 1}/{len(projects)} projects ({project}).\n'
-              f'===========================================================')
-        run(xlsx=project.as_posix())
+
+xlsxs = get_target_spreadsheets()
+
+for i, xlsx in enumerate(xlsxs):
+    print(f'\n% Progress: {i + 1}/{len(xlsxs)} projects ({xlsx.name}).\n'
+          f'===========================================================')
+    run(xlsx=xlsx.as_posix())

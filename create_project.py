@@ -3,46 +3,21 @@ import copy
 from datetime import datetime
 import json
 import os
-from pathlib import Path
 import sys
-from typing import (
-    List,
-    Sequence,
-)
-import uuid
 
 from openpyxl import load_workbook
 
 from count_cells import get_cell_counts
-
+from util import (
+    generate_file_uuid,
+    generate_project_uuid
+)
 
 # TODO: Consolidate similar functions and clean up code.
 
 
 def timestamp():
     return datetime.utcnow().strftime("%Y-%m-%dT%H%M%S.%fZ")
-
-
-def generate_project_uuid(geo_accessions: Sequence[str]) -> str:
-    """
-    Deterministically generate a project UUID based on one or more GEO accession ids.
-    """
-    if isinstance(geo_accessions, str):
-        geo_accessions = [geo_accessions]
-    namespace_uuid = uuid.UUID('296e1002-1c99-4877-bb7f-bb6a3b752638')
-    return str(uuid.uuid5(namespace_uuid, ''.join(sorted(geo_accessions))))
-
-
-def generate_file_uuid(bundle_uuid: str, file_name: str) -> str:
-    """
-    Deterministically generate a file UUID based on the parent bundle uuid and its file name.
-    """
-    namespace_uuid = uuid.UUID('4c52e3d0-ffe5-4b4d-a4d0-cb6a6f372b31')
-    return str(uuid.uuid5(namespace_uuid, bundle_uuid + file_name))
-
-
-def get_spreadsheet_paths(src_dir: Path) -> List[Path]:
-    return [p for p in src_dir.iterdir() if p.is_file() and p.name.endswith('.0.xlsx')]
 
 
 def create_project_json(data, version, verify=False):
@@ -249,7 +224,7 @@ def create_cell_suspension_jsons(data, cell_count, file_uuid, i=0):
     return cell_suspension_json
 
 
-def fill_sections(data, keys, i, as_list=[]):
+def fill_sections(data, keys, i, as_list=()):
     # TODO: Add types
     # TODO: Handle lists intelligently
     document = {}
