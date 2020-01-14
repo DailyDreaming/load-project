@@ -121,7 +121,7 @@ class Converter(metaclass=ABCMeta):
             else:
                 log.warning('Only found the following expected files %s', expected_files)
             convert_csv_to_mtx(input_file=self.geo_dir / csv.name,
-                               output_dir=self.matrix_dir(csv.name),
+                               output_dir=(self.matrix_dir(csv.name)),
                                delimiter=csv.sep,
                                rows_are_genes=csv.rows_are_genes,
                                row_filter=csv.row_filter)
