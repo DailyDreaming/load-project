@@ -1780,11 +1780,11 @@ def main(project_dirs: List[Path]):
             else:
                 succeeded_projects.append(project_dir)
     finally:
+        skipped_projects = converter_classes.keys()
+        print_projects('not in working set', skipped_projects)
         print_projects('not implemented', not_implemented_projects, file=sys.stderr)
         print_projects('failed', failed_projects, file=sys.stderr)
         print_projects('succeeded', succeeded_projects)
-        for k, v in converter_classes.items():
-            log.warning('Unused converter `%s` with UUID `%s`', k, v.__doc__.strip())
 
 
 def print_projects(title, projects, file=None):
