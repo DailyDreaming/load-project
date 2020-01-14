@@ -12,7 +12,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Union,
 )
 
 from util import open_maybe_gz
@@ -124,15 +123,16 @@ def write_gzip_file(output_file: Path, lines: Iterable):
     temp_output_file = output_file.with_suffix(output_file.suffix + '.tmp')
     print(f'Writing {temp_output_file} ...')
     try:
-        with open(temp_output_file, 'wb') as f:
-            # Using gzip.open(temp) will cause `gunzip -N` to create a file
-            # with the temp as the file name (even if the archive name is
-            # different). Therefore we must set the internal filename manually
-            # and pass in the file object for writing.
+        # Using gzip.open(temp) directly creates an archive that causes
+        # `gunzip -N` to extract the file under the name of the temporary file
+        # even if the archive name is different. Therefore we must set the
+        # internal file name manually and pass in an already open file object
+        # for writing.
+        with open(temp_output_file.as_posix(), 'wb') as f:
             with gzip.GzipFile(filename=output_file, fileobj=f) as z:
-                with io.TextIOWrapper(z) as b:
+                with io.TextIOWrapper(z) as w:
                     for line in lines:
-                        b.write(line + '\n')
+                        w.write(line + '\n')
     except:
         try:
             temp_output_file.unlink()
