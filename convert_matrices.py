@@ -107,24 +107,21 @@ class Converter(metaclass=ABCMeta):
                     idempotent_link(self.geo_dir / src_name, dst_dir / dst_name)
 
     def _convert_csvs(self, *csvs: CSV):
+        expected_files = {'matrix.mtx.gz', 'genes.tsv', 'barcodes.tsv'}
         for csv in csvs:
-            self.idempotent_csv_conversion(csv)
-
-    def idempotent_csv_conversion(self, csv):
-        expected_files = [f for f in ('matrix.mtx.gz', 'genes.tsv', 'barcodes.tsv')
-                          if (self.matrix_dir(csv.name) / f).exists()]
-        if len(expected_files) == 3:
-            log.info('Matrix already generated for CSV `%s`', csv.name)
-        else:
-            if len(expected_files) == 0:
-                log.info('Started CSV conversion for CSV `%s`', csv.name)
+            output_dir = self.matrix_dir(csv.name)
+            actual_files = {f for f in expected_files if (output_dir / f).exists()}
+            if actual_files == expected_files:
+                log.info('Matrix already generated for CSV `%s`', csv.name)
             else:
-                log.warning('Only found the following expected files %s', expected_files)
-            convert_csv_to_mtx(input_file=self.geo_dir / csv.name,
-                               output_dir=(self.matrix_dir(csv.name)),
-                               delimiter=csv.sep,
-                               rows_are_genes=csv.rows_are_genes,
-                               row_filter=csv.row_filter)
+                if actual_files:
+                    log.warning('Found partial conversion results. Missing files: %s', expected_files - actual_files)
+                log.info('Started CSV conversion for `%s`', csv.name)
+                convert_csv_to_mtx(input_file=self.geo_dir / csv.name,
+                                   output_dir=output_dir,
+                                   delimiter=csv.sep,
+                                   rows_are_genes=csv.rows_are_genes,
+                                   row_filter=csv.row_filter)
 
     def _fix_short_rows(self, row_length: int) -> RowFilter:
         """
