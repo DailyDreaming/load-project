@@ -108,6 +108,18 @@ class Converter(metaclass=ABCMeta):
 
     def _convert_csvs(self, *csvs: CSV):
         for csv in csvs:
+            self.idempotent_csv_conversion(csv)
+
+    def idempotent_csv_conversion(self, csv):
+        expected_files = [f for f in ('matrix.mtx.gz', 'genes.tsv', 'barcodes.tsv')
+                          if (self.matrix_dir(csv.name) / f).exists()]
+        if len(expected_files) == 3:
+            log.info('Matrix already generated for CSV `%s`', csv.name)
+        else:
+            if len(expected_files) == 0:
+                log.info('Started CSV conversion for CSV `%s`', csv.name)
+            else:
+                log.warning('Only found the following expected files %s', expected_files)
             convert_csv_to_mtx(input_file=self.geo_dir / csv.name,
                                output_dir=self.matrix_dir(csv.name),
                                delimiter=csv.sep,
