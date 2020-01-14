@@ -62,10 +62,15 @@ def get_target_spreadsheets() -> List[Path]:
     ext = '.0.xlsx'
     for sub_dir in ('existing', 'new'):
         src_dir = Path('spreadsheets') / sub_dir
-        if accessions is None:
-            subdir_paths = [p for p in src_dir.iterdir() if p.is_file() and p.name.endswith(ext)]
-        else:
-            subdir_paths = [src_dir / (accession + ext) for accession in accessions]
+        subdir_paths = [
+            p
+            for p
+            in src_dir.iterdir()
+            if (p.is_file()
+                and p.name.endswith(ext)
+                and (accessions is None
+                     or p.name.replace(ext, '') in accessions))
+        ]
         spreadsheet_paths.extend(subdir_paths)
     return spreadsheet_paths
 

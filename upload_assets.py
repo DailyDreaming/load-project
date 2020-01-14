@@ -20,7 +20,7 @@ class ProjectMatrixUploader:
     def __init__(self):
         self.s3 = boto3.resource('s3')
 
-    def upload_files_to_bucket(self, bucket_name, project_dir):
+    def upload_files_to_bucket(self, bucket_name: str, project_dir: Path):
         key_prefix = 'project-assets/project-matrices/'
         project_uuid = project_dir.name
         bundle_dir = project_dir / 'bundle'
@@ -37,7 +37,7 @@ class ProjectMatrixUploader:
                 obj = self.s3.Object(bucket_name, key)
 
                 log.info(f'Uploading %s to s3://%s/%s.', matrix_path, bucket_name, key)
-                with open(matrix_path, 'rb') as mf:
+                with open(str(matrix_path), 'rb') as mf:
                     obj.put(Body=mf,
                             ContentDisposition=content_disposition,
                             ContentType='application/zip, application/octet-stream')
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     options = parser.parse_args(sys.argv[1:])
     uploader = ProjectMatrixUploader()
 
-    projects = get_target_project_dirs(uuids=True, root_dir=options.directory)
+    projects = get_target_project_dirs(uuids=True, root_dir=Path(options.directory))
 
     for project in projects:
         uploader.upload_files_to_bucket(options.bucket, project)
