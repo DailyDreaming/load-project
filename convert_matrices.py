@@ -125,7 +125,7 @@ class Converter(metaclass=ABCMeta):
                     idempotent_link(self.geo_dir / src_name, dst_dir / dst_name)
 
     def _convert_matrices(self, *inputs: Union[CSV, H5]):
-        expected_files = {'matrix.mtx.gz', 'genes.tsv', 'barcodes.tsv'}
+        expected_files = {'matrix.mtx.gz', 'genes.tsv.gz', 'barcodes.tsv.gz'}
         for input in inputs:
             output_dir = self.matrix_dir(input.name)
             actual_files = {f for f in expected_files if (output_dir / f).exists()}
