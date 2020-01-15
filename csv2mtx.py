@@ -138,19 +138,19 @@ def convert_csv_to_mtx(input_file: Path,
     convert_to_mtx(csv_converter, output_dir)
 
 
-def convert_cell_files_to_mtx(input_dir: Path,
+def convert_cell_files_to_mtx(input_files: Iterable[Path],
                               output_dir: Path,
                               delimiter: str = ','):
     """
     Convert a series of files to mtx where each file is expression for a single cell.
     :param delimiter: what separates genes from their expression in the cell files.
-    :param input_dir: directory containing the cell files.
+    :param input_files: paths to the cell files.
     :param output_dir: The location to save the output files
     :return:
     """
     def iter_files():
         first = True
-        for file_path in input_dir.iterdir():
+        for file_path in input_files:
             cell = pd.read_csv(file_path, sep=delimiter, compression='infer')
             if first:
                 first = False

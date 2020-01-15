@@ -15,6 +15,7 @@ from typing import (
     Optional,
     Union,
     cast,
+    Callable,
 )
 
 from dataclasses import (
@@ -66,6 +67,14 @@ class H5:
     def to_mtx(self, input_dir: Path, output_dir: Path):
         convert_h5_to_mtx(input_file=input_dir / self.name,
                           output_dir=output_dir)
+
+
+@dataclass(frozen=True)
+class IndividualCellFiles:
+    directory: str
+    cell_group_name: Optional[str] = None
+    path_filter: Optional[Callable[[Path], bool]] = None
+    sep: str = ','
 
 
 class Converter(metaclass=ABCMeta):
@@ -144,10 +153,13 @@ class Converter(metaclass=ABCMeta):
                 log.info('Started conversion for `%s`', input.name)
                 input.to_mtx(input_dir=self.geo_dir, output_dir=output_dir)
 
-    def _convert_cell_files(self, input_dir: str = '', delimiter: str = ','):
-        convert_cell_files_to_mtx(input_dir=self.geo_dir / input_dir,
-                                  output_dir=self.matrix_dir(input_dir),
-                                  delimiter=delimiter)
+    def _convert_cell_files(self, *cell_groups: IndividualCellFiles):
+        for cells in cell_groups:
+            paths = (self.geo_dir / cells.directory).iterdir()
+            matrix_name = cells.directory if cells.cell_group_name is None else cells.cell_group_name
+            convert_cell_files_to_mtx(input_files=filter(cells.path_filter, paths),
+                                      output_dir=self.matrix_dir(matrix_name),
+                                      delimiter=cells.sep)
 
     def _fix_short_rows(self, row_length: int) -> RowFilter:
         """
@@ -307,7 +319,13 @@ class GSE67835(Converter):
     """
 
     def _convert(self):
-        self._convert_cell_files('GSE67835_RAW', '\t')
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        self._convert_cell_files(
+            IndividualCellFiles(
+                'GSE67835_RAW',
+                sep='\t'
+            )
+        )
 
 
 class GSE102580(Converter):
@@ -522,7 +540,26 @@ class GSE113197(Converter):
     """
 
     def _convert(self):
-        self._convert_cell_files()
+
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        self._convert_cell_files(
+            IndividualCellFiles(
+                'GSE113197_RAW',
+                path_filter=lambda p: not p.name.endswith('Matrix.txt.gz'),
+                sep=' '
+            )
+        )
+
+        self._convert_csvs(*[
+            CSV('GSE113197_RAW/' + mat, sep='\t')
+            for mat
+            in [
+                'GSM3099846_Ind4_Expression_Matrix.txt.gz',
+                'GSM3099848_Ind6_Expression_Matrix.txt.gz',
+                'GSM3099847_Ind5_Expression_Matrix.txt.gz',
+                'GSM3099849_Ind7_Expression_Matrix.txt.gz'
+            ]
+        ])
 
 
 class GSE110499(Converter):
@@ -910,7 +947,14 @@ class GSE70580(Converter):
     """
 
     def _convert(self):
-        self._convert_cell_files()
+
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        self._convert_cell_files(
+            IndividualCellFiles(
+                'GSE67835_RAW',
+                sep='\t'
+            )
+        )
 
 
 class GSE130606(Converter):
@@ -1311,7 +1355,14 @@ class GSE110154(Converter):
     """
 
     def _convert(self):
-        self._convert_cell_files()
+
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        self._convert_cell_files(
+            IndividualCellFiles('GSE110154_RAW')
+        )
+
+        # There is also a corrupt/nonconforming csv file for this project but it
+        # can't be opened.
 
 
 class GSE86473(Converter):
@@ -1423,6 +1474,15 @@ class GSE81547(Converter):
         # https://data.humancellatlas.org/explore/projects/cddab57b-6868-4be4-806f-395ed9dd635a/expression-matrices
         raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
 
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        # noinspection PyUnreachableCode
+        self._convert_cell_files(
+            IndividualCellFiles(
+                'GSE81547_RAW',
+                sep='\t'
+            )
+        )
+
 
 class GSE115469(Converter):
     """
@@ -1486,7 +1546,40 @@ class GSE75659(Converter):
     """
 
     def _convert(self):
-        self._convert_cell_files()
+        # These ones are NOT all row-compatible, but have been be grouped into
+        # compatible cohorts. The current target is 5 separate matrices, but it
+        # could be reduced to 3 if desired (the first 3 are mutually compatible).
+        # The file GSM2127554_Bf37_mRNA_Fibroblast_Total_fraction_expression.txt.gz
+        # does not align with any other and thus is left out.
+        # The file GSM1962979_person1_YFV2001_Exome_Seq_Cap_expression.txt.gz
+        # is row compatible with the non-eGFP T-Cells, but is left out
+        # because I'm not convinced it actually represents a single cell.
+
+        self._convert_cell_files(*[
+            IndividualCellFiles(
+                'GSE75659_RAW',
+                sep='\t',
+                cell_group_name=name,
+                path_filter=pf
+            )
+            for (name, pf)
+            in ([
+                (tissue, lambda p: tissue in p.name)
+                for tissue
+                in
+                # 40,198 genes
+                ('brain', 'liver', 'fibroblast')
+            ] + [
+                (name, lambda p: 'Tcell' in p.name and check_sample(p.name.split('_')[0][3:]))
+                for (name, check_sample)
+                in [
+                    # 60,287 genes (includes eGFP)
+                    ('Tcell_eGFP', lambda s: int(s) <= 1962978),
+                    # 60,286 genes (lacks eGFP)
+                    ('Tcell_No_eGFP', lambda s: int(s) >= 1962979),
+                ]
+            ])
+        ])
 
 
 class GSE109822(Converter):
@@ -1604,7 +1697,15 @@ class GSE132566(Converter):
     """
 
     def _convert(self):
-        self._convert_cell_files()
+        # TODO add some kind of row filter to avoid headers
+
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        self._convert_cell_files(
+            IndividualCellFiles(
+                'GSE132566_RAW',
+                sep='\t'
+            )
+        )
 
 
 class GSE83139(Converter):
