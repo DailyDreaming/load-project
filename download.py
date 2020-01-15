@@ -1,9 +1,8 @@
-import argparse
+import os
 from itertools import dropwhile
 import logging
 from pathlib import Path
 import re
-import sys
 import tempfile
 from typing import (
     MutableMapping,
@@ -18,37 +17,19 @@ import requests
 
 from create_project import (
     generate_project_uuid,
-    get_spreadsheet_paths,
 )
+from util import get_target_spreadsheets
 
 logging.basicConfig(level=logging.INFO)
 
 source_url_template = 'https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc='
 
 
-def main(argv):
-    parser = argparse.ArgumentParser(description=__doc__)
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--all', '-A',
-                       action='store_true')
-    group.add_argument('--accessions', '-a',
-                       help='Comma separated list of GEO accession ids')
-    args = parser.parse_args(argv)
+def main():
 
-    if args.all:
-        download_from_all_accessions()
-    else:
-        accessions = args.accessions.split(',')
-        for accession in accessions:
-            download_supplementary_files(accession)
-
-
-def download_from_all_accessions():
-    for sub_dir in 'existing', 'new':
-        src_dir = Path('spreadsheets') / sub_dir
-        paths = get_spreadsheet_paths(src_dir)
-        for accession in [p.name.split('.')[0] for p in paths]:
-            download_supplementary_files(accession)
+    accessions = [p.name.split('.')[0] for p in get_target_spreadsheets()]
+    for accession in accessions:
+        download_supplementary_files(accession)
 
 
 # Work around https://bugs.python.org/issue30618, fixed on 3.7+
@@ -63,7 +44,6 @@ if not hasattr(Path, 'readlink'):
         obj._init(template=self)
         return obj
 
-
     Path.readlink = path_readlink
 
 
@@ -75,14 +55,11 @@ def download_supplementary_files(accession):
     project_uuid = generate_project_uuid([accession])
     logging.info('Downloading files for project accession %s, UUID %s.', accession, project_uuid)
 
-    projects_path = Path.cwd() / 'projects'
-    project_path = projects_path / project_uuid
-    geo_path = project_path / 'geo'
+    projects_path = Path('projects')
+    geo_path = projects_path / project_uuid / 'geo'
     if not geo_path.exists():
         geo_path.mkdir(parents=True)
-    accession_path = projects_path / accession
-    relative_path = project_path.relative_to(accession_path.parent)
-    create_or_update_symlink(accession_path, relative_path)
+    create_or_update_symlink(projects_path / accession, project_uuid)
 
     source_url = source_url_template + accession
     page = requests.get(source_url)
@@ -181,4 +158,4 @@ def download_file(url: str, path: Path):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

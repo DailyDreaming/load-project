@@ -8,7 +8,7 @@ all:
 	$(MAKE) assets
 
 download:
-	python3 download.py --all
+	python3 download.py
 
 extract:
 	python3 extract.py
@@ -17,10 +17,10 @@ matrices:
 	python3 convert_matrices.py
 
 clean_matrices:
-	rm -rf projects/*/matrices projects/*/bundle/matrix.mtx.zip
+	python clean.py
 
 count:
-	python3 count_cells.py --write-all
+	python3 count_cells.py --write
 
 metadata:
 	python3 generate_metadata.py

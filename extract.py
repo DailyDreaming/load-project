@@ -4,12 +4,18 @@ import shutil
 from tarfile import TarFile
 
 import logging
+
+from util import get_target_project_dirs
+
 logging.basicConfig(level=logging.INFO)
 
 
 def main():
-    projects_dir = Path.cwd() / 'projects'
-    extract_tar_file_recursive(projects_dir)
+
+    project_dirs = get_target_project_dirs()
+
+    for project_dir in project_dirs:
+        extract_tar_file_recursive(project_dir)
 
 
 def extract_tar_file(tar_path: Path, dest_path: Path):

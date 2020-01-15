@@ -26,6 +26,11 @@ from csv2mtx import (
     convert_csv_to_mtx,
 )
 from h5_to_mtx import convert_h5_to_mtx
+from util import (
+    get_target_project_dirs,
+    is_working_set_defined,
+)
+
 
 log = logging.getLogger(__file__)
 
@@ -1757,34 +1762,36 @@ class GSE73727(Converter):
         raise PostponedImplementationError('No recognizable matrices.')
 
 
-def main(projects: Path):
+def main(project_dirs: List[Path]):
     not_implemented_projects = []
     failed_projects = []
     succeeded_projects = []
     converter_classes = {k: v for k, v in globals().items() if k.startswith('GSE')}
     try:
-        for project_dir in sorted(projects.iterdir()):
-            if project_dir.is_symlink():
-                # noinspection PyBroadException
-                try:
-                    converter_class = converter_classes.pop(project_dir.name)
-                    converter = converter_class(project_dir)
-                    converter.convert()
-                except NotImplementedError:
-                    not_implemented_projects.append(project_dir)
-                except BaseException as e:
-                    failed_projects.append(project_dir)
-                    log.exception('Failed to process project', exc_info=True)
-                    if not isinstance(e, Exception):
-                        raise e
-                else:
-                    succeeded_projects.append(project_dir)
+        for project_dir in sorted(project_dirs):
+            # noinspection PyBroadException
+            try:
+                converter_class = converter_classes.pop(project_dir.name)
+                converter = converter_class(project_dir)
+                converter.convert()
+            except NotImplementedError:
+                not_implemented_projects.append(project_dir)
+            except BaseException as e:
+                failed_projects.append(project_dir)
+                log.exception('Failed to process project', exc_info=True)
+                if not isinstance(e, Exception):
+                    raise e
+            else:
+                succeeded_projects.append(project_dir)
     finally:
+        if is_working_set_defined():
+            print_projects('not in working set', converter_classes.keys())
+        else:
+            for class_name, class_obj in converter_classes.items():
+                log.warning('Unused converter `%s` with UUID `%s`', class_obj.__doc__.strip())
         print_projects('not implemented', not_implemented_projects, file=sys.stderr)
         print_projects('failed', failed_projects, file=sys.stderr)
         print_projects('succeeded', succeeded_projects)
-        for k, v in converter_classes.items():
-            log.warning('Unused converter `%s` with UUID `%s`', k, v.__doc__.strip())
 
 
 def print_projects(title, projects, file=None):
@@ -1798,4 +1805,5 @@ def print_projects(title, projects, file=None):
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
                         level=logging.DEBUG)
-    main(Path.cwd() / 'projects')
+    project_dirs = get_target_project_dirs()
+    main(project_dirs)

@@ -1,3 +1,5 @@
+from collections import Sequence
+
 import argparse
 import csv
 import json
@@ -6,11 +8,14 @@ import os
 from pathlib import Path
 import sys
 from typing import (
-    Sequence,
     Union,
+    Sequence,
 )
 
-from util import open_maybe_gz
+from util import (
+    open_maybe_gz,
+    get_target_project_dirs,
+)
 
 cell_counts_file = Path('cell_counts.json')
 
@@ -20,17 +25,11 @@ def main(argv):
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--list', '-l',
-                       metavar='ACCESSION',
-                       help='list cell count value for given accession id')
+                       help='list cell count values',
+                       action='store_true')
     group.add_argument('--write', '-w',
-                       metavar='ACCESSION',
-                       help='write a cell count file for given accession id')
-    group.add_argument('--list-all', '-L',
-                       action='store_true',
-                       help='list cell counts for all accession ids')
-    group.add_argument('--write-all', '-W',
-                       action='store_true',
-                       help='write cell count files for all accession ids')
+                       help='write cell count files',
+                       action='store_true')
     parser.add_argument('--verbose', '-v',
                         action='store_true',
                         help='Verbose debug output')
@@ -39,25 +38,10 @@ def main(argv):
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    if args.list:
-        count_one_project_cells(args.list, save_to_file=False)
-    elif args.write:
-        count_one_project_cells(args.write, save_to_file=True)
-    elif args.list_all:
-        count_all_project_cells(save_to_file=False)
-    elif args.write_all:
-        count_all_project_cells(save_to_file=True)
+    project_dirs = get_target_project_dirs()
 
-
-def count_all_project_cells(save_to_file=True):
-    """
-    Count cells in all projects
-
-    :param save_to_file: If true write the cell count totals to a global cell count file
-    """
-    for accession_id in get_accession_ids():
-        logging.info('Checking: %s ...', accession_id)
-        count_one_project_cells(accession_id, save_to_file)
+    for project_dir in project_dirs:
+        count_one_project_cells(project_dir.name, args.write)
 
 
 def count_one_project_cells(accession_id: str, save_to_file=True):
