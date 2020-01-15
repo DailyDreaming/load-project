@@ -26,8 +26,9 @@ from dataclasses import (
 from copy_static_project import populate_all_static_projects
 from csv2mtx import (
     RowFilter,
-    convert_csv_to_mtx,
-    convert_cell_files_to_mtx,
+    CSV2MTXConverter,
+    convert_rows,
+    CellFilesConverter,
 )
 from h5_to_mtx import convert_h5_to_mtx
 from util import (
@@ -53,11 +54,13 @@ class CSV:
     row_filter: Optional[RowFilter] = None
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
-        convert_csv_to_mtx(input_file=input_dir / self.name,
-                           output_dir=output_dir,
-                           delimiter=self.sep,
-                           rows_are_genes=self.rows_are_genes,
-                           row_filter=self.row_filter)
+        csv_converter = CSV2MTXConverter(
+            input_dir / self.name,
+            self.sep,
+            self.rows_are_genes,
+            self.row_filter
+        )
+        convert_rows(csv_converter, output_dir)
 
 
 @dataclass(frozen=True)
@@ -72,9 +75,17 @@ class H5:
 @dataclass(frozen=True)
 class IndividualCellFiles:
     directory: str
-    cell_group_name: Optional[str] = None
+    name: str = 'cell_files'
     path_filter: Optional[Callable[[Path], bool]] = None
     sep: str = ','
+
+    def to_mtx(self, input_dir: Path, output_dir: Path):
+        paths = (input_dir / self.directory).iterdir()
+        cell_files_converter = CellFilesConverter(
+            input_files=filter(self.path_filter, paths),
+            delimiter=self.sep
+        )
+        convert_rows(cell_files_converter, output_dir)
 
 
 class Converter(metaclass=ABCMeta):
@@ -140,7 +151,7 @@ class Converter(metaclass=ABCMeta):
                 else:
                     idempotent_link(self.geo_dir / src_name, dst_dir / dst_name)
 
-    def _convert_matrices(self, *inputs: Union[CSV, H5]):
+    def _convert_matrices(self, *inputs: Union[CSV, H5, IndividualCellFiles]):
         expected_files = {'matrix.mtx.gz', 'genes.tsv.gz', 'barcodes.tsv.gz'}
         for input in inputs:
             output_dir = self.matrix_dir(input.name)
@@ -152,14 +163,6 @@ class Converter(metaclass=ABCMeta):
                     log.warning('Found partial conversion results. Missing files: %s', expected_files - actual_files)
                 log.info('Started conversion for `%s`', input.name)
                 input.to_mtx(input_dir=self.geo_dir, output_dir=output_dir)
-
-    def _convert_cell_files(self, *cell_groups: IndividualCellFiles):
-        for cells in cell_groups:
-            paths = (self.geo_dir / cells.directory).iterdir()
-            matrix_name = cells.directory if cells.cell_group_name is None else cells.cell_group_name
-            convert_cell_files_to_mtx(input_files=filter(cells.path_filter, paths),
-                                      output_dir=self.matrix_dir(matrix_name),
-                                      delimiter=cells.sep)
 
     def _fix_short_rows(self, row_length: int) -> RowFilter:
         """
@@ -320,7 +323,7 @@ class GSE67835(Converter):
 
     def _convert(self):
         # row compatibility verified using ~/load-project.nadove/check_genes
-        self._convert_cell_files(
+        self._convert_matrices(
             IndividualCellFiles(
                 'GSE67835_RAW',
                 sep='\t'
@@ -540,26 +543,23 @@ class GSE113197(Converter):
     """
 
     def _convert(self):
-
         # row compatibility verified using ~/load-project.nadove/check_genes
-        self._convert_cell_files(
+        self._convert_matrices(
             IndividualCellFiles(
                 'GSE113197_RAW',
                 path_filter=lambda p: not p.name.endswith('Matrix.txt.gz'),
                 sep=' '
-            )
-        )
-
-        self._convert_csvs(*[
-            CSV('GSE113197_RAW/' + mat, sep='\t')
-            for mat
-            in [
-                'GSM3099846_Ind4_Expression_Matrix.txt.gz',
-                'GSM3099848_Ind6_Expression_Matrix.txt.gz',
-                'GSM3099847_Ind5_Expression_Matrix.txt.gz',
-                'GSM3099849_Ind7_Expression_Matrix.txt.gz'
-            ]
-        ])
+            ),
+            *[
+                CSV('GSE113197_RAW/' + mat, sep='\t')
+                for mat
+                in [
+                    'GSM3099846_Ind4_Expression_Matrix.txt.gz',
+                    'GSM3099848_Ind6_Expression_Matrix.txt.gz',
+                    'GSM3099847_Ind5_Expression_Matrix.txt.gz',
+                    'GSM3099849_Ind7_Expression_Matrix.txt.gz'
+                ]
+            ])
 
 
 class GSE110499(Converter):
@@ -947,9 +947,8 @@ class GSE70580(Converter):
     """
 
     def _convert(self):
-
         # row compatibility verified using ~/load-project.nadove/check_genes
-        self._convert_cell_files(
+        self._convert_matrices(
             IndividualCellFiles(
                 'GSE67835_RAW',
                 sep='\t'
@@ -1355,9 +1354,8 @@ class GSE110154(Converter):
     """
 
     def _convert(self):
-
         # row compatibility verified using ~/load-project.nadove/check_genes
-        self._convert_cell_files(
+        self._convert_matrices(
             IndividualCellFiles('GSE110154_RAW')
         )
 
@@ -1476,7 +1474,7 @@ class GSE81547(Converter):
 
         # row compatibility verified using ~/load-project.nadove/check_genes
         # noinspection PyUnreachableCode
-        self._convert_cell_files(
+        self._convert_matrices(
             IndividualCellFiles(
                 'GSE81547_RAW',
                 sep='\t'
@@ -1555,30 +1553,30 @@ class GSE75659(Converter):
         # is row compatible with the non-eGFP T-Cells, but is left out
         # because I'm not convinced it actually represents a single cell.
 
-        self._convert_cell_files(*[
+        self._convert_matrices(*[
             IndividualCellFiles(
                 'GSE75659_RAW',
                 sep='\t',
-                cell_group_name=name,
+                name=name,
                 path_filter=pf
             )
             for (name, pf)
             in ([
-                (tissue, lambda p: tissue in p.name)
-                for tissue
-                in
-                # 40,198 genes
-                ('brain', 'liver', 'fibroblast')
-            ] + [
-                (name, lambda p: 'Tcell' in p.name and check_sample(p.name.split('_')[0][3:]))
-                for (name, check_sample)
-                in [
-                    # 60,287 genes (includes eGFP)
-                    ('Tcell_eGFP', lambda s: int(s) <= 1962978),
-                    # 60,286 genes (lacks eGFP)
-                    ('Tcell_No_eGFP', lambda s: int(s) >= 1962979),
-                ]
-            ])
+                    (tissue, lambda p: tissue in p.name)
+                    for tissue
+                    in
+                    # 40,198 genes
+                    ('brain', 'liver', 'fibroblast')
+                ] + [
+                    (name, lambda p: 'Tcell' in p.name and check_sample(p.name.split('_')[0][3:]))
+                    for (name, check_sample)
+                    in [
+                        # 60,287 genes (includes eGFP)
+                        ('Tcell_eGFP', lambda s: int(s) <= 1962978),
+                        # 60,286 genes (lacks eGFP)
+                        ('Tcell_No_eGFP', lambda s: int(s) >= 1962979),
+                    ]
+                ])
         ])
 
 
@@ -1700,7 +1698,7 @@ class GSE132566(Converter):
         # TODO add some kind of row filter to avoid headers
 
         # row compatibility verified using ~/load-project.nadove/check_genes
-        self._convert_cell_files(
+        self._convert_matrices(
             IndividualCellFiles(
                 'GSE132566_RAW',
                 sep='\t'

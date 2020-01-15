@@ -14,6 +14,11 @@ from typing import (
     Optional,
 )
 
+from abc import (
+    ABCMeta,
+    abstractmethod,
+)
+
 import pandas as pd
 from util import open_maybe_gz
 
@@ -22,17 +27,15 @@ logging.basicConfig(level=logging.INFO)
 RowFilter = Callable[[List[str]], Optional[bool]]
 
 
-class RowConverter(Iterable):
+class RowConverter(Iterable, metaclass=ABCMeta):
 
     def __init__(self,
-                 row_provider: Iterable[List[str]],
                  rows_are_genes: bool,
                  row_filter: Optional[RowFilter] = None):
         """
         :param rows_are_genes: True if csv rows are genes, False if csv cols are barcodes
         :param row_filter: callable to process or skip nonconforming rows.
         """
-        self.row_provider = row_provider
         self.rows_are_genes = rows_are_genes
         if row_filter is None:
             def row_filter(_): return False
@@ -41,9 +44,13 @@ class RowConverter(Iterable):
         self.y_axis_values = []
         self.num_values = 0
 
+    @abstractmethod
+    def get_row_provider(self) -> Iterable[List[str]]:
+        raise NotImplementedError
+
     def __iter__(self):
 
-        for row in self.row_provider:
+        for row in self.get_row_provider():
             filter_status = self.row_filter(row)
             if filter_status is None or filter_status is False:
                 if self.x_axis_values is None:  # Get header values once
@@ -88,19 +95,41 @@ class CSV2MTXConverter(RowConverter):
 
         # Delay provider initialization until file is opened
         # noinspection PyTypeChecker
-        super().__init__(None, rows_are_genes, row_filter)
+        super().__init__(rows_are_genes, row_filter)
         self.input_file = input_file
         self.delimiter = delimiter
 
-    def __iter__(self):
+    def get_row_provider(self) -> Iterable[List[str]]:
         with open_maybe_gz(self.input_file, 'rt', newline='') as csv_file:
-            self.row_provider = csv.reader(csv_file, delimiter=self.delimiter)
-            return super().__iter__()
+            for row in csv.reader(csv_file, delimiter=self.delimiter):
+                yield row
 
 
-def convert_to_mtx(converter: RowConverter,
-                   output_dir: Path):
-    output_dir.mkdir(parents=True, exist_ok=True) # FIXME: move to convert_matrices.py
+class CellFilesConverter(RowConverter):
+
+    def __init__(self, input_files: Iterable[Path], delimiter: str = ','):
+        self.filepaths = input_files
+        self.delimiter = delimiter
+        super().__init__(False, None)  # TODO add support for row_filter
+
+    def get_row_provider(self) -> Iterable[List[str]]:
+        first = True
+        for path in self.filepaths:
+            cell = pd.read_csv(path, sep=self.delimiter, compression='infer')
+            if first:
+                first = False
+                # provide header (gene names) with empty first column
+                genes = ['']
+                genes.extend(cell[0])
+                yield genes
+            # provide expression values with barcodes
+            data = [path.name]
+            data.extend(cell[1])
+            yield data
+
+
+def convert_rows(converter: RowConverter, output_dir: Path):
+    output_dir.mkdir(parents=True, exist_ok=True)  # FIXME: move to convert_matrices.py
 
     mtx_body_file = output_dir / 'matrix.mtx.body.gz'
     mtx_file = output_dir / 'matrix.mtx.gz'
@@ -118,55 +147,6 @@ def convert_to_mtx(converter: RowConverter,
     write_gzip_file(output_dir / 'genes.tsv.gz', ['genes'] + converter.genes)
 
     print('Done.')
-
-
-def convert_csv_to_mtx(input_file: Path,
-                       output_dir: Path,
-                       delimiter: str = ',',
-                       rows_are_genes: bool = True,
-                       row_filter: Optional[RowFilter] = None):
-    """
-    Convert a csv file to a matrix.mtx, barcodes.tsv, and genes.tsv set of files
-
-    :param input_file: The input csv file
-    :param output_dir: The location to save the output files
-    :param delimiter: Delimiter character in csv
-    :param rows_are_genes: True if csv rows are genes, False if csv cols are barcodes
-    :param row_filter: callable to pre-process lines in the CSV
-    """
-    csv_converter = CSV2MTXConverter(input_file, delimiter, rows_are_genes, row_filter)
-    convert_to_mtx(csv_converter, output_dir)
-
-
-def convert_cell_files_to_mtx(input_files: Iterable[Path],
-                              output_dir: Path,
-                              delimiter: str = ','):
-    """
-    Convert a series of files to mtx where each file is expression for a single cell.
-    :param delimiter: what separates genes from their expression in the cell files.
-    :param input_files: paths to the cell files.
-    :param output_dir: The location to save the output files
-    :return:
-    """
-    def iter_files():
-        first = True
-        for file_path in input_files:
-            cell = pd.read_csv(file_path, sep=delimiter, compression='infer')
-            if first:
-                first = False
-                # provide header (gene names) with empty first column
-                genes = ['']
-                genes.extend(cell[0])
-                yield genes
-            # provide expression values with barcodes
-            data = [file_path.name]
-            data.extend(cell[1])
-            yield data
-
-    cell_file_converter = RowConverter(iter_files(),
-                                       rows_are_genes=False)
-
-    convert_to_mtx(cell_file_converter, output_dir)
 
 
 def write_gzip_file(output_file: Path, lines: Iterable):
@@ -260,10 +240,12 @@ def main(argv):
 
     args.rows_are_genes = args.rows_are_genes == 'y'
 
-    convert_csv_to_mtx(Path(args.csv_file),
-                       Path(args.output_dir),
-                       delimiter=args.delimiter,
-                       rows_are_genes=args.rows_are_genes)
+    converter = CSV2MTXConverter(
+        Path(args.csv_file),
+        delimiter=args.delimiter,
+        rows_are_genes=args.rows_are_genes
+    )
+    convert_rows(converter, Path(args.output_dir))
 
 
 if __name__ == '__main__':
