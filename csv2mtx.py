@@ -22,7 +22,9 @@ import pandas as pd
 
 from util import open_maybe_gz
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(levelname)s:%(threadName)s:%(message)s',
+                    level=logging.INFO)
+log = logging.getLogger(__file__)
 
 RowFilter = Callable[[List[str]], Optional[bool]]
 
@@ -160,7 +162,7 @@ def write_gzip_file(output_file: Path, lines: Iterable):
     :param lines: List/Iterator of strings to write to file (a '\n' is added to each line)
     """
     temp_output_file = output_file.with_suffix(output_file.suffix + '.tmp')
-    print(f'Writing {temp_output_file} ...')
+    log.info('Writing %s ...', temp_output_file)
     try:
         # Using gzip.open(temp) directly creates an archive that causes
         # `gunzip -N` to extract the file under the name of the temporary file
@@ -179,7 +181,7 @@ def write_gzip_file(output_file: Path, lines: Iterable):
             pass
         raise
     else:
-        print(f'Renaming {temp_output_file} to {output_file} ...')
+        log.info('Renaming %s to %s ...', temp_output_file, output_file)
         temp_output_file.rename(output_file)
 
 
@@ -193,6 +195,7 @@ def write_mtx_file(rows_cols_count_line: str, mtx_body_file: Path, output_file: 
     :param output_file: Path of the mtx file to be written
     """
     temp_output_file = output_file.with_suffix(output_file.suffix + '.tmp')
+    log.info('Writing %s ...', temp_output_file)
     try:
         with gzip.open(temp_output_file, 'wb') as f:
             header_line = '%%MatrixMarket matrix coordinate integer general\n'
@@ -202,13 +205,14 @@ def write_mtx_file(rows_cols_count_line: str, mtx_body_file: Path, output_file: 
                 # Using 1MiB buffer should be faster than the default of 16KiB
                 copyfileobj(temp_data, f, length=2 ** 20)
     except:
+        log.warning('Error writing %s ...', temp_output_file)
         try:
             temp_output_file.unlink()
         except FileNotFoundError:
             pass
         raise
     else:
-        print(f'Renaming {temp_output_file} to {output_file} ...')
+        log.info('Renaming %s to %s ...', temp_output_file, output_file)
         temp_output_file.rename(output_file)
 
 
@@ -224,7 +228,7 @@ def main(argv):
     args = parser.parse_args(argv)
 
     if not os.path.isfile(args.csv_file):
-        print('Error: File not found:', args.csv_file)
+        log.error('File not found: %s', args.csv_file)
         parser.print_help()
         exit()
 
@@ -236,10 +240,10 @@ def main(argv):
         args.delimiter = '\t'
 
     if len(args.delimiter) < 1:
-        print('Error: delimiter must be 1 char in length')
+        log.error('Delimiter must be 1 char in length')
 
     if args.rows_are_genes not in ('y', 'n'):
-        print('Error: rows_are_genes must be "y" or "n"')
+        log.error('rows_are_genes must be "y" or "n"')
 
     args.rows_are_genes = args.rows_are_genes == 'y'
 

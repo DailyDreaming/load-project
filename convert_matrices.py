@@ -8,7 +8,6 @@ import logging
 from operator import methodcaller
 import os
 from pathlib import Path
-import shutil
 import sys
 from typing import (
     Callable,
@@ -18,6 +17,7 @@ from typing import (
     Union,
     cast,
 )
+from zipfile import ZipFile
 
 from dataclasses import (
     astuple,
@@ -31,6 +31,7 @@ from csv2mtx import (
     RowFilter,
 )
 from h5_to_mtx import convert_h5_to_mtx
+from threads import DeferredTaskExecutor
 from util import (
     get_target_project_dirs,
     is_working_set_defined,
@@ -98,8 +99,10 @@ class CSVPerCell:
 
 class Converter(metaclass=ABCMeta):
 
-    def __init__(self, project_dir: Path):
+    def __init__(self, project_dir: Path, executor: DeferredTaskExecutor):
         self.project_dir = project_dir
+        self.executor = executor
+        self.futures = []
 
     @property
     def matrices_dir(self) -> Path:
@@ -125,7 +128,7 @@ class Converter(metaclass=ABCMeta):
             log.info('Final matrix already exists for project %s; moving on.', self.project_dir)
         else:
             self._convert()
-            self._create_zip()
+            self.executor.defer(self._create_zip, run_after=self.futures)
 
     def _create_zip(self):
         os.makedirs(str(self.zip_file.parent), exist_ok=True)
@@ -163,16 +166,19 @@ class Converter(metaclass=ABCMeta):
         names = [input.name for input in inputs]
         assert len(names) == len(set(names))
         expected_files = {'matrix.mtx.gz', 'genes.tsv.gz', 'barcodes.tsv.gz'}
-        for input in inputs:
-            output_dir = self.matrix_dir(input.name)
+        for input_file in inputs:
+            output_dir = self.matrix_dir(input_file.name)
             actual_files = {f for f in expected_files if (output_dir / f).exists()}
             if actual_files == expected_files:
-                log.info('Matrix already generated for `%s`', input.name)
+                log.info('Matrix already generated for `%s`', input_file.name)
             else:
                 if actual_files:
                     log.warning('Found partial conversion results. Missing files: %s', expected_files - actual_files)
-                log.info('Started conversion for `%s`', input.name)
-                input.to_mtx(input_dir=self.geo_dir, output_dir=output_dir)
+                log.info('Started conversion for `%s`', input_file.name)
+                future = self.executor.defer(input_file.to_mtx,
+                                             input_dir=self.geo_dir,
+                                             output_dir=output_dir)
+                self.futures.append(future)
 
     def _fix_short_rows(self, row_length: int) -> RowFilter:
         """
@@ -214,11 +220,11 @@ def idempotent_gzip_file(src_name: Path, dst_name: Path):
 
 
 def atomic_make_archive(dst: Path, root_dir: Path):
-    tmp_stem = dst.parent / (dst.stem + '.tmp')
-    tmp = tmp_stem.parent / (tmp_stem.name + '.zip')
+    tmp = dst.with_name(dst.name + '.tmp')
     try:
-        # make_archive adds it's own .zip at the end
-        shutil.make_archive(tmp_stem, 'zip', root_dir=str(root_dir))
+        with ZipFile(str(tmp), 'w') as z:
+            for member in root_dir.glob('**/*'):
+                z.write(member, arcname=member.relative_to(root_dir))
     except BaseException as e:
         tmp.unlink()
         raise e
@@ -1957,21 +1963,24 @@ def main(project_dirs: List[Path]):
     succeeded_projects = []
     converter_classes = {k: v for k, v in globals().items() if k.startswith('GSE')}
     try:
-        for project_dir in sorted(project_dirs):
-            # noinspection PyBroadException
-            try:
-                converter_class = converter_classes.pop(project_dir.name)
-                converter = converter_class(project_dir)
-                converter.convert()
-            except NotImplementedError:
-                not_implemented_projects.append(project_dir)
-            except BaseException as e:
-                failed_projects.append(project_dir)
-                log.exception('Failed to process project', exc_info=True)
-                if not isinstance(e, Exception):
-                    raise e
-            else:
-                succeeded_projects.append(project_dir)
+        with DeferredTaskExecutor(max_workers=os.cpu_count()) as executor:
+            log.debug('ThreadPoolExecutor max_workers set to %s', os.cpu_count())
+            for project_dir in sorted(project_dirs):
+                # noinspection PyBroadException
+                try:
+                    converter_class = converter_classes.pop(project_dir.name)
+                    converter = converter_class(project_dir, executor)
+                    converter.convert()
+                except NotImplementedError:
+                    not_implemented_projects.append(project_dir)
+                except BaseException as e:
+                    failed_projects.append(project_dir)
+                    log.exception('Failed to process project', exc_info=True)
+                    if not isinstance(e, Exception):
+                        raise e
+                else:
+                    succeeded_projects.append(project_dir)
+        # TODO: executor.errors
     finally:
         if is_working_set_defined():
             print_projects('not in working set', converter_classes.keys())
