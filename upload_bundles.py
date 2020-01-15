@@ -45,7 +45,7 @@ def main():
             return file_uuid
 
         if bundle.is_dir():
-            response = dss.upload(src_dir=bundle.as_posix(),
+            response = dss.upload(src_dir=str(bundle),
                                   replica='aws',
                                   staging_bucket='lon-test-data',
                                   bundle_uuid=bundle_uuid,

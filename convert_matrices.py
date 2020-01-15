@@ -99,7 +99,7 @@ class Converter(metaclass=ABCMeta):
             self._create_zip()
 
     def _create_zip(self):
-        os.makedirs(self.zip_file.parent.as_posix(), exist_ok=True)
+        os.makedirs(str(self.zip_file.parent), exist_ok=True)
         atomic_make_archive(self.zip_file, root_dir=self.matrices_dir)
 
     @abstractmethod
@@ -166,7 +166,7 @@ def idempotent_gzip_file(src_name: Path, dst_name: Path):
     if not dst_name.exists():
         tmp = dst_name.parent / (dst_name.name + '.tmp')
         try:
-            with open(src_name.as_posix(), 'rb') as read_fh:
+            with open(str(src_name), 'rb') as read_fh:
                 with gzip.open(tmp, 'wb') as write_fh:
                     chunk = read_fh.read(1024 ** 2)
                     while chunk:
@@ -187,7 +187,7 @@ def atomic_make_archive(dst: Path, root_dir: Path):
     tmp = tmp_stem.parent / (tmp_stem.name + '.zip')
     try:
         # make_archive adds it's own .zip at the end
-        shutil.make_archive(tmp_stem, 'zip', root_dir=root_dir.as_posix())
+        shutil.make_archive(tmp_stem, 'zip', root_dir=str(root_dir))
     except BaseException as e:
         tmp.unlink()
         raise e
@@ -211,7 +211,7 @@ def idempotent_link(src: Path, dst: Path):
             dst.unlink()
         except FileNotFoundError:
             pass
-        os.link(src.as_posix(), dst.as_posix())
+        os.link(str(src), str(dst))
 
 
 class PostponedImplementationError(NotImplementedError):
