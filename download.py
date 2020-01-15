@@ -1,4 +1,3 @@
-import os
 from itertools import dropwhile
 import logging
 from pathlib import Path
@@ -26,7 +25,6 @@ source_url_template = 'https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc='
 
 
 def main():
-
     accessions = [p.name.split('.')[0] for p in get_target_spreadsheets()]
     for accession in accessions:
         download_supplementary_files(accession)
@@ -44,6 +42,7 @@ if not hasattr(Path, 'readlink'):
         obj._init(template=self)
         return obj
 
+
     Path.readlink = path_readlink
 
 
@@ -59,7 +58,7 @@ def download_supplementary_files(accession):
     geo_path = projects_path / project_uuid / 'geo'
     if not geo_path.exists():
         geo_path.mkdir(parents=True)
-    create_or_update_symlink(projects_path / accession, project_uuid)
+    create_or_update_symlink(projects_path / accession, Path(project_uuid))
 
     source_url = source_url_template + accession
     page = requests.get(source_url)
@@ -76,8 +75,9 @@ def download_supplementary_files(accession):
         logging.info('No supplementary files found on %s', source_url)
 
 
-def create_or_update_symlink(symlink, target):
+def create_or_update_symlink(symlink: Path, target: Path):
     if symlink.is_symlink():
+        # noinspection PyUnresolvedReferences
         current_target = symlink.readlink()
         if current_target == target:
             return
