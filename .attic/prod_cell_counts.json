@@ -1,0 +1,179 @@
+{
+    "cddab57b-6868-4be4-806f-395ed9dd635a": {
+        "project_manifest": "",
+        "cell_count": 2544,
+        "compare": "with our actual counts from geo"
+    },
+    "4d6f6c96-2a83-43d8-8fe1-0f53bffd4674": {
+        "project_manifest": "",
+        "cell_count": 30000,
+        "compare": "with our actual counts from geo"
+    },
+    "2043c65a-1cf8-4828-a656-9e247d4e64f1": {
+        "project_manifest": "",
+        "cell_count": 1733,
+        "was": "unspecified",
+        "compare": "with our actual counts from geo"
+    },
+    "f86f1ab4-1fbb-4510-ae35-3ffd752d4dfc": {
+        "project_manifest": "",
+        "cell_count": 12404,
+        "compare": "with our actual counts from geo"
+    },
+    "f8aa201c-4ff1-45a4-890e-840d63459ca2": {
+        "project_manifest": "",
+        "cell_count": 16893,
+        "compare": "with our actual counts from geo"
+    },
+    "90bd6933-40c0-48d4-8d76-778c103bf545": {
+        "project_manifest": "",
+        "cell_count": 2244,
+        "compare": "with our actual counts from geo"
+    },
+    "8185730f-4113-40d3-9cc3-929271784c2b": {
+        "project_manifest": "c36973e8-c51e-588e-a18a-94b8c6bb2069.tsv",
+        "cell_count": 44000,
+        "bundle_uuid": "b6f23f10-cceb-4606-9ed0-5f3f3f63ba6f",
+        "mtx": true
+    },
+    "005d611a-14d5-4fbf-846e-571a1f874f70": {
+        "project_manifest": "3d7d9d53-3a23-575b-8655-71f4b58bc6bf.tsv",
+        "cell_count": 19916,
+        "bundle_uuid": "95c479cb-ce2a-4e66-bce3-e94e362284c6",
+        "mtx": true
+    },
+    "a29952d9-925e-40f4-8a1c-274f118f1f51": {
+        "project_manifest": "a4e8ffa3-2167-5882-a42a-6478af16c677.tsv",
+        "cell_count": 9500,
+        "bundle_uuid": "38414e2c-090b-48b9-bf2d-16659899ab93",
+        "mtx": false
+    },
+    "f81efc03-9f56-4354-aabb-6ce819c3d414": {
+        "project_manifest": "34fe2d4f-6fb0-5709-a65e-e276a6b195b6.tsv",
+        "cell_count": 20000,
+        "bundle_uuid": "45ab2fbd-e6ab-4aaf-9044-b6c11ab93706",
+        "mtx": false
+    },
+    "cc95ff89-2e68-4a08-a234-480eca21ce79": {
+        "project_manifest": "da81bb40-4ddc-5fde-8ca9-55aa1d10d679.tsv",
+        "cell_count": 528092,
+        "bundle_uuid": "0eaa712a-bb35-4b36-be51-7a4b9a19f9d6",
+        "mtx": true
+    },
+    "c4077b3c-5c98-4d26-a614-246d12c2e5d7": {
+        "project_manifest": "0cca81fc-d877-5d1c-b6b4-5b91a2167ced.tsv",
+        "cell_count": 199845,
+        "bundle_uuid": "64c857ab-3fef-45ec-955f-98a7b2b03f65",
+        "mtx": true
+    },
+    "091cf39b-01bc-42e5-9437-f419a66c8a45": {
+        "project_manifest": "05797e3c-86ab-598b-a623-ec7030218dc3.tsv",
+        "cell_count": 1480000,
+        "bundle_uuid": "8496f742-25d2-425a-b262-87d903c289ae",
+        "mtx": true
+    },
+    "027c51c6-0719-469f-a7f5-640fe57cbece": {
+        "project_manifest": "7c71d75d-23a8-5d6f-90a5-07493143c9ea.tsv",
+        "cell_count": 4000,
+        "bundle_uuid": "8d15738a-a26d-42e7-97d4-0e4c83a72d10",
+        "mtx": false
+    },
+    "ae71be1d-ddd8-4feb-9bed-24c3ddb6e1ad": {
+        "project_manifest": "4f9b3823-1544-595c-a45f-4f2d0aea1c4a.tsv",
+        "cell_count": 3514,
+        "bundle_uuid": "0e704d02-4035-41c0-86b5-5096b1bd40a9",
+        "mtx": false
+    },
+    "88ec040b-8705-4f77-8f41-f81e57632f7d": {
+        "project_manifest": "5c4e39ab-90ac-5d84-b9d3-7c20b54d4863.tsv",
+        "cell_count": 59780,
+        "bundle_uuid": "5822b076-cf01-4568-bd80-feb75b37b5e3",
+        "mtx": false
+    },
+    "577c946d-6de5-4b55-a854-cd3fde40bff2": {
+        "project_manifest": "dffda4c2-286c-500d-8784-1b3b4470272b.tsv",
+        "cell_count": 30000,
+        "bundle_uuid": "76bc5307-a8d9-44ca-a32f-72a6865c67d5",
+        "mtx": false
+    },
+    "9c20a245-f2c0-43ae-82c9-2232ec6b594f": {
+        "project_manifest": "41139e67-4c5d-5ccb-b407-aa11f22cdf49.tsv",
+        "cell_count": 230800,
+        "bundle_uuid": "792d0b2d-8d8f-47e4-ac94-cca644140812",
+        "mtx": false
+    },
+    "74b6d569-3b11-42ef-b6b1-a0454522b4a0": {
+        "project_manifest": "358b4817-eb60-5bc7-9d69-4e772888cf91.tsv",
+        "cell_count": 1330000,
+        "bundle_uuid": "2574757a-b62f-4ab3-ae83-1219ad2d03c6",
+        "mtx": false
+    },
+    "1defdada-a365-44ad-9b29-443b06bd11d6": {
+        "project_manifest": "d1513895-3a09-5610-8451-6aff80cc3d64.tsv",
+        "cell_count": 339089,
+        "bundle_uuid": "0fbc2a3a-fbb7-41b1-b6b2-9602f39fdbc8",
+        "mtx": false
+    },
+    "4e6f083b-5b9a-4393-9890-2a83da8188f1": {
+        "project_manifest": "535560f1-9456-53b0-ab8a-946431c4fd83.tsv",
+        "cell_count": 112201,
+        "bundle_uuid": "1c460b84-d09c-4d4e-be0e-ea9b2eed1b46",
+        "mtx": false
+    },
+    "8c3c290d-dfff-4553-8868-54ce45f4ba7f": {
+        "project_manifest": "cf9a8385-3d13-51c2-bdd2-e5140b07c6d4.tsv",
+        "cell_count": 6639,
+        "bundle_uuid": "05b5e0bd-811c-4c29-a71b-b6a9814cbc4c",
+        "mtx": false
+    },
+    "e0009214-c0a0-4a7b-96e2-d6a83e966ce0": {
+        "project_manifest": "9a738660-c43e-5648-b301-57c65f076a6f.tsv",
+        "cell_count": 48977,
+        "this": "needs to be actually checked; tabula muris says 100k+ cells.",
+        "bundle_uuid": "13887894-c484-49d3-a778-4fa450d90a10",
+        "mtx": false
+    },
+    "116965f3-f094-4769-9d28-ae675c1b569c": {
+        "project_manifest": "499ffd25-58ed-5eaa-86b2-82a9a4167aff.tsv",
+        "cell_count": 15744,
+        "was": "unspecified",
+        "bundle_uuid": "c6633095-68f9-4118-981b-16dc8b42a5a1",
+        "mtx": true
+    },
+    "4a95101c-9ffc-4f30-a809-f04518a23803": {
+        "project_manifest": "f20e2ccb-93fb-5c70-800f-e664aaa44890.tsv",
+        "cell_count": 267360,
+        "was": "unspecified",
+        "bundle_uuid": "f3b7ca6b-84a3-43ba-afad-a78beae7c927",
+        "mtx": true
+    },
+    "f83165c5-e2ea-4d15-a5cf-33f3550bffde": {
+        "project_manifest": "ffa646c1-61fc-5456-a488-0ddf4324a0d6.tsv",
+        "cell_count": 546183,
+        "was": "unspecified",
+        "bundle_uuid": "256408e8-fe91-4976-bca9-9389089b35a7",
+        "mtx": true
+    },
+    "abe1a013-af7a-45ed-8c26-f3793c24a1f4": {
+        "project_manifest": "a2186fbc-1d18-5d07-ade5-00b0c33b570e.tsv",
+        "cell_count": 341079,
+        "was": "unspecified",
+        "bundle_uuid": "05a28b33-ae4e-465d-9c81-d98d95d3765c",
+        "mtx": true
+    },
+    "a9c022b4-c771-4468-b769-cabcf9738de3": {
+        "project_manifest": "125e57e7-7f61-5120-a282-68d18aa30a35.tsv",
+        "cell_count": 40993,
+        "was": "unspecified",
+        "bundle_uuid": "0dbe4b76-114f-4e0f-864c-7fd367c6da01",
+        "mtx": false
+    },
+    "008e40e8-66ae-43bb-951c-c073a2fa6774": {
+        "project_manifest": "e9f3855d-63d5-5513-957e-15baf891912c.tsv",
+        "cell_count": 114,
+        "was": "unspecified",
+        "this": "needs to be actually checked",
+        "bundle_uuid": "0ec17a59-3c4e-43a3-aaa7-6d5bcb2a75b5",
+        "mtx": false
+    }
+}
