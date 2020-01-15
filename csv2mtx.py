@@ -93,7 +93,7 @@ def convert_csv_to_mtx(input_file: Path,
     :param row_filter: callable to pre-process lines in the CSV
     """
     csv_converter = CSV2MTXConverter(input_file, delimiter, rows_are_genes, row_filter)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)  # FIXME: move to convert_matrices.py
 
     mtx_body_file = output_dir / 'matrix.mtx.body.gz'
     mtx_file = output_dir / 'matrix.mtx.gz'
