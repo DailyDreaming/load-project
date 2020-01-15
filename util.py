@@ -47,13 +47,20 @@ def generate_file_uuid(bundle_uuid: str, file_name: str) -> str:
     return str(uuid.uuid5(namespace_uuid, bundle_uuid + file_name))
 
 
+WORKING_SET_ENV_VAR = 'SKUNK_ACCESSIONS'
+
+
+def is_working_set_defined() -> bool:
+    return WORKING_SET_ENV_VAR in os.environ
+
+
 def get_skunk_accessions() -> Optional[List[str]]:
     try:
-        accessions = os.environ['SKUNK_ACCESSIONS']
+        accessions = os.environ[WORKING_SET_ENV_VAR]
     except KeyError:
         return None
     else:
-        return accessions.split(',')
+        return [acc.strip() for acc in accessions.split(',') if acc.strip()]
 
 
 def get_target_spreadsheets() -> List[Path]:
@@ -63,13 +70,13 @@ def get_target_spreadsheets() -> List[Path]:
     for sub_dir in ('existing', 'new'):
         src_dir = Path('spreadsheets') / sub_dir
         subdir_paths = [
-            p
-            for p
+            path
+            for path
             in src_dir.iterdir()
-            if (p.is_file()
-                and p.name.endswith(ext)
+            if (path.is_file()
+                and path.name.endswith(ext)
                 and (accessions is None
-                     or p.name.replace(ext, '') in accessions))
+                     or path.name.replace(ext, '') in accessions))
         ]
         spreadsheet_paths.extend(subdir_paths)
     return spreadsheet_paths
@@ -80,8 +87,12 @@ def get_target_project_dirs(uuids: bool = False, root_dir: Path = None) -> List[
         root_dir = Path('projects/')
 
     accessions = get_skunk_accessions()
-    if accessions is None:
-        return [p for p in root_dir.iterdir() if p.is_dir() and (p.is_symlink() ^ uuids)]
-    else:
-        targets = [generate_project_uuid([acc]) for acc in accessions] if uuids else accessions
-        return [root_dir / target for target in targets]
+    return [
+        path
+        for path
+        in root_dir.iterdir()
+        if (path.is_dir()
+            and (path.is_symlink() ^ uuids)
+            and (accessions is None
+                 or path.name in accessions))
+    ]

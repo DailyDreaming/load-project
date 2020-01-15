@@ -26,7 +26,11 @@ from csv2mtx import (
     convert_csv_to_mtx,
 )
 from h5_to_mtx import convert_h5_to_mtx
-from util import get_target_project_dirs
+from util import (
+    get_target_project_dirs,
+    is_working_set_defined,
+)
+
 
 log = logging.getLogger(__file__)
 
@@ -1780,8 +1784,11 @@ def main(project_dirs: List[Path]):
             else:
                 succeeded_projects.append(project_dir)
     finally:
-        skipped_projects = converter_classes.keys()
-        print_projects('not in working set', skipped_projects)
+        if is_working_set_defined():
+            print_projects('not in working set', converter_classes.keys())
+        else:
+            for class_name, class_obj in converter_classes.items():
+                log.warning('Unused converter `%s` with UUID `%s`', class_obj.__doc__.strip())
         print_projects('not implemented', not_implemented_projects, file=sys.stderr)
         print_projects('failed', failed_projects, file=sys.stderr)
         print_projects('succeeded', succeeded_projects)
@@ -1798,7 +1805,5 @@ def print_projects(title, projects, file=None):
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
                         level=logging.DEBUG)
-
     project_dirs = get_target_project_dirs()
-
     main(project_dirs)
