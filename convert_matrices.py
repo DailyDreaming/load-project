@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import sys
 from typing import (
+    Iterable,
     List,
     Optional,
     Union,
@@ -21,17 +22,16 @@ from dataclasses import (
     dataclass,
 )
 
+from copy_static_project import populate_all_static_projects
 from csv2mtx import (
     RowFilter,
     convert_csv_to_mtx,
 )
-from copy_static_project import populate_all_static_projects
 from h5_to_mtx import convert_h5_to_mtx
 from util import (
     get_target_project_dirs,
     is_working_set_defined,
 )
-
 
 log = logging.getLogger(__file__)
 
@@ -492,7 +492,6 @@ class GSE97104(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('Invalid CSV syntax')
         # NOTE: this file contains a comment (#) and multiple blank lines at the beginning,
         # not sure if Daniel's script handles this
 
@@ -500,8 +499,15 @@ class GSE97104(Converter):
         # the result of their concatenation
         # noinspection PyUnreachableCode
         self._convert_matrices(
-            CSV('GSE97104_all_umi.mtx.txt.gz', sep='\t')
+            CSV('GSE97104_all_umi.mtx.txt.gz', sep='\t', row_filter=self._fix_short_rows(35017))
         )
+
+    def _fix_short_rows_filter(self, row_length: int, row: List[str]) -> Optional[bool]:
+        # Skip lines that start with # or are blank
+        if not row or row[0].startswith('#'):
+            return True
+        else:
+            return super()._fix_short_rows_filter(row_length, row)
 
 
 class GSE113197(Converter):
@@ -632,9 +638,7 @@ class GSE124472(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/66')
-        # noinspection PyUnreachableCode
-        self._copy_matrices([
+        self._copy_matrices(*[
             Matrix(
                 mtx=str(prefix / 'matrix.mtx'),
                 genes=str(prefix / 'genes.tsv'),
@@ -776,6 +780,7 @@ class GSE116470(Converter):
 
     def _convert(self):
         # Might be like. An mtx with the genes and barcodes defined in comments????
+        # TODO: (Jesse) needs special parser
         raise PostponedImplementationError('Confusing data')
 
 
@@ -1452,10 +1457,8 @@ class GSE84133(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('non-numeric descriptive columns')
-        # noinspection PyUnreachableCode
-        self._convert_matrices(
-            CSV('GSE84133_RAW/' + csv, rows_are_genes=False)
+        self._convert_matrices(*[
+            CSV('GSE84133_RAW/' + csv, rows_are_genes=False, row_filter=self._filter)
             for csv in (
                 'GSM2230757_human1_umifm_counts.csv.gz',
                 'GSM2230758_human2_umifm_counts.csv.gz',
@@ -1463,7 +1466,12 @@ class GSE84133(Converter):
                 'GSM2230760_human4_umifm_counts.csv.gz',
                 'GSM2230761_mouse1_umifm_counts.csv.gz',
                 'GSM2230762_mouse2_umifm_counts.csv.gz'
-            ))
+            )
+        ])
+
+    def _filter(self, row: List[str]):
+        del row[2]
+        del row[1]
 
 
 class GSE75659(Converter):
@@ -1608,7 +1616,65 @@ class GSE76381(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('.cef files with multi-line column headers')
+        self._convert_matrices(
+            *[
+                CSV(
+                    f,
+                    sep='\t',
+                    row_filter=self._filter(
+                        row_patterns=[
+                            ['CEF'],
+                            ['', 'Cell_type'],
+                            ['', 'Timepoint'],
+                            ['', 'Total_Molecules'],
+                            ['Gene'],
+                        ],
+                        cols=[1])
+                )
+                for f in [
+                    'GSE76381_ESMoleculeCounts.cef.txt.gz',
+                    'GSE76381_EmbryoMoleculeCounts.cef.txt.gz',
+                    'GSE76381_iPSMoleculeCounts.cef.txt.gz',
+                ]
+            ],
+            CSV(
+                'GSE76381_MouseAdultDAMoleculeCounts.cef.txt.gz',
+                row_filter=self._filter(
+                    row_patterns=[
+                        ['CEF'],
+                        ['Dataset', 'Adult dopaminergic neurons'],
+                        ['', 'Cell_type'],
+                        ['Gene'],
+                    ],
+                    cols=[1])
+            ),
+        )
+
+    def _filter(self, row_patterns: Iterable[Iterable[str]], cols: Iterable[int] = ()):
+        """
+        Suppress rows that match any of the given row patterns.
+
+        For a row to match a row pattern, each of the cells in the row needs to
+        match the corresponding string in the row pattern.
+
+        For rows that are not supressed, remove the cells at the specified
+        column indices.
+        """
+
+        def matches(row, row_pattern):
+            for cell, cell_pattern in zip(row, row_pattern):
+                if cell != cell_pattern:
+                    return False
+            return True
+
+        def filter_func(row):
+            if any(matches(row, row_pattern) for row_pattern in row_patterns):
+                return True  # suppress row
+            else:
+                for c in sorted(cols, reverse=True):
+                    del row[c]
+
+        return filter_func
 
 
 class GSE117498(Converter):
@@ -1769,7 +1835,7 @@ class GSE73727(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('No recognizable matrices.')
+        raise PostponedImplementationError('Special case of https://github.com/DailyDreaming/load-project/issues/43')
 
 
 def main(project_dirs: List[Path]):
