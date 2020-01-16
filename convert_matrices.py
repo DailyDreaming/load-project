@@ -851,7 +851,7 @@ class GSE127969(Converter):
 
     def _convert(self):
         # Fails with a UnicodeError due to fancy quotation marks (0x93 0x94)
-        raise PostponedImplementationError('Not UTF-8')
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/114')
         # noinspection PyUnreachableCode
         self._convert_matrices(
             CSV('GSE127969_counts_TPM_ALL.csv.gz', sep='\t')
