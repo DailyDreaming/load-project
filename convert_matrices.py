@@ -25,6 +25,8 @@ from csv2mtx import (
     RowFilter,
     convert_csv_to_mtx,
 )
+from copy_static_project import link_project_metadata
+from generate_metadata import static_prod_bundles
 from h5_to_mtx import convert_h5_to_mtx
 from util import (
     get_target_project_dirs,
@@ -1789,9 +1791,15 @@ def main(project_dirs: List[Path]):
         else:
             for class_name, class_obj in converter_classes.items():
                 log.warning('Unused converter `%s` with UUID `%s`', class_obj.__doc__.strip())
-        print_projects('not implemented', not_implemented_projects, file=sys.stderr)
-        print_projects('failed', failed_projects, file=sys.stderr)
-        print_projects('succeeded', succeeded_projects)
+
+    for bundle in static_prod_bundles:
+        src_dir = Path('projects') / bundle
+        print(f'Hard-linked project ("*.mtx.zip" only) contents: {bundle}/hca to {bundle}/bundle.')
+        link_project_metadata(str(src_dir), file_pattern='*.mtx.zip')
+
+    print_projects('not implemented', not_implemented_projects, file=sys.stderr)
+    print_projects('failed', failed_projects, file=sys.stderr)
+    print_projects('succeeded', succeeded_projects)
 
 
 def print_projects(title, projects, file=None):

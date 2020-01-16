@@ -65,4 +65,4 @@ for bundle in static_prod_bundles:
     src_dir = Path('projects') / bundle
     link_project_metadata(str(src_dir), file_pattern='*.json')
     print(f'Hard-linked project ("*.json" only) contents: {bundle}/hca to {bundle}/bundle.')
-    link_project_metadata(str(src_dir), file_pattern='*.mtx.zip')
+    # link_project_metadata(str(src_dir), file_pattern='*.mtx.zip')
