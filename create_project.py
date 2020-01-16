@@ -7,7 +7,7 @@ import sys
 
 from openpyxl import load_workbook
 
-from count_cells import get_cell_counts
+from count_cells import CountCells
 from util import (
     generate_file_uuid,
     generate_project_uuid
@@ -892,7 +892,7 @@ def run(xlsx, output_dir=None, clear=True):
     if os.path.exists(matrix_file):
         generate_analysis_json(bundle_uuid=bundle_uuid, output_dir=output_dir)
 
-    cell_counts = get_cell_counts()
+    cell_counts = CountCells.get_cell_counts()
     cell_count = 1  # the default if not found
     for accession in project_json['geo_series_accessions']:
         if accession in cell_counts:

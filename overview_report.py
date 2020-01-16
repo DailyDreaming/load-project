@@ -9,10 +9,7 @@ from typing import (
 )
 from uuid import UUID
 
-from count_cells import (
-    get_accession_ids,
-    get_cell_counts,
-)
+from count_cells import CountCells
 from create_project import (
     generate_project_uuid,
 )
@@ -97,7 +94,7 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
 
     # ---
     logging.debug('Searching for accession ids in the projects path ...')
-    for accession_id in get_accession_ids():
+    for accession_id in CountCells.get_accession_ids():
         # accession ids are symlinks to folders named by uuid
         accession_symlink = projects_path / accession_id
         assert accession_symlink.is_symlink()
@@ -152,7 +149,7 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
 
     # ---
     logging.debug('Reading cell_counts.json ...')
-    for accession_id, cell_count in get_cell_counts().items():
+    for accession_id, cell_count in CountCells.get_cell_counts().items():
         uuid = UUID(generate_project_uuid(accession_id))
         try:
             report[uuid].cell_count = cell_count
