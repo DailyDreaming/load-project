@@ -69,6 +69,26 @@ class RowConverter(Iterable, metaclass=ABCMeta):
             else:
                 assert False, f"Invalid row_filter return type {type(filter_status)}"
 
+    def convert(self, output_dir: Path):
+        output_dir.mkdir(parents=True, exist_ok=True)  # FIXME: move to convert_matrices.py
+
+        mtx_body_file = output_dir / 'matrix.mtx.body.gz'
+        mtx_file = output_dir / 'matrix.mtx.gz'
+
+        # Fully consume the iterator by writing the body of the mtx file to a temp file
+        write_gzip_file(mtx_body_file, self)
+
+        # Write the completed mtx file using correct header information and the body we wrote to the temp file
+        rows_cols_count_line = f'{len(self.genes)} {len(self.barcodes)} {self.num_values}'
+        write_mtx_file(rows_cols_count_line, mtx_body_file, mtx_file)
+        mtx_body_file.unlink()
+
+        # Write the two remaining files using the properties from the fully consumed iterator
+        write_gzip_file(output_dir / 'barcodes.tsv.gz', ['barcodes'] + self.barcodes)
+        write_gzip_file(output_dir / 'genes.tsv.gz', ['genes'] + self.genes)
+
+        print('Done.')
+
     @property
     def genes(self):
         return self.y_axis_values if self.rows_are_genes else self.x_axis_values
@@ -107,15 +127,20 @@ class CSV2MTXConverter(RowConverter):
 
 class CellFilesConverter(RowConverter):
 
-    def __init__(self, input_files: Iterable[Path], delimiter: str = ','):
+    def __init__(self,
+                 input_files: Iterable[Path],
+                 delimiter: str = ',',
+                 entry_filter: Optional[RowFilter] = None,
+                 expr_column: int = 1):
         self.filepaths = input_files
         self.delimiter = delimiter
-        super().__init__(False, None)  # TODO add support for row_filter
+        self.expr_column = expr_column
+        super().__init__(False, entry_filter)
 
     def get_row_provider(self) -> Iterable[List[str]]:
         first = True
         for path in self.filepaths:
-            cell = pd.read_csv(path, sep=self.delimiter, compression='infer')
+            cell = pd.read_csv(path, sep=self.delimiter, compression='infer', header=None, comment='#')
             if first:
                 first = False
                 # provide header (gene names) with empty first column
@@ -124,29 +149,8 @@ class CellFilesConverter(RowConverter):
                 yield genes
             # provide expression values with barcodes
             data = [path.name]
-            data.extend(cell[1])
+            data.extend(cell[self.expr_column])
             yield data
-
-
-def convert_rows(converter: RowConverter, output_dir: Path):
-    output_dir.mkdir(parents=True, exist_ok=True)  # FIXME: move to convert_matrices.py
-
-    mtx_body_file = output_dir / 'matrix.mtx.body.gz'
-    mtx_file = output_dir / 'matrix.mtx.gz'
-
-    # Fully consume the iterator by writing the body of the mtx file to a temp file
-    write_gzip_file(mtx_body_file, converter)
-
-    # Write the completed mtx file using correct header information and the body we wrote to the temp file
-    rows_cols_count_line = f'{len(converter.genes)} {len(converter.barcodes)} {converter.num_values}'
-    write_mtx_file(rows_cols_count_line, mtx_body_file, mtx_file)
-    mtx_body_file.unlink()
-
-    # Write the two remaining files using the properties from the fully consumed iterator
-    write_gzip_file(output_dir / 'barcodes.tsv.gz', ['barcodes'] + converter.barcodes)
-    write_gzip_file(output_dir / 'genes.tsv.gz', ['genes'] + converter.genes)
-
-    print('Done.')
 
 
 def write_gzip_file(output_file: Path, lines: Iterable):
@@ -245,7 +249,7 @@ def main(argv):
         delimiter=args.delimiter,
         rows_are_genes=args.rows_are_genes
     )
-    convert_rows(converter, Path(args.output_dir))
+    converter.convert(Path(args.output_dir))
 
 
 if __name__ == '__main__':
