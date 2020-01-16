@@ -14,22 +14,19 @@ Editing 'upload=False' to 'upload=True' with upload to dss dev if you are creden
 Otherwise it will just parse the excel files and generate all of the matrix and json files necessary for upload.
 """
 from pathlib import Path
-
+from copy_static_project import link_project_metadata
 from create_project import (
-    get_spreadsheet_paths,
     run,
 )
-from copy_static_project import link_project_metadata
+from util import get_target_spreadsheets
 
 
-for sub_dir in 'existing', 'new':
-    src_dir = Path('spreadsheets') / sub_dir
-    projects = get_spreadsheet_paths(src_dir)
-    for i, project in enumerate(projects):
-        print(f'\n% Progress: {i + 1}/{len(projects)} projects ({project}).\n'
-              f'===========================================================')
-        run(xlsx=str(project))
+xlsxs = get_target_spreadsheets()
 
+for i, xlsx in enumerate(xlsxs):
+    print(f'\n% Progress: {i + 1}/{len(xlsxs)} projects ({xlsx.name}).\n'
+          f'===========================================================')
+    run(xlsx=str(xlsx))
 
 # This will work with:
 # for root, dirs, files in os.walk('/home/quokka/yeah/load-project/projects'):
