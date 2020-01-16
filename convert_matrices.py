@@ -1764,6 +1764,13 @@ class GSE73727(Converter):
         raise PostponedImplementationError('No recognizable matrices.')
 
 
+def link_static_matrix_files():
+    for bundle in static_prod_bundles:
+        src_dir = Path('projects') / bundle
+        link_project_metadata(str(src_dir), file_pattern='*.mtx.zip')
+        print(f'Hard-linked project ("*.mtx.zip" only) contents: {bundle}/hca to {bundle}/bundle.')
+
+
 def main(project_dirs: List[Path]):
     not_implemented_projects = []
     failed_projects = []
@@ -1791,15 +1798,11 @@ def main(project_dirs: List[Path]):
         else:
             for class_name, class_obj in converter_classes.items():
                 log.warning('Unused converter `%s` with UUID `%s`', class_obj.__doc__.strip())
+        print_projects('not implemented', not_implemented_projects, file=sys.stderr)
+        print_projects('failed', failed_projects, file=sys.stderr)
+        print_projects('succeeded', succeeded_projects)
 
-    for bundle in static_prod_bundles:
-        src_dir = Path('projects') / bundle
-        link_project_metadata(str(src_dir), file_pattern='*.mtx.zip')
-        print(f'Hard-linked project ("*.mtx.zip" only) contents: {bundle}/hca to {bundle}/bundle.')
-
-    print_projects('not implemented', not_implemented_projects, file=sys.stderr)
-    print_projects('failed', failed_projects, file=sys.stderr)
-    print_projects('succeeded', succeeded_projects)
+    link_static_matrix_files()
 
 
 def print_projects(title, projects, file=None):
