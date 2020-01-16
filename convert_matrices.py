@@ -1794,8 +1794,8 @@ def main(project_dirs: List[Path]):
 
     for bundle in static_prod_bundles:
         src_dir = Path('projects') / bundle
-        print(f'Hard-linked project ("*.mtx.zip" only) contents: {bundle}/hca to {bundle}/bundle.')
         link_project_metadata(str(src_dir), file_pattern='*.mtx.zip')
+        print(f'Hard-linked project ("*.mtx.zip" only) contents: {bundle}/hca to {bundle}/bundle.')
 
     print_projects('not implemented', not_implemented_projects, file=sys.stderr)
     print_projects('failed', failed_projects, file=sys.stderr)
