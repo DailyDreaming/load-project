@@ -26,7 +26,7 @@ def populate_static_project(project_dir: Path, file_pattern: str = '*.json'):
         raise RuntimeError(f'{hca_dir} does not exist.  Nothing to link over.')
 
 
-def populate_all_static_projects(file_pattern='*.json'):
+def populate_all_static_projects(file_pattern: str = '*.json'):
     for root, dirs, files in os.walk('projects'):
         for project_uuid in dirs:
             if len(project_uuid) == len('4a95101c-9ffc-4f30-a809-f04518a23803'):
