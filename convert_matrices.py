@@ -1075,6 +1075,9 @@ class GSE93593(Converter):
 
     def _convert(self):
         # ignoring GSE93593_tpm.csv.gz
+
+        # This is a prod project that has a matrix already:
+        # https://data.humancellatlas.org/explore/projects/2043c65a-1cf8-4828-a656-9e247d4e64f1/expression-matrices
         self._convert_matrices(
             CSV('GSE93593_counts.csv.gz')
         )
@@ -1315,6 +1318,8 @@ class GSE114374(Converter):
     """
 
     def _convert(self):
+        # This is a prod project that has matrices already:
+        # https://data.humancellatlas.org/explore/projects/f8aa201c-4ff1-45a4-890e-840d63459ca2/expression-matrices
         self._convert_matrices(
             CSV('GSE114374_Human_HC_expression_matrix.txt.gz', sep='\t', row_filter=self._fix_short_rows(4379)),
             CSV('GSE114374_Human_UC_expression_matrix.txt.gz', sep='\t', row_filter=self._fix_short_rows(4904)),
@@ -1403,6 +1408,8 @@ class GSE81547(Converter):
     """
 
     def _convert(self):
+        # This is a prod project that has a matrix already:
+        # https://data.humancellatlas.org/explore/projects/cddab57b-6868-4be4-806f-395ed9dd635a/expression-matrices
         raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
 
 
@@ -1412,6 +1419,8 @@ class GSE115469(Converter):
     """
 
     def _convert(self):
+        # This is a prod project that has a matrix already:
+        # https://data.humancellatlas.org/explore/projects/4d6f6c96-2a83-43d8-8fe1-0f53bffd4674/expression-matrices
         self._convert_matrices(
             CSV('GSE115469_Data.csv.gz')
         )

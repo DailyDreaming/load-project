@@ -2,32 +2,50 @@
     "cddab57b-6868-4be4-806f-395ed9dd635a": {
         "project_manifest": "",
         "cell_count": 2544,
+        "GEO": "GSE81547",
+        "new_uuid": "bd4ebaac-7bcb-5069-b3ea-3a13887092e8",
+        "mtx": true,
         "compare": "with our actual counts from geo"
     },
     "4d6f6c96-2a83-43d8-8fe1-0f53bffd4674": {
         "project_manifest": "",
         "cell_count": 30000,
+        "GEO": "GSE115469",
+        "new_uuid": "bdfe2399-b8a6-5b6a-9f0a-a5fd81d08ff4",
+        "mtx": true,
         "compare": "with our actual counts from geo"
     },
     "2043c65a-1cf8-4828-a656-9e247d4e64f1": {
         "project_manifest": "",
         "cell_count": 1733,
+        "GEO": "GSE93593",
+        "new_uuid": "99ab18ff-ca15-5d7d-9c2d-5c0b537fb1c2",
+        "mtx": true,
         "was": "unspecified",
         "compare": "with our actual counts from geo"
     },
     "f86f1ab4-1fbb-4510-ae35-3ffd752d4dfc": {
         "project_manifest": "",
         "cell_count": 12404,
+        "GEO": "GSE84133",
+        "new_uuid": "c366f1f5-27aa-5157-a142-110e492a3e52",
+        "mtx": false,
         "compare": "with our actual counts from geo"
     },
     "f8aa201c-4ff1-45a4-890e-840d63459ca2": {
         "project_manifest": "",
         "cell_count": 16893,
+        "GEO": "GSE114374",
+        "new_uuid": "b4b128d5-61e5-510e-9d91-a151b94fbb99",
+        "mtx": true,
         "compare": "with our actual counts from geo"
     },
     "90bd6933-40c0-48d4-8d76-778c103bf545": {
         "project_manifest": "",
         "cell_count": 2244,
+        "GEO": "GSE106540",
+        "new_uuid": "dd761426-cc9c-5fbd-8bec-93a4cc4eb999",
+        "mtx": false,
         "compare": "with our actual counts from geo"
     },
     "8185730f-4113-40d3-9cc3-929271784c2b": {
