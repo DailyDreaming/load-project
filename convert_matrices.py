@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import sys
 from typing import (
+    Iterable,
     List,
     Optional,
     Union,
@@ -21,17 +22,16 @@ from dataclasses import (
     dataclass,
 )
 
+from copy_static_project import populate_all_static_projects
 from csv2mtx import (
     RowFilter,
     convert_csv_to_mtx,
 )
-from copy_static_project import populate_all_static_projects
 from h5_to_mtx import convert_h5_to_mtx
 from util import (
     get_target_project_dirs,
     is_working_set_defined,
 )
-
 
 log = logging.getLogger(__file__)
 
@@ -638,7 +638,6 @@ class GSE124472(Converter):
     """
 
     def _convert(self):
-        # noinspection PyUnreachableCode
         self._copy_matrices(*[
             Matrix(
                 mtx=str(prefix / 'matrix.mtx'),
@@ -856,7 +855,6 @@ class GSE127969(Converter):
     """
 
     def _convert(self):
-        # TODO: (Jesse)
         # Fails with a UnicodeError due to fancy quotation marks (0x93 0x94)
         raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/114')
         # noinspection PyUnreachableCode
@@ -1459,7 +1457,6 @@ class GSE84133(Converter):
     """
 
     def _convert(self):
-        # noinspection PyUnreachableCode
         self._convert_matrices(*[
             CSV('GSE84133_RAW/' + csv, rows_are_genes=False, row_filter=self._filter)
             for csv in (
@@ -1653,23 +1650,30 @@ class GSE76381(Converter):
             ),
         )
 
-    def _filter(self, row_patterns: List[List[str]], cols: Optional[List[int]] = None):
+    def _filter(self, row_patterns: Iterable[Iterable[str]], cols: Iterable[int] = ()):
         """
-        Filter rows that match any pattern. Also any columns listed
+        Suppress rows that match any of the given row patterns.
+
+        For a row to match a row pattern, each of the cells in the row needs to
+        match the corresponding string in the row pattern.
+
+        For rows that are not supressed, remove the cells at the specified
+        column indices.
         """
-        def matches(row, pattern):
-            for p, cell in zip(pattern, row):
-                if p != cell and p != '*':
+
+        def matches(row, row_pattern):
+            for cell, cell_pattern in zip(row, row_pattern):
+                if cell != cell_pattern:
                     return False
             return True
 
         def filter_func(row):
-            if any(matches(row, pattern) for pattern in row_patterns):
-                return True
+            if any(matches(row, row_pattern) for row_pattern in row_patterns):
+                return True  # suppress row
             else:
-                if cols:
-                    for c in cols:
-                        del row[c]
+                for c in sorted(cols, reverse=True):
+                    del row[c]
+
         return filter_func
 
 
@@ -1831,7 +1835,7 @@ class GSE73727(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('Special case of issues/43')
+        raise PostponedImplementationError('Special case of https://github.com/DailyDreaming/load-project/issues/43')
 
 
 def main(project_dirs: List[Path]):
