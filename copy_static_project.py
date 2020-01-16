@@ -1,11 +1,13 @@
 import os
+import re
 import glob
 from pathlib import Path
 
+UUID_PATTERN = "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}"
+UUID_REGEX = re.compile(UUID_PATTERN)
+
 
 def populate_static_project(project_dir: Path, file_pattern: str = '*.json'):
-    assert project_dir.is_dir()
-    assert len(project_dir.name) == len('4a95101c-9ffc-4f30-a809-f04518a23803')
     bundle_dir = project_dir / 'bundle'
     hca_dir = project_dir / 'hca'
 
@@ -22,17 +24,11 @@ def populate_static_project(project_dir: Path, file_pattern: str = '*.json'):
         for filename in glob.glob(str(hca_dir / file_pattern)):
             new_filename = str(bundle_dir / os.path.basename(filename))
             os.link(filename, new_filename)
-    else:
-        raise RuntimeError(f'{hca_dir} does not exist.  Nothing to link over.')
 
 
-def populate_all_static_projects(file_pattern: str = '*.json'):
+def populate_all_static_projects(file_pattern='*.json'):
     for root, dirs, files in os.walk('projects'):
-        for project_uuid in dirs:
-            if len(project_uuid) == len('4a95101c-9ffc-4f30-a809-f04518a23803'):
-                src_dir = Path('projects') / project_uuid
-                hca_dir = src_dir / 'hca'
-                if hca_dir.is_dir():
-                    populate_static_project(src_dir, file_pattern=file_pattern)
-                    print(f'Hard-linked project ("{file_pattern}" only) contents: '
-                          f'{project_uuid}/hca to {project_uuid}/bundle.')
+        for dir_name in dirs:
+            if UUID_REGEX.match(dir_name):
+                project_dir = Path('projects') / dir_name
+                populate_static_project(project_dir=project_dir, file_pattern=file_pattern)
