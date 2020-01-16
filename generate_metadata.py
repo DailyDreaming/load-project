@@ -13,8 +13,7 @@ also have slightly different formatting (all seem to be missing a "funders" sect
 Editing 'upload=False' to 'upload=True' with upload to dss dev if you are credentialed to do so.
 Otherwise it will just parse the excel files and generate all of the matrix and json files necessary for upload.
 """
-from pathlib import Path
-
+from copy_static_project import populate_all_static_projects
 from create_project import (
     run,
 )
@@ -26,4 +25,6 @@ xlsxs = get_target_spreadsheets()
 for i, xlsx in enumerate(xlsxs):
     print(f'\n% Progress: {i + 1}/{len(xlsxs)} projects ({xlsx.name}).\n'
           f'===========================================================')
-    run(xlsx=xlsx.as_posix())
+    run(xlsx=str(xlsx))
+
+populate_all_static_projects(file_pattern='*.json')
