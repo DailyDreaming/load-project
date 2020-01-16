@@ -146,7 +146,7 @@ def download_file(url: str, path: Path):
     """
     with requests.get(url, stream=True) as request:
         request.raise_for_status()
-        with tempfile.NamedTemporaryFile(dir=path.parent.as_posix(), delete=False) as f:
+        with tempfile.NamedTemporaryFile(dir=str(path.parent), delete=False) as f:
             try:
                 for chunk in request.iter_content(chunk_size=1024 * 1024):
                     f.write(chunk)

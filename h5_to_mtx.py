@@ -90,7 +90,7 @@ class Matrix:
 
 
 def convert_h5_to_mtx(input_file: Path, output_dir: Path) -> None:
-    with h5py.File(input_file.as_posix(), mode='r') as h5:
+    with h5py.File(str(input_file), mode='r') as h5:
         group = one(h5.values())
         m = Matrix.from_group(input_file, group)
         output_dir.mkdir(parents=True, exist_ok=True)  # FIXME: move to convert_matrices.py

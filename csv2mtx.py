@@ -128,7 +128,7 @@ def write_gzip_file(output_file: Path, lines: Iterable):
         # even if the archive name is different. Therefore we must set the
         # internal file name manually and pass in an already open file object
         # for writing.
-        with open(temp_output_file.as_posix(), 'wb') as f:
+        with open(str(temp_output_file), 'wb') as f:
             with gzip.GzipFile(filename=output_file, fileobj=f) as z:
                 with io.TextIOWrapper(z) as w:
                     for line in lines:

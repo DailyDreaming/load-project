@@ -31,14 +31,14 @@ def extract_tar_file(tar_path: Path, dest_path: Path):
         logging.info('Expansion of %s already complete', tar_path)
     else:
         openmode = 'r:gz' if tar_path.name.endswith('.tar.gz') else 'r'
-        with TarFile.open(tar_path.as_posix(), mode=openmode) as tar_file:
+        with TarFile.open(str(tar_path), mode=openmode) as tar_file:
             assert completion_file.name not in tar_file.getnames()
             if dest_path.exists():
                 logging.info('Removing partially expanded %s', dest_path)
-                shutil.rmtree(dest_path.as_posix())
+                shutil.rmtree(str(dest_path))
             logging.info('Expanding %s', dest_path)
             dest_path.mkdir()
-            tar_file.extractall(dest_path.as_posix())
+            tar_file.extractall(str(dest_path))
             completion_file.touch()
             logging.info('Expansion of %s is complete', dest_path)
 
