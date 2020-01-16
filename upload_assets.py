@@ -33,29 +33,40 @@ class ProjectMatrixUploader:
                 log.warning('Could not determine species name. Skipping project %s.', project_uuid)
             else:
                 key = f'{key_prefix}{project_uuid}.{species_name}{file_extension}'
-                content_disposition = f'attachment;filename="{project_uuid}.{species_name}{file_extension}"'
                 obj = self.s3.Object(bucket_name, key)
-
-                log.info(f'Uploading %s to s3://%s/%s.', matrix_path, bucket_name, key)
-                with open(str(matrix_path), 'rb') as mf:
-                    obj.put(Body=mf,
-                            ContentDisposition=content_disposition,
-                            ContentType='application/zip, application/octet-stream')
-                obj.Acl().put(AccessControlPolicy={
-                    'Owner': {
-                        'DisplayName': 'czi-aws-admins+humancellatlas',
-                        'ID': '76fe35006be54bbb55cf619bf94684704f14362141f2422a19c3af23e080a148'
-                    },
-                    'Grants': [
-                        {
-                            'Grantee': {
-                                'URI': 'http://acs.amazonaws.com/groups/global/AllUsers',
-                                'Type': 'Group'
-                            },
-                            'Permission': 'READ'
-                        }
+                try:
+                    last_modified = obj.last_modified.timestamp()
+                except self.s3.meta.client.exceptions.ClientError as e:
+                    if e.response['Error']['Code'] == '404':
+                        last_modified = 0
+                    else:
+                        raise
+                # Timezone check unnecessary since S3 date-time is HTTP standards compliant,
+                # which uses GMT. Also note Unix time uses UTC as standard.
+                if int(matrix_path.stat().st_mtime) >= int(last_modified):
+                    content_disposition = f'attachment;filename="{project_uuid}.{species_name}{file_extension}"'
+                    log.info(f'Uploading %s to s3://%s/%s.', matrix_path, bucket_name, key)
+                    with open(str(matrix_path), 'rb') as mf:
+                        obj.put(Body=mf,
+                                ContentDisposition=content_disposition,
+                                ContentType='application/zip, application/octet-stream')
+                    obj.Acl().put(AccessControlPolicy={
+                        'Owner': {
+                            'DisplayName': 'czi-aws-admins+humancellatlas',
+                            'ID': '76fe35006be54bbb55cf619bf94684704f14362141f2422a19c3af23e080a148'
+                        },
+                        'Grants': [
+                            {
+                                'Grantee': {
+                                    'URI': 'http://acs.amazonaws.com/groups/global/AllUsers',
+                                    'Type': 'Group'
+                                },
+                                'Permission': 'READ'
+                            }
                         ]
                     })
+                else:
+                    log.info(f'%s is up to date.', matrix_path)
         else:
             log.warning('Found no matrix asset for project %s.', project_uuid)
 
