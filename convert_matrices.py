@@ -25,8 +25,7 @@ from csv2mtx import (
     RowFilter,
     convert_csv_to_mtx,
 )
-from copy_static_project import link_project_metadata
-from generate_metadata import static_prod_bundles
+from copy_static_project import populate_all_static_projects
 from h5_to_mtx import convert_h5_to_mtx
 from util import (
     get_target_project_dirs,
@@ -1764,13 +1763,6 @@ class GSE73727(Converter):
         raise PostponedImplementationError('No recognizable matrices.')
 
 
-def link_static_matrix_files():
-    for bundle in static_prod_bundles:
-        src_dir = Path('projects') / bundle
-        link_project_metadata(str(src_dir), file_pattern='*.mtx.zip')
-        print(f'Hard-linked project ("*.mtx.zip" only) contents: {bundle}/hca to {bundle}/bundle.')
-
-
 def main(project_dirs: List[Path]):
     not_implemented_projects = []
     failed_projects = []
@@ -1802,7 +1794,7 @@ def main(project_dirs: List[Path]):
         print_projects('failed', failed_projects, file=sys.stderr)
         print_projects('succeeded', succeeded_projects)
 
-    link_static_matrix_files()
+    populate_all_static_projects(file_pattern='*.mtx.zip')
 
 
 def print_projects(title, projects, file=None):
