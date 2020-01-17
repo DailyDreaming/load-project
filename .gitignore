@@ -64,7 +64,6 @@ variables.tf
 /smoketest-*.tmp
 
 .~lock.*
-accessions/
 /projects
 
 /cell_counts.json
