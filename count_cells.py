@@ -6,28 +6,32 @@ from _pathlib import Path
 import sys
 from typing import (
     Sequence,
+    Mapping,
     Union,
 )
 
 from util import (
+    generate_project_uuid,
     get_target_project_dirs,
     open_maybe_gz,
 )
 
 
 class CountCells:
-    cell_counts_file = Path('cell_counts.json')
 
     def __init__(self, argv):
         logging.basicConfig(level=logging.INFO)
         parser = argparse.ArgumentParser(description=__doc__)
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument('--list', '-l',
-                           help='list cell count values',
+                           help='List cell count values',
                            action='store_true')
         group.add_argument('--write', '-w',
-                           help='write cell count files',
+                           help='Write cell count files',
                            action='store_true')
+        parser.add_argument('--accession', '-a', type=str,
+                            help='Count cells for a single accession '
+                                 'instead of all')
         parser.add_argument('--verbose', '-v',
                             action='store_true',
                             help='Verbose debug output')
@@ -38,77 +42,78 @@ class CountCells:
         self.args = parser.parse_args(argv)
 
     def run(self):
-
         if self.args.verbose:
             logging.getLogger().setLevel(logging.DEBUG)
 
-        project_dirs = get_target_project_dirs()
-
-        for project_dir in project_dirs:
-            self.count_one_project_cells(project_dir.name)
-
-    def count_one_project_cells(self, accession_id: str):
-        """
-        Count cells in one project
-
-        :param accession_id: An accession id with a downloaded matrix file
-        """
-        cell_count = self.get_project_cell_count(accession_id)
-        if self.args.write:
-            self.update_cell_count_file(accession_id, cell_count)
-
-    @classmethod
-    def get_accession_ids(cls) -> Sequence[str]:
-        """
-        Return a list of the accession ids
-        """
-        accession_ids = []
-        for p in Path('projects').iterdir():
-            logging.debug('Checking: %s', p)
-            if p.is_dir() and p.is_symlink():
-                accession_ids.append(p.name)
-                logging.debug('Found: %s', p.name)
-        return accession_ids
-
-    @classmethod
-    def get_cell_counts(cls):
-        if cls.cell_counts_file.exists():
-            with open(str(cls.cell_counts_file), 'r') as f:
-                cell_counts = json.loads(f.read())
-            return cell_counts
+        if self.args.accession:
+            accessions = [self.args.accession]
         else:
-            return {}
+            accessions = [p.name for p in get_target_project_dirs()]
 
-    def update_cell_count_file(self, accession_id: str, cell_count: int) -> bool:
-        """
-        Write the accession cell count to the global cell count file
+        for accession in accessions:
+            cell_count = self.get_project_cell_count(accession)
+            if self.args.write:
+                self.write_cell_count(accession, cell_count)
 
-        :param accession_id: An accession id
-        :param cell_count: An int value to save, or None to remove entry
-        :return: Boolean status of the save
+    @classmethod
+    def get_cached_cell_count(cls, accession: str) -> int:
         """
-        if not accession_id:
-            return False
-        cell_counts = self.get_cell_counts()
-        if isinstance(cell_count, int):
-            logging.info('Writing accession %s cell count.', accession_id)
-            cell_counts[accession_id] = cell_count
-        elif cell_count is None and accession_id in cell_counts:
-            logging.info('Removing accession %s cell count.', accession_id)
-            del cell_counts[accession_id]
-        with open(str(self.cell_counts_file), 'w') as f:
-            f.write(json.dumps(cell_counts, sort_keys=True, indent='    '))
+        Return a cell count for the given accession
+        """
+        stats_file = Path(f'projects/{accession}/stats.json')
+        if stats_file.exists():
+            with open(stats_file, 'r') as f:
+                cell_count = json.loads(f.read()).get('cell_count', 0)
+            return cell_count
+        else:
+            return 0
+
+    @classmethod
+    def get_cached_cell_counts(cls) -> Mapping[str, int]:
+        """
+        Return a dict of accession id to cell count
+        """
+        cell_counts = {}
+        for accession in [p.name for p in get_target_project_dirs()]:
+            cell_counts[accession] = cls.get_cached_cell_count(accession)
+        return cell_counts
+
+    @classmethod
+    def write_cell_count(cls, accession: str, cell_count: int) -> bool:
+        """
+        Write the accession cell count to the project's stats json
+
+        :param accession: An accession id
+        :param cell_count: An int value to write to the json file
+        :return: Status of the write
+        """
+        stats_file = Path(f'projects/{accession}/stats.json')
+        if not stats_file.exists():
+            with open(stats_file, 'w') as f:
+                logging.info('Writing %s', stats_file)
+                stats = {
+                    'project_uuid': generate_project_uuid(accession),
+                    'cell_count': cell_count
+                }
+                f.write(json.dumps(stats, sort_keys=True, indent='    '))
+        else:
+            with open(stats_file, 'r+') as f:
+                logging.info('Updating %s', stats_file)
+                stats = json.loads(f.read())
+                stats['cell_count'] = cell_count
+                f.seek(0)
+                f.write(json.dumps(stats, sort_keys=True, indent='    '))
         return True
 
-    def get_project_cell_count(self, accession_id: str) -> Union[int, None]:
+    def get_project_cell_count(self, accession: str) -> Union[int, None]:
         """
-        Get the cell count from a project's matrix file(s)
+        Count the number of cells in a project
 
-        :param accession_id: An accession id that has downloaded matrix file(s)
+        :param accession: An accession id that has downloaded matrix file(s)
         :return: A count of cells
         """
         total_cell_count = 0
-        for mtx_file in Path(f'projects/{accession_id}/matrices').glob('**/matrix.mtx.gz'):
+        for mtx_file in Path(f'projects/{accession}/matrices').glob('**/matrix.mtx.gz'):
             cell_count_from_matrix = self.count_cells(mtx_file)
             logging.info('Cell count in %s is %s', mtx_file, cell_count_from_matrix)
             if cell_count_from_matrix is not None:
@@ -118,7 +123,7 @@ class CountCells:
             if cell_count_from_matrix != cell_count_from_barcodes:
                 logging.warning('Cell count mismatch found for %s: %s vs %s',
                                 mtx_file.parent, cell_count_from_matrix, cell_count_from_barcodes)
-        logging.info('Total cell count in %s is %s', accession_id, total_cell_count)
+        logging.info('Total cell count in %s is %s', accession, total_cell_count)
         return total_cell_count
 
     def count_cells(self, matrix_file: Path) -> Union[int, None]:
