@@ -61,7 +61,7 @@ class AbstractCSVConverter(Iterable, metaclass=ABCMeta):
                             self.num_values += 1
                             gene_index = len(self.y_axis_values) if self.rows_are_genes else col + 1
                             barcode_index = col + 1 if self.rows_are_genes else len(self.y_axis_values)
-                            return_string = f'{gene_index} {barcode_index} {value}'
+                            return_string = f'{gene_index} {barcode_index} {value.strip()}'
                             yield return_string
             elif filter_status is True:
                 pass
