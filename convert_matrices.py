@@ -5,6 +5,7 @@ from abc import (
 from functools import partial
 import gzip
 import logging
+from operator import methodcaller
 import os
 from pathlib import Path
 import shutil
@@ -15,6 +16,7 @@ from typing import (
     Optional,
     Union,
     cast,
+    Callable,
 )
 
 from dataclasses import (
@@ -25,7 +27,8 @@ from dataclasses import (
 from copy_static_project import populate_all_static_projects
 from csv2mtx import (
     RowFilter,
-    convert_csv_to_mtx,
+    CSV2MTXConverter,
+    CellFilesConverter,
 )
 from h5_to_mtx import convert_h5_to_mtx
 from util import (
@@ -51,11 +54,13 @@ class CSV:
     row_filter: Optional[RowFilter] = None
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
-        convert_csv_to_mtx(input_file=input_dir / self.name,
-                           output_dir=output_dir,
-                           delimiter=self.sep,
-                           rows_are_genes=self.rows_are_genes,
-                           row_filter=self.row_filter)
+        csv_converter = CSV2MTXConverter(
+            input_dir / self.name,
+            self.sep,
+            self.rows_are_genes,
+            self.row_filter
+        )
+        csv_converter.convert(output_dir)
 
 
 @dataclass(frozen=True)
@@ -65,6 +70,34 @@ class H5:
     def to_mtx(self, input_dir: Path, output_dir: Path):
         convert_h5_to_mtx(input_file=input_dir / self.name,
                           output_dir=output_dir)
+
+
+@dataclass(frozen=True)
+class IndividualCellFiles:
+    directory: str
+    name: str = 'cell_files'
+    path_filter: Optional[Callable[[Path], bool]] = None
+    entry_filter: Optional[RowFilter] = None
+    sep: str = ','
+    expr_column: int = 1
+
+    def to_mtx(self, input_dir: Path, output_dir: Path):
+        paths = (
+            p
+            for p
+            in (input_dir / self.directory).iterdir()
+            if (p.name[0] != '.'
+                and (self.path_filter is None
+                     or self.path_filter(p)))
+        )
+
+        cell_files_converter = CellFilesConverter(
+            input_files=paths,
+            delimiter=self.sep,
+            entry_filter=self.entry_filter,
+            expr_column=self.expr_column
+        )
+        cell_files_converter.convert(output_dir)
 
 
 class Converter(metaclass=ABCMeta):
@@ -130,7 +163,9 @@ class Converter(metaclass=ABCMeta):
                 else:
                     idempotent_link(self.geo_dir / src_name, dst_dir / dst_name)
 
-    def _convert_matrices(self, *inputs: Union[CSV, H5]):
+    def _convert_matrices(self, *inputs: Union[CSV, H5, IndividualCellFiles]):
+        names = [input.name for input in inputs]
+        assert len(names) == len(set(names))
         expected_files = {'matrix.mtx.gz', 'genes.tsv.gz', 'barcodes.tsv.gz'}
         for input in inputs:
             output_dir = self.matrix_dir(input.name)
@@ -301,7 +336,13 @@ class GSE67835(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        self._convert_matrices(
+            IndividualCellFiles(
+                'GSE67835_RAW',
+                sep='\t'
+            )
+        )
 
 
 class GSE102580(Converter):
@@ -516,7 +557,24 @@ class GSE113197(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/119')
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        self._convert_matrices(
+            IndividualCellFiles(
+                'GSE113197_RAW',
+                path_filter=lambda p: not p.name.endswith('Matrix.txt.gz'),
+                sep=' '
+            ),
+            *[
+                CSV('GSE113197_RAW/' + mat, sep='\t')
+                for mat
+                in [
+                    'GSM3099846_Ind4_Expression_Matrix.txt.gz',
+                    'GSM3099848_Ind6_Expression_Matrix.txt.gz',
+                    'GSM3099847_Ind5_Expression_Matrix.txt.gz',
+                    'GSM3099849_Ind7_Expression_Matrix.txt.gz'
+                ]
+            ])
 
 
 class GSE110499(Converter):
@@ -904,7 +962,14 @@ class GSE70580(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        self._convert_matrices(
+            IndividualCellFiles(
+                'GSE70580_RAW',
+                sep='\t',
+                expr_column=2
+            )
+        )
 
 
 class GSE130606(Converter):
@@ -1305,7 +1370,13 @@ class GSE110154(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        self._convert_matrices(
+            IndividualCellFiles('GSE110154_RAW')
+        )
+
+        # There is also a corrupt/nonconforming csv file for this project but it
+        # can't be opened.
 
 
 class GSE86473(Converter):
@@ -1415,7 +1486,15 @@ class GSE81547(Converter):
     def _convert(self):
         # This is a prod project that has a matrix already:
         # https://data.humancellatlas.org/explore/projects/cddab57b-6868-4be4-806f-395ed9dd635a/expression-matrices
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        # noinspection PyUnreachableCode
+        self._convert_matrices(
+            IndividualCellFiles(
+                'GSE81547_RAW',
+                sep='\t'
+            )
+        )
 
 
 class GSE115469(Converter):
@@ -1480,7 +1559,37 @@ class GSE75659(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+        # These ones are NOT all row-compatible, but have been be grouped into
+        # compatible cohorts. The current target is 5 separate matrices, but it
+        # could be reduced to 3 if desired (the first 3 are mutually compatible).
+        # The file GSM2127554_Bf37_mRNA_Fibroblast_Total_fraction_expression.txt.gz
+        # does not align with any other and thus is left out.
+        # The file GSM1962979_person1_YFV2001_Exome_Seq_Cap_expression.txt.gz
+        # is row compatible with the non-eGFP T-Cells, but is left out
+        # because I'm not convinced it actually represents a single cell.
+
+        cutoff = 1962631
+
+        self._convert_matrices(*[
+            IndividualCellFiles(
+                'GSE75659_RAW',
+                sep='\t',
+                expr_column=2,
+                name=name,
+                path_filter=pf
+            )
+            for (name, pf)
+            in [
+                # 40,198 genes
+                ('brain', lambda p: 'brain' in p.name),
+                ('liver', lambda p: 'liver' in p.name),
+                ('fibroblast', lambda p: 'fibroblast' in p.name),
+                # 60,287 genes (includes eGFP)
+                ('Tcell_eGFP', lambda p: 'Tcell' in p.name and int(p.name.split('_')[0][3:]) <= cutoff),
+                # 60,286 genes (lacks eGFP)
+                ('Tcell_No_eGFP', lambda p: 'Tcell' in p.name and int(p.name.split('_')[0][3:]) > cutoff)
+            ]
+        ])
 
 
 class GSE109822(Converter):
@@ -1598,7 +1707,15 @@ class GSE132566(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/43')
+
+        # row compatibility verified using ~/load-project.nadove/check_genes
+        self._convert_matrices(
+            IndividualCellFiles(
+                'GSE132566_RAW',
+                sep='\t',
+                entry_filter=methodcaller('__delitem__', 0)
+            )
+        )
 
 
 class GSE83139(Converter):
@@ -1864,7 +1981,7 @@ def main(project_dirs: List[Path]):
             print_projects('not in working set', converter_classes.keys())
         else:
             for class_name, class_obj in converter_classes.items():
-                log.warning('Unused converter `%s` with UUID `%s`', class_obj.__doc__.strip())
+                log.warning('Unused converter `%s` with UUID `%s`', class_name, class_obj.__doc__.strip())
         print_projects('not implemented', not_implemented_projects, file=sys.stderr)
         print_projects('failed', failed_projects, file=sys.stderr)
         print_projects('succeeded', succeeded_projects)
