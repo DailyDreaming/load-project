@@ -113,13 +113,21 @@ class CountCells:
             logging.warning('Unable to find path %s', f'projects/{accession_id}')
             return None
         total_count = 0
+        total_count_from_barcodes = 0
         for file in Path(f'projects/{accession_id}/matrices').glob('**/*'):
-            if file.is_file() and file.name.endswith(('.mtx', '.mtx.gz')):
-                cell_count = self.count_cells(file)
-                logging.info('Cell count in %s is %s', file, cell_count)
-                if cell_count is not None:
-                    total_count += cell_count
+            if file.is_file():
+                if file.name.endswith(('.mtx', '.mtx.gz')):
+                    cell_count = self.count_cells(file)
+                    logging.info('Cell count in %s is %s', file, cell_count)
+                    if cell_count is not None:
+                        total_count += cell_count
+                elif file.name in ('barcodes.gz', 'barcodes.tsv.gz'):
+                    total_count_from_barcodes += self.count_cells_from_barcodes(file)
         logging.info('Total cell count in %s is %s', accession_id, total_count)
+        if total_count == total_count_from_barcodes:
+            logging.info('Total cell count in %s matches count from barcodes.', accession_id)
+        else:
+            logging.warning('Total cell count in %s from barcodes file is %s', accession_id, total_count_from_barcodes)
         return total_count
 
     def count_cells(self, matrix_file: Path) -> Union[int, None]:
@@ -131,27 +139,31 @@ class CountCells:
         """
         with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
             first_line_length = len(csv_file.readline().strip())
+            assert first_line_length > 0, f'File has no first line "{matrix_file}"'
             csv_file.seek(0)
-            if first_line_length:
-                dialect = csv.Sniffer().sniff(csv_file.read(first_line_length))
-            else:
-                logging.error(f'File has no first line "{matrix_file}"')
-                return None
-        barcode_indexes = set()
+            dialect = csv.Sniffer().sniff(csv_file.read(first_line_length))
+        barcode_indexes = None
         with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
             csv_reader = csv.reader(csv_file, dialect)
-            for row in csv_reader:
+            for line_num, row in enumerate(csv_reader):
                 if not row[0].startswith('%'):  # skip comment lines in the csv
-                    assert len(row) == 3
-                    if not barcode_indexes:
+                    assert len(row) == 3, f'{matrix_file} has line {line_num} with {len(row)} columns instead of 3'
+                    if barcode_indexes is None:
                         # The first non-comment line contains the dimensions
                         # of the matrix and the number of non-zero cells in
                         # that matrix.
                         if self.args.fast:
                             return int(row[1])
+                        else:
+                            barcode_indexes = set()
                     else:
                         barcode_indexes.add(row[1])  # 2nd column is barcode
         return len(barcode_indexes)
+
+    def count_cells_from_barcodes(self, barcodes_file: Path) -> Union[int, None]:
+        with open_maybe_gz(barcodes_file,  'rt') as f:
+            next(f)  # skip header line
+            return sum(1 for line in f)
 
 
 if __name__ == '__main__':
