@@ -553,14 +553,14 @@ class GSE113197(Converter):
     """
 
     def _convert(self):
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/119')
         # row compatibility verified using ~/load-project.nadove/check_genes
         # noinspection PyUnreachableCode
         self._convert_matrices(
             CSVPerCell(
                 'GSE113197_RAW',
                 path_filter=lambda p: not p.name.endswith('Matrix.txt.gz'),
-                sep=' '
+                sep=' ',
+                entry_filter=methodcaller('__delitem__', 0)
             ),
             *[
                 CSV('GSE113197_RAW/' + mat, sep='\t')
