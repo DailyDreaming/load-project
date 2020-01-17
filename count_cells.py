@@ -32,6 +32,10 @@ class CountCells:
         parser.add_argument('--verbose', '-v',
                             action='store_true',
                             help='Verbose debug output')
+        parser.add_argument('--fast', '-f',
+                            action='store_true',
+                            help='Use barcodes dimension from MTX header '
+                                 'instead of counting unique barcode indices.')
         self.args = parser.parse_args(argv)
 
     def run(self):
@@ -113,7 +117,8 @@ class CountCells:
             if file.is_file() and file.name.endswith(('.mtx', '.mtx.gz')):
                 cell_count = self.count_cells(file)
                 logging.info('Cell count in %s is %s', file, cell_count)
-                total_count += cell_count
+                if cell_count is not None:
+                    total_count += cell_count
         logging.info('Total cell count in %s is %s', accession_id, total_count)
         return total_count
 
@@ -124,27 +129,29 @@ class CountCells:
         :param matrix_file: A mtx file with tab/space/comma delimited data
         :return: A count of cells found in the given file
         """
-        if matrix_file.exists():
-            with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
-                first_line_length = len(csv_file.readline().strip())
-                csv_file.seek(0)
-                if first_line_length:
-                    dialect = csv.Sniffer().sniff(csv_file.read(first_line_length))
-                else:
-                    logging.error(f'File has no first line "{matrix_file}"')
-                    return None
-            barcode_indexes = set()
-            with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
-                csv_reader = csv.reader(csv_file, dialect)
-                for row in csv_reader:
-                    if row[0].startswith('%'):
-                        continue  # skip comment lines in the csv
-                    if len(row) == 3:
+        with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
+            first_line_length = len(csv_file.readline().strip())
+            csv_file.seek(0)
+            if first_line_length:
+                dialect = csv.Sniffer().sniff(csv_file.read(first_line_length))
+            else:
+                logging.error(f'File has no first line "{matrix_file}"')
+                return None
+        barcode_indexes = set()
+        with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
+            csv_reader = csv.reader(csv_file, dialect)
+            for row in csv_reader:
+                if not row[0].startswith('%'):  # skip comment lines in the csv
+                    assert len(row) == 3
+                    if not barcode_indexes:
+                        # The first non-comment line contains the dimensions
+                        # of the matrix and the number of non-zero cells in
+                        # that matrix.
+                        if self.args.fast:
+                            return int(row[1])
+                    else:
                         barcode_indexes.add(row[1])  # 2nd column is barcode
-            return len(barcode_indexes)
-        else:
-            logging.error(f'File not found "{matrix_file}"')
-            return None
+        return len(barcode_indexes)
 
 
 if __name__ == '__main__':

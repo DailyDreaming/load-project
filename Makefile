@@ -20,7 +20,7 @@ clean_matrices:
 	python clean.py
 
 count:
-	python3 count_cells.py --write
+	python3 count_cells.py --write --fast
 
 metadata:
 	python3 generate_metadata.py
