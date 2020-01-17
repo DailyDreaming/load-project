@@ -11,12 +11,12 @@ from pathlib import Path
 import shutil
 import sys
 from typing import (
+    Callable,
     Iterable,
     List,
     Optional,
     Union,
     cast,
-    Callable,
 )
 
 from dataclasses import (
@@ -26,9 +26,9 @@ from dataclasses import (
 
 from copy_static_project import populate_all_static_projects
 from csv2mtx import (
+    CSVConverter,
+    CSVPerCellConverter,
     RowFilter,
-    CSV2MTXConverter,
-    CellFilesConverter,
 )
 from h5_to_mtx import convert_h5_to_mtx
 from util import (
@@ -54,13 +54,12 @@ class CSV:
     row_filter: Optional[RowFilter] = None
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
-        csv_converter = CSV2MTXConverter(
-            input_dir / self.name,
-            self.sep,
-            self.rows_are_genes,
-            self.row_filter
-        )
-        csv_converter.convert(output_dir)
+        converter = CSVConverter(
+            input_file=input_dir / self.name,
+            delimiter=self.sep,
+            rows_are_genes=self.rows_are_genes,
+            row_filter=self.row_filter)
+        converter.convert(output_dir)
 
 
 @dataclass(frozen=True)
@@ -73,7 +72,7 @@ class H5:
 
 
 @dataclass(frozen=True)
-class IndividualCellFiles:
+class CSVPerCell:
     directory: str
     name: str = 'cell_files'
     path_filter: Optional[Callable[[Path], bool]] = None
@@ -83,21 +82,18 @@ class IndividualCellFiles:
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
         paths = (
-            p
-            for p
-            in (input_dir / self.directory).iterdir()
+            p for p in (input_dir / self.directory).iterdir()
             if (p.name[0] != '.'
                 and (self.path_filter is None
                      or self.path_filter(p)))
         )
-
-        cell_files_converter = CellFilesConverter(
+        converter = CSVPerCellConverter(
             input_files=paths,
             delimiter=self.sep,
             entry_filter=self.entry_filter,
             expr_column=self.expr_column
         )
-        cell_files_converter.convert(output_dir)
+        converter.convert(output_dir)
 
 
 class Converter(metaclass=ABCMeta):
@@ -163,7 +159,7 @@ class Converter(metaclass=ABCMeta):
                 else:
                     idempotent_link(self.geo_dir / src_name, dst_dir / dst_name)
 
-    def _convert_matrices(self, *inputs: Union[CSV, H5, IndividualCellFiles]):
+    def _convert_matrices(self, *inputs: Union[CSV, H5, CSVPerCell]):
         names = [input.name for input in inputs]
         assert len(names) == len(set(names))
         expected_files = {'matrix.mtx.gz', 'genes.tsv.gz', 'barcodes.tsv.gz'}
@@ -338,7 +334,7 @@ class GSE67835(Converter):
     def _convert(self):
         # row compatibility verified using ~/load-project.nadove/check_genes
         self._convert_matrices(
-            IndividualCellFiles(
+            CSVPerCell(
                 'GSE67835_RAW',
                 sep='\t'
             )
@@ -559,8 +555,9 @@ class GSE113197(Converter):
     def _convert(self):
         raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/119')
         # row compatibility verified using ~/load-project.nadove/check_genes
+        # noinspection PyUnreachableCode
         self._convert_matrices(
-            IndividualCellFiles(
+            CSVPerCell(
                 'GSE113197_RAW',
                 path_filter=lambda p: not p.name.endswith('Matrix.txt.gz'),
                 sep=' '
@@ -964,7 +961,7 @@ class GSE70580(Converter):
     def _convert(self):
         # row compatibility verified using ~/load-project.nadove/check_genes
         self._convert_matrices(
-            IndividualCellFiles(
+            CSVPerCell(
                 'GSE70580_RAW',
                 sep='\t',
                 expr_column=2
@@ -1372,7 +1369,7 @@ class GSE110154(Converter):
     def _convert(self):
         # row compatibility verified using ~/load-project.nadove/check_genes
         self._convert_matrices(
-            IndividualCellFiles('GSE110154_RAW')
+            CSVPerCell('GSE110154_RAW')
         )
 
         # There is also a corrupt/nonconforming csv file for this project but it
@@ -1490,7 +1487,7 @@ class GSE81547(Converter):
         # row compatibility verified using ~/load-project.nadove/check_genes
         # noinspection PyUnreachableCode
         self._convert_matrices(
-            IndividualCellFiles(
+            CSVPerCell(
                 'GSE81547_RAW',
                 sep='\t'
             )
@@ -1571,7 +1568,7 @@ class GSE75659(Converter):
         cutoff = 1962631
 
         self._convert_matrices(*[
-            IndividualCellFiles(
+            CSVPerCell(
                 'GSE75659_RAW',
                 sep='\t',
                 expr_column=2,
@@ -1707,10 +1704,9 @@ class GSE132566(Converter):
     """
 
     def _convert(self):
-
         # row compatibility verified using ~/load-project.nadove/check_genes
         self._convert_matrices(
-            IndividualCellFiles(
+            CSVPerCell(
                 'GSE132566_RAW',
                 sep='\t',
                 entry_filter=methodcaller('__delitem__', 0)
@@ -2000,5 +1996,4 @@ def print_projects(title, projects, file=None):
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
                         level=logging.DEBUG)
-    project_dirs = get_target_project_dirs()
-    main(project_dirs)
+    main(get_target_project_dirs())

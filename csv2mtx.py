@@ -1,3 +1,7 @@
+from abc import (
+    ABCMeta,
+    abstractmethod,
+)
 import argparse
 import csv
 import gzip
@@ -14,12 +18,8 @@ from typing import (
     Optional,
 )
 
-from abc import (
-    ABCMeta,
-    abstractmethod,
-)
-
 import pandas as pd
+
 from util import open_maybe_gz
 
 logging.basicConfig(level=logging.INFO)
@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO)
 RowFilter = Callable[[List[str]], Optional[bool]]
 
 
-class RowConverter(Iterable, metaclass=ABCMeta):
+class AbstractCSVConverter(Iterable, metaclass=ABCMeta):
 
     def __init__(self,
                  rows_are_genes: bool,
@@ -45,12 +45,11 @@ class RowConverter(Iterable, metaclass=ABCMeta):
         self.num_values = 0
 
     @abstractmethod
-    def get_row_provider(self) -> Iterable[List[str]]:
+    def get_rows(self) -> Iterable[List[str]]:
         raise NotImplementedError
 
     def __iter__(self):
-
-        for row in self.get_row_provider():
+        for row in self.get_rows():
             filter_status = self.row_filter(row)
             if filter_status is None or filter_status is False:
                 if self.x_axis_values is None:  # Get header values once
@@ -98,7 +97,7 @@ class RowConverter(Iterable, metaclass=ABCMeta):
         return self.x_axis_values if self.rows_are_genes else self.y_axis_values
 
 
-class CSV2MTXConverter(RowConverter):
+class CSVConverter(AbstractCSVConverter):
     """
     Convert a csv file to a matrix.mtx, barcodes.tsv, and genes.tsv set of files
     """
@@ -119,13 +118,13 @@ class CSV2MTXConverter(RowConverter):
         self.input_file = input_file
         self.delimiter = delimiter
 
-    def get_row_provider(self) -> Iterable[List[str]]:
+    def get_rows(self) -> Iterable[List[str]]:
         with open_maybe_gz(self.input_file, 'rt', newline='') as csv_file:
             for row in csv.reader(csv_file, delimiter=self.delimiter):
                 yield row
 
 
-class CellFilesConverter(RowConverter):
+class CSVPerCellConverter(AbstractCSVConverter):
 
     def __init__(self,
                  input_files: Iterable[Path],
@@ -137,7 +136,7 @@ class CellFilesConverter(RowConverter):
         self.expr_column = expr_column
         super().__init__(False, entry_filter)
 
-    def get_row_provider(self) -> Iterable[List[str]]:
+    def get_rows(self) -> Iterable[List[str]]:
         first = True
         for path in self.filepaths:
             cell = pd.read_csv(path, sep=self.delimiter, compression='infer', header=None, comment='#')
@@ -244,7 +243,7 @@ def main(argv):
 
     args.rows_are_genes = args.rows_are_genes == 'y'
 
-    converter = CSV2MTXConverter(
+    converter = CSVConverter(
         Path(args.csv_file),
         delimiter=args.delimiter,
         rows_are_genes=args.rows_are_genes
