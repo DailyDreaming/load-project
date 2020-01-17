@@ -12,56 +12,14 @@ __pycache__/
 /dist/
 /.eggs/
 
-# Sphinx documentation
-/docs/_build/
-
-# IDE project files
-/.pydevproject
-
-# vim python-mode plugin
-/.ropeproject
-
-# vsCode IDE files
-/.vscode
-
 # IntelliJ IDEA / PyCharm project files
 /.idea
-/*.iml
-
-# JS/node/npm/web dev files
-node_modules
-npm-debug.log
 
 # OS X metadata files
 .DS_Store
 
-# Python coverage
-.coverage
-.coverage.*
-
-# Credential files
-/gcp-credentials.json
-/application_secrets.json
-
-# Temporary folder
-/tmp
-
-# Local environment configuration
-/environment.local
-/environment.*.local
-
 # virtualenv folder
-venv/
-v3nv/
 .venv/
-
-# Terraform files
-.terraform
-backend.tf
-providers.tf
-variables.tf
-
-/smoketest-*.tmp
 
 .~lock.*
 /projects
