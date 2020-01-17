@@ -15,8 +15,8 @@ from count_cells import (
 )
 from create_project import (
     generate_project_uuid,
-    get_spreadsheet_paths,
 )
+from util import get_target_spreadsheets
 
 logging.basicConfig(level=logging.INFO)
 
@@ -137,19 +137,18 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
 
     # ---
     logging.debug('Searching for spreadsheets ...')
-    for sub_dir in 'existing', 'new':
-        for file in get_spreadsheet_paths(Path(f'spreadsheets/{sub_dir}')):
-            logging.debug('Checking: %s', file)
-            accession_id = file.name[:-len('.0.xlsx')]
-            uuid = UUID(generate_project_uuid(accession_id))
-            try:
-                report[uuid].spreadsheet = file
-            except KeyError:
-                logging.debug('New accession %s found in spreadsheets, adding uuid %s',
-                              accession_id, str(uuid))
-                report[uuid] = ProjectReport(uuid=uuid,
-                                             accession=accession_id,
-                                             spreadsheet=file)
+    for file in get_target_spreadsheets():
+        logging.debug('Checking: %s', file)
+        accession_id = file.name[:-len('.0.xlsx')]
+        uuid = UUID(generate_project_uuid(accession_id))
+        try:
+            report[uuid].spreadsheet = file
+        except KeyError:
+            logging.debug('New accession %s found in spreadsheets, adding uuid %s',
+                          accession_id, str(uuid))
+            report[uuid] = ProjectReport(uuid=uuid,
+                                         accession=accession_id,
+                                         spreadsheet=file)
 
     # ---
     logging.debug('Reading cell_counts.json ...')
