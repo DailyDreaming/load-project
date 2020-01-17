@@ -1486,7 +1486,6 @@ class GSE81547(Converter):
     def _convert(self):
         # This is a prod project that has a matrix already:
         # https://data.humancellatlas.org/explore/projects/cddab57b-6868-4be4-806f-395ed9dd635a/expression-matrices
-        raise PostponedImplementationError('Already has a prod matrix')
 
         # row compatibility verified using ~/load-project.nadove/check_genes
         # noinspection PyUnreachableCode
