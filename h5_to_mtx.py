@@ -65,7 +65,9 @@ class Matrix:
         assert self.rows == len(self.genes)
         assert self.columns == len(self.barcodes)
         assert len(self.data) == len(self.indices)
-        write_gzip_file(output_dir / 'genes.gz', chain(['genes'], map(bytes.decode, self.genes)))
+        genes = chain(['featurekey'], map(bytes.decode, self.genes))
+        gene_names = chain(['featurename'], map(bytes.decode, self.gene_names))
+        write_gzip_file(output_dir / 'genes.gz', list('\t'.join(row) for row in zip(genes, gene_names)))
         write_gzip_file(output_dir / 'barcodes.gz', chain(['barcodes'], map(bytes.decode, self.barcodes)))
         log.info('Reading matrix data from %s ...', self.file_path)
         write_gzip_file(output_dir / 'matrix.mtx.gz', chain([
