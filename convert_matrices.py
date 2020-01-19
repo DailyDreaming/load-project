@@ -8,12 +8,12 @@ import logging
 from operator import methodcaller
 import os
 from pathlib import Path
-import sys
 from typing import (
     Callable,
     Iterable,
     List,
     Optional,
+    Set,
     Union,
     cast,
 )
@@ -125,14 +125,19 @@ class Converter(metaclass=ABCMeta):
 
     def convert(self):
         if self.zip_file.exists():
-            log.info('Final matrix already exists for project %s; moving on.', self.project_dir)
+            return False
         else:
             self._convert()
-            self.executor.defer(self._create_zip, run_after=self.futures)
+            self.executor.defer(key=self.project_dir,
+                                callable_=self._create_zip,
+                                run_after=self.futures)
+            return True
 
     def _create_zip(self):
+        log.info('Creating %s ...', self.zip_file)
         os.makedirs(str(self.zip_file.parent), exist_ok=True)
         atomic_make_archive(self.zip_file, root_dir=self.matrices_dir)
+        log.info('... created %s.', self.zip_file)
 
     @abstractmethod
     def _convert(self):
@@ -151,31 +156,34 @@ class Converter(metaclass=ABCMeta):
         :return:
         """
         for matrix in matrices:
-            # assert all(name.endswith('.gz') for name in astuple(matrix))
             dst_dir = self.matrix_dir(matrix.mtx)
             dst_dir.mkdir(parents=True, exist_ok=True)
-            dst = self.std_matrix
-            for src_name, dst_name in zip(astuple(matrix), astuple(dst)):
+            for src_name, dst_name in zip(astuple(matrix), astuple(self.std_matrix)):
+                src = self.geo_dir / src_name
+                dst = dst_dir / dst_name
                 if not src_name.endswith('.gz'):
-                    log.warning('Matrix file `%s` was not gzipped. Compressing...', src_name)
-                    idempotent_gzip_file(self.geo_dir / src_name, dst_dir / dst_name)
+                    if not dst.exists():
+                        log.warning('Matrix file `%s` was not gzipped. Compressing...', src_name)
+                        atomic_gzip_file(src, dst)
                 else:
-                    idempotent_link(self.geo_dir / src_name, dst_dir / dst_name)
+                    idempotent_link(src, dst)
 
     def _convert_matrices(self, *inputs: Union[CSV, H5, CSVPerCell]):
-        names = [input.name for input in inputs]
+        names = [input_.name for input_ in inputs]
         assert len(names) == len(set(names))
         expected_files = {'matrix.mtx.gz', 'genes.tsv.gz', 'barcodes.tsv.gz'}
-        for input_file in inputs:
-            output_dir = self.matrix_dir(input_file.name)
+        for input_ in inputs:
+            output_dir = self.matrix_dir(input_.name)
             actual_files = {f for f in expected_files if (output_dir / f).exists()}
             if actual_files == expected_files:
-                log.info('Matrix already generated for `%s`', input_file.name)
+                log.info('Matrix already generated for `%s`', input_.name)
             else:
                 if actual_files:
-                    log.warning('Found partial conversion results. Missing files: %s', expected_files - actual_files)
-                log.info('Started conversion for `%s`', input_file.name)
-                future = self.executor.defer(input_file.to_mtx,
+                    log.warning('Found partial conversion results. Missing files: %s',
+                                expected_files - actual_files)
+                log.info('Started conversion for `%s`', input_.name)
+                future = self.executor.defer(key=self.project_dir,
+                                             callable_=input_.to_mtx,
                                              input_dir=self.geo_dir,
                                              output_dir=output_dir)
                 self.futures.append(future)
@@ -199,24 +207,23 @@ class Converter(metaclass=ABCMeta):
             assert False, len(row)
 
 
-def idempotent_gzip_file(src_name: Path, dst_name: Path):
-    if not dst_name.exists():
-        tmp = dst_name.parent / (dst_name.name + '.tmp')
-        try:
-            with open(str(src_name), 'rb') as read_fh:
-                with gzip.open(tmp, 'wb') as write_fh:
+def atomic_gzip_file(src: Path, dst: Path):
+    tmp = dst.parent / (dst.name + '.tmp')
+    try:
+        with open(str(src), 'rb') as read_fh:
+            with gzip.open(tmp, 'wb') as write_fh:
+                chunk = read_fh.read(1024 ** 2)
+                while chunk:
                     chunk = read_fh.read(1024 ** 2)
-                    while chunk:
-                        chunk = read_fh.read(1024 ** 2)
-                        write_fh.write(chunk)
-        except Exception:
-            try:
-                tmp.unlink()
-            except FileNotFoundError:
-                pass
-            raise
-        else:
-            tmp.rename(dst_name)
+                    write_fh.write(chunk)
+    except Exception:
+        try:
+            tmp.unlink()
+        except FileNotFoundError:
+            pass
+        raise
+    else:
+        tmp.rename(dst)
 
 
 def atomic_make_archive(dst: Path, root_dir: Path):
@@ -244,11 +251,12 @@ def inode(file: Path, missing_ok=False) -> Optional[int]:
 
 def idempotent_link(src: Path, dst: Path):
     if inode(src) != inode(dst, missing_ok=True):
+        log.info('Linking %s to %s', src, dst)
         try:
             dst.unlink()
         except FileNotFoundError:
             pass
-        os.link(str(src), str(dst))
+        src.link_to(dst)
 
 
 class PostponedImplementationError(NotImplementedError):
@@ -1958,51 +1966,57 @@ class GSE73727(Converter):
 
 
 def main(project_dirs: List[Path]):
-    not_implemented_projects = []
-    failed_projects = []
-    succeeded_projects = []
+    not_implemented: Set[str] = set()
+    failed: Set[str] = set()
+    made: Set[str] = set()
+    already_done: Set[str] = set()
     converter_classes = {k: v for k, v in globals().items() if k.startswith('GSE')}
+
+    def record_failure_(project_dir_, exception):
+        log.exception('Failed to process project', exc_info=exception)
+        failed.add(project_dir_)
+
     try:
-        with DeferredTaskExecutor(max_workers=os.cpu_count()) as executor:
-            log.debug('ThreadPoolExecutor max_workers set to %s', os.cpu_count())
+        max_workers = os.cpu_count()
+        log.info('Using %i worker threads.', max_workers)
+        with DeferredTaskExecutor(max_workers=max_workers) as executor:
             for project_dir in sorted(project_dirs):
                 # noinspection PyBroadException
                 try:
                     converter_class = converter_classes.pop(project_dir.name)
                     converter = converter_class(project_dir, executor)
-                    converter.convert()
+                    if converter.convert():
+                        made.add(project_dir.name)
+                    else:
+                        already_done.add(project_dir.name)
                 except NotImplementedError:
-                    not_implemented_projects.append(project_dir)
+                    not_implemented.add(project_dir.name)
                 except BaseException as e:
-                    failed_projects.append(project_dir)
-                    log.exception('Failed to process project', exc_info=True)
+                    record_failure_(project_dir, e)
                     if not isinstance(e, Exception):
+                        # We sholdn't swallow exceptions like KeyboardError
+                        # which do not inherit Exception, but BaseException.
                         raise e
-                else:
-                    succeeded_projects.append(project_dir)
-        # TODO: executor.errors
+        for project_dir, errors in executor.errors.items():
+            for e in errors:
+                record_failure_(project_dir, e)
     finally:
+        def print_projects(title, projects, level=logging.INFO):
+            if projects:
+                log.log(level, 'Projects %s: %s\n', title, list(sorted(projects)))
+
+        print_projects('not implemented', not_implemented)
+        print_projects('already done', already_done)
+        print_projects('succeeded', made)
         if is_working_set_defined():
             print_projects('not in working set', converter_classes.keys())
         else:
-            for class_name, class_obj in converter_classes.items():
-                log.warning('Unused converter `%s` with UUID `%s`', class_name, class_obj.__doc__.strip())
-        print_projects('not implemented', not_implemented_projects, file=sys.stderr)
-        print_projects('failed', failed_projects, file=sys.stderr)
-        print_projects('succeeded', succeeded_projects)
-
-    populate_all_static_projects(file_pattern='*.mtx.zip')
-
-
-def print_projects(title, projects, file=None):
-    if len(projects) > 0:
-        print('Projects', title, file=file)
-        for p in projects:
-            print(p, file=file)
-        print()
+            print_projects('not in working set', converter_classes.keys(), level=logging.WARNING)
+        print_projects('failed', failed, level=logging.ERROR)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s',
-                        level=logging.DEBUG)
+    logging.basicConfig(format='%(asctime)s %(levelname)s %(threadName)s: %(message)s',
+                        level=logging.INFO)
     main(get_target_project_dirs())
+    populate_all_static_projects(file_pattern='*.mtx.zip')
