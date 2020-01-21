@@ -2,12 +2,15 @@ from abc import (
     ABCMeta,
     abstractmethod,
 )
+from concurrent.futures import (
+    Future,
+)
+from concurrent.futures.process import ProcessPoolExecutor
 from functools import partial
 import gzip
 import logging
 from operator import methodcaller
 import os
-from pathlib import Path
 from typing import (
     Callable,
     Iterable,
@@ -24,6 +27,7 @@ from dataclasses import (
     dataclass,
 )
 
+from _pathlib import Path
 from copy_static_project import populate_all_static_projects
 from csv2mtx import (
     CSVConverter,
@@ -31,7 +35,6 @@ from csv2mtx import (
     RowFilter,
 )
 from h5_to_mtx import convert_h5_to_mtx
-from threads import DeferredTaskExecutor
 from util import (
     get_target_project_dirs,
     is_working_set_defined,
@@ -99,10 +102,8 @@ class CSVPerCell:
 
 class Converter(metaclass=ABCMeta):
 
-    def __init__(self, project_dir: Path, executor: DeferredTaskExecutor):
+    def __init__(self, project_dir: Path):
         self.project_dir = project_dir
-        self.executor = executor
-        self.futures = []
 
     @property
     def matrices_dir(self) -> Path:
@@ -128,9 +129,7 @@ class Converter(metaclass=ABCMeta):
             return False
         else:
             self._convert()
-            self.executor.defer(key=self.project_dir,
-                                callable_=self._create_zip,
-                                run_after=self.futures)
+            self._create_zip()
             return True
 
     def _create_zip(self):
@@ -182,11 +181,7 @@ class Converter(metaclass=ABCMeta):
                     log.warning('Found partial conversion results. Missing files: %s',
                                 expected_files - actual_files)
                 log.info('Started conversion for `%s`', input_.name)
-                future = self.executor.defer(key=self.project_dir,
-                                             callable_=input_.to_mtx,
-                                             input_dir=self.geo_dir,
-                                             output_dir=output_dir)
-                self.futures.append(future)
+                input_.to_mtx(input_dir=self.geo_dir, output_dir=output_dir)
 
     def _fix_short_rows(self, row_length: int) -> RowFilter:
         """
@@ -1966,53 +1961,47 @@ class GSE73727(Converter):
 
 
 def main(project_dirs: List[Path]):
-    not_implemented: Set[str] = set()
-    failed: Set[str] = set()
-    made: Set[str] = set()
-    already_done: Set[str] = set()
-    converter_classes = {k: v for k, v in globals().items() if k.startswith('GSE')}
+    not_implemented: Set[Path] = set()
+    failed: Set[Path] = set()
+    succeeded: Set[Path] = set()
+    already_done: Set[Path] = set()
+    converter_classes = {k: v for k, v in globals().items()
+                         if isinstance(v, type) and v != Converter and issubclass(v, Converter)}
 
-    def record_failure_(project_dir_, exception):
-        log.exception('Failed to process project', exc_info=exception)
-        failed.add(project_dir_)
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+        for project_dir in sorted(project_dirs):
+            converter_class = converter_classes.pop(project_dir.name)
+            converter = converter_class(project_dir)
+            future = executor.submit(converter.convert)
 
-    try:
-        max_workers = os.cpu_count()
-        log.info('Using %i worker threads.', max_workers)
-        with DeferredTaskExecutor(max_workers=max_workers) as executor:
-            for project_dir in sorted(project_dirs):
-                # noinspection PyBroadException
-                try:
-                    converter_class = converter_classes.pop(project_dir.name)
-                    converter = converter_class(project_dir, executor)
-                    if converter.convert():
-                        made.add(project_dir.name)
+            def done_callback(future: Future, project_dir=project_dir):
+                e = future.exception()
+                if e is None:
+                    if future.result():
+                        s = succeeded
                     else:
-                        already_done.add(project_dir.name)
-                except NotImplementedError:
-                    not_implemented.add(project_dir.name)
-                except BaseException as e:
-                    record_failure_(project_dir, e)
-                    if not isinstance(e, Exception):
-                        # We sholdn't swallow exceptions like KeyboardError
-                        # which do not inherit Exception, but BaseException.
-                        raise e
-        for project_dir, errors in executor.errors.items():
-            for e in errors:
-                record_failure_(project_dir, e)
-    finally:
-        def print_projects(title, projects, level=logging.INFO):
-            if projects:
-                log.log(level, 'Projects %s: %s\n', title, list(sorted(projects)))
+                        s = already_done
+                else:
+                    if isinstance(e, NotImplementedError):
+                        s = not_implemented
+                    else:
+                        s = failed
+                        log.exception('Failed to process project %s', project_dir, exc_info=e)
+                s.add(project_dir)
 
-        print_projects('not implemented', not_implemented)
-        print_projects('already done', already_done)
-        print_projects('succeeded', made)
-        if is_working_set_defined():
-            print_projects('not in working set', converter_classes.keys())
-        else:
-            print_projects('not in working set', converter_classes.keys(), level=logging.WARNING)
-        print_projects('failed', failed, level=logging.ERROR)
+            future.add_done_callback(done_callback)
+
+    def print_projects(title, project_dirs: Iterable[Union[Path, str]], level=logging.INFO):
+        if project_dirs:
+            accessions = (p.name if isinstance(p, Path) else p for p in project_dirs)
+            log.log(level, 'Projects %s: %s\n', title, list(sorted(accessions)))
+
+    print_projects('not implemented', not_implemented)
+    print_projects('already done', already_done)
+    print_projects('succeeded', succeeded)
+    if not is_working_set_defined():
+        print_projects('without a project directory', converter_classes.keys(), level=logging.WARNING)
+    print_projects('failed', failed, level=logging.ERROR)
 
 
 if __name__ == '__main__':
