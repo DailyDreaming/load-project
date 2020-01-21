@@ -1,12 +1,13 @@
 import gzip
 import os
-from pathlib import Path
 from typing import (
-    Sequence,
     List,
     Optional,
+    Sequence,
 )
 import uuid
+
+from _pathlib import Path
 
 
 def open_maybe_gz(path, mode: str, **kwargs):
@@ -84,7 +85,7 @@ def get_target_spreadsheets() -> List[Path]:
 
 def get_target_project_dirs(uuids: bool = False, root_dir: Path = None) -> List[Path]:
     if root_dir is None:
-        root_dir = Path('projects/')
+        root_dir = Path('projects')
 
     accessions = get_skunk_accessions()
     return [

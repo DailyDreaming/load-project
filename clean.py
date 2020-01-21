@@ -1,6 +1,6 @@
 import logging
 import os
-from pathlib import Path
+from _pathlib import Path
 import shutil
 from util import get_target_project_dirs
 

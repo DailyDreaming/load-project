@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import argparse
 import json
 import logging
@@ -9,8 +7,8 @@ import unicodedata
 
 import boto3
 
+from _pathlib import Path
 from util import get_target_project_dirs
-
 
 log = logging.getLogger(__name__)
 

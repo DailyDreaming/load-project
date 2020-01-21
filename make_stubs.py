@@ -1,5 +1,5 @@
 import os
-from pathlib import Path
+from _pathlib import Path
 
 
 cwd = Path(os.getcwd())

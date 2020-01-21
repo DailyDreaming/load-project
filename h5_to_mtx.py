@@ -7,7 +7,7 @@ https://math.nist.gov/MatrixMarket/formats.html
 """
 from itertools import chain
 import logging
-from pathlib import Path
+from _pathlib import Path
 from typing import (
     Any,
     Iterable,

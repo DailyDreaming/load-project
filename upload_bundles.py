@@ -1,6 +1,6 @@
 import json
 import logging
-from pathlib import Path
+from _pathlib import Path
 from uuid import UUID
 
 from hca import HCAConfig

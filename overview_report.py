@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass
 import logging
-from pathlib import Path
+from _pathlib import Path
 import sys
 from typing import (
     Mapping,

@@ -8,7 +8,7 @@ import gzip
 import io
 import logging
 import os
-from pathlib import Path
+from _pathlib import Path
 from shutil import copyfileobj
 import sys
 from typing import (
@@ -22,7 +22,7 @@ import pandas as pd
 
 from util import open_maybe_gz
 
-logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__file__)
 
 RowFilter = Callable[[List[str]], Optional[bool]]
 
@@ -38,7 +38,8 @@ class AbstractCSVConverter(Iterable, metaclass=ABCMeta):
         """
         self.rows_are_genes = rows_are_genes
         if row_filter is None:
-            def row_filter(_): return False
+            def row_filter(_):
+                return False
         self.row_filter = row_filter
         self.x_axis_values = None
         self.y_axis_values = []
@@ -160,7 +161,7 @@ def write_gzip_file(output_file: Path, lines: Iterable):
     :param lines: List/Iterator of strings to write to file (a '\n' is added to each line)
     """
     temp_output_file = output_file.with_suffix(output_file.suffix + '.tmp')
-    print(f'Writing {temp_output_file} ...')
+    log.info('Writing %s ...', temp_output_file)
     try:
         # Using gzip.open(temp) directly creates an archive that causes
         # `gunzip -N` to extract the file under the name of the temporary file
@@ -172,14 +173,14 @@ def write_gzip_file(output_file: Path, lines: Iterable):
                 with io.TextIOWrapper(z) as w:
                     for line in lines:
                         w.write(line + '\n')
-    except:
+    except BaseException:
         try:
             temp_output_file.unlink()
         except FileNotFoundError:
             pass
         raise
     else:
-        print(f'Renaming {temp_output_file} to {output_file} ...')
+        log.info('Renaming %s to %s ...', temp_output_file, output_file)
         temp_output_file.rename(output_file)
 
 
@@ -193,6 +194,7 @@ def write_mtx_file(rows_cols_count_line: str, mtx_body_file: Path, output_file: 
     :param output_file: Path of the mtx file to be written
     """
     temp_output_file = output_file.with_suffix(output_file.suffix + '.tmp')
+    log.info('Writing %s ...', temp_output_file)
     try:
         with gzip.open(temp_output_file, 'wb') as f:
             header_line = '%%MatrixMarket matrix coordinate integer general\n'
@@ -201,14 +203,15 @@ def write_mtx_file(rows_cols_count_line: str, mtx_body_file: Path, output_file: 
             with open_maybe_gz(mtx_body_file, 'rb') as temp_data:
                 # Using 1MiB buffer should be faster than the default of 16KiB
                 copyfileobj(temp_data, f, length=2 ** 20)
-    except:
+    except BaseException:
+        log.warning('Error writing %s ...', temp_output_file)
         try:
             temp_output_file.unlink()
         except FileNotFoundError:
             pass
         raise
     else:
-        print(f'Renaming {temp_output_file} to {output_file} ...')
+        log.info('Renaming %s to %s ...', temp_output_file, output_file)
         temp_output_file.rename(output_file)
 
 
@@ -216,6 +219,9 @@ def main(argv):
     """
     Support for command line execution of convert_csv_to_mtx()
     """
+    logging.basicConfig(format='%(asctime)s %(levelname)s:%(threadName)s:%(message)s',
+                        level=logging.INFO)
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('csv_file', help='Input csv file')
     parser.add_argument('output_dir', help='Path to write output files')
@@ -224,7 +230,7 @@ def main(argv):
     args = parser.parse_args(argv)
 
     if not os.path.isfile(args.csv_file):
-        print('Error: File not found:', args.csv_file)
+        log.error('File not found: %s', args.csv_file)
         parser.print_help()
         exit()
 
@@ -236,10 +242,10 @@ def main(argv):
         args.delimiter = '\t'
 
     if len(args.delimiter) < 1:
-        print('Error: delimiter must be 1 char in length')
+        log.error('Delimiter must be 1 char in length')
 
     if args.rows_are_genes not in ('y', 'n'):
-        print('Error: rows_are_genes must be "y" or "n"')
+        log.error('rows_are_genes must be "y" or "n"')
 
     args.rows_are_genes = args.rows_are_genes == 'y'
 
