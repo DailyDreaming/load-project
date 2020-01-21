@@ -32,6 +32,8 @@ class ProjectReport:
     zipped_matrix: Path = None  # projects/{uuid}/bundle/matrix.mtx.zip
     cell_count: int = 0  # value of cell count in cell_counts.json
     num_metadata_files: int = 0  # number of metadata JSON files in projects/{uuid}/bundle
+    num_hca_metadata_files: int = 0  # number of metadata JSON files in projects/{uuid}/hca
+    zipped_hca_matrix = None  # projects/{uuid}/hca/matrix.mtx.zip
 
     @classmethod
     def tsv_header(cls) -> Sequence[str]:
@@ -46,6 +48,8 @@ class ProjectReport:
             'zipped_matrix',
             'cell_count',
             'num_metadata_files',
+            'num_hca_metadata_files',
+            'zipped_hca_matrix',
         ]
 
     def tsv_row(self) -> Sequence[str]:
@@ -60,6 +64,8 @@ class ProjectReport:
             self.zipped_matrix,
             self.cell_count,
             self.num_metadata_files,
+            self.num_hca_metadata_files,
+            self.zipped_hca_matrix
         ]]
 
 
@@ -184,6 +190,19 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
     for uuid in report:
         path = projects_path / str(uuid) / 'bundle'
         report[uuid].num_metadata_files = get_file_count(path, glob='*.json')
+
+    # ---
+    logging.debug('Checking for num_hca_metadata_files ...')
+    for uuid in report:
+        path = projects_path / str(uuid) / 'hca'
+        report[uuid].num_hca_metadata_files = get_file_count(path, glob='*.json')
+
+    # ---
+    logging.debug('Checking for zipped_matrix ...')
+    for uuid in report:
+        zipped_matrix = projects_path / str(uuid) / 'hca' / 'matrix.mtx.zip'
+        if zipped_matrix.is_file():
+            report[uuid].zipped_hca_matrix = zipped_matrix
 
     return report
 
