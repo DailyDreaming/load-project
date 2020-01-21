@@ -58,7 +58,8 @@ class AbstractCSVConverter(Iterable, metaclass=ABCMeta):
                 else:
                     self.y_axis_values.append(row[0])
                     for col, value in enumerate(row[1:]):
-                        if float(value):
+                        value = value.strip()
+                        if float(value):  # skip values of 0
                             self.num_values += 1
                             gene_index = len(self.y_axis_values) if self.rows_are_genes else col + 1
                             barcode_index = col + 1 if self.rows_are_genes else len(self.y_axis_values)
