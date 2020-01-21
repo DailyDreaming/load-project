@@ -2010,6 +2010,6 @@ class GSE73727(Converter):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s %(levelname)s %(threadName)s: %(message)s',
+    logging.basicConfig(format='%(asctime)s %(processName)s.%(process)i %(levelname)s: %(message)s',
                         level=logging.INFO)
     main()
