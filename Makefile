@@ -16,7 +16,7 @@ matrices:
 	python3 convert_matrices.py
 
 clean_matrices:
-	python clean.py
+	python clean.py matrices bundle/matrix.mtx.zip
 
 count:
 	python3 count_cells.py --write --fast
