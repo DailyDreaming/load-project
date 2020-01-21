@@ -58,7 +58,6 @@ class AbstractCSVConverter(Iterable, metaclass=ABCMeta):
                     self.y_axis_values.append(row[0])
                     for col, value in enumerate(row[1:]):
                         value = value.strip()
-                        assert ' ' not in value, f'Non-numeric value "{value}" at col {col}'
                         if float(value):  # skip values of 0
                             self.num_values += 1
                             gene_index = len(self.y_axis_values) if self.rows_are_genes else col + 1
