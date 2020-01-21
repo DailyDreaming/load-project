@@ -53,7 +53,6 @@ class CountCells:
         Count cells in one project
 
         :param accession_id: An accession id with a downloaded matrix file
-        :param save_to_file: If true write the cell count total(s) to a global cell count file
         """
         cell_count = self.get_project_cell_count(accession_id)
         if self.args.write:
@@ -112,23 +111,24 @@ class CountCells:
         if not os.path.isdir(f'projects/{accession_id}'):
             logging.warning('Unable to find path %s', f'projects/{accession_id}')
             return None
-        total_count = 0
-        total_count_from_barcodes = 0
+        cell_counts = {}
         for file in Path(f'projects/{accession_id}/matrices').glob('**/*'):
             if file.is_file():
-                if file.name.endswith(('.mtx', '.mtx.gz')):
+                if file.parent.name not in cell_counts:
+                    cell_counts[file.parent.name] = {'mtx': 0, 'barcodes': 0}
+                if file.name.endswith('.mtx.gz'):
                     cell_count = self.count_cells(file)
                     logging.info('Cell count in %s is %s', file, cell_count)
                     if cell_count is not None:
-                        total_count += cell_count
+                        cell_counts[file.parent.name]['mtx'] += cell_count
                 elif file.name in ('barcodes.gz', 'barcodes.tsv.gz'):
-                    total_count_from_barcodes += self.count_cells_from_barcodes(file)
-        logging.info('Total cell count in %s is %s', accession_id, total_count)
-        if total_count == total_count_from_barcodes:
-            logging.info('Total cell count in %s matches count from barcodes.', accession_id)
-        else:
-            logging.warning('Total cell count in %s from barcodes file is %s', accession_id, total_count_from_barcodes)
-        return total_count
+                    cell_counts[file.parent.name]['barcodes'] += self.count_cells_from_barcodes(file)
+        for key in cell_counts:
+            if cell_counts[key]['mtx'] != cell_counts[key]['barcodes']:
+                logging.warning('Cell count mismatch found for %s: %s vs %s',
+                                key, cell_counts[key]['mtx'], cell_counts[key]['barcodes'])
+        logging.info('Total cell count in %s is %s', accession_id, sum([d['mtx'] for d in cell_counts.values()]))
+        return sum([d['mtx'] for d in cell_counts.values()])
 
     def count_cells(self, matrix_file: Path) -> Union[int, None]:
         """
@@ -163,7 +163,7 @@ class CountCells:
     def count_cells_from_barcodes(self, barcodes_file: Path) -> Union[int, None]:
         with open_maybe_gz(barcodes_file,  'rt') as f:
             next(f)  # skip header line
-            return sum(1 for line in f)
+            return sum(1 for _ in f)
 
 
 if __name__ == '__main__':
