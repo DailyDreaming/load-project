@@ -33,4 +33,4 @@ assets:
 report:
 	python3 overview_report.py | column -t | less -S
 
-.PHONY: all download extract merge count metadata bundles assets
+.PHONY: all download extract matrices clean_matrices count metadata bundles assets report
