@@ -33,7 +33,7 @@ class ProjectReport:
     geo_files: int = 0  # number of downloaded geo files in projects/{uuid}/geo
     num_matrices: int = 0  # number of matrices in projects/{uuid}/matrices
     zipped_matrix: Path = None  # projects/{uuid}/bundle/matrix.mtx.zip
-    cell_count: int = 0  # value of cell count in cell_counts.json
+    cell_count: int = 0  # number of cell counted
     num_metadata_files: int = 0  # number of metadata JSON files in projects/{uuid}/bundle
     num_hca_metadata_files: int = 0  # number of metadata JSON files in projects/{uuid}/hca
     zipped_hca_matrix = None  # projects/{uuid}/hca/matrix.mtx.zip
@@ -94,14 +94,12 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
 
     report = {}
 
-    # ---
     logging.debug('Searching for project uuids in the projects path ...')
     for uuid in get_project_uuids():
         project_path = projects_path / str(uuid)
         report[uuid] = ProjectReport(uuid=uuid,
                                      project_path=project_path)
 
-    # ---
     logging.debug('Searching for accession ids in the projects path ...')
     for accession_id in [p.name for p in get_target_project_dirs()]:
         # accession ids are symlinks to folders named by uuid
@@ -141,7 +139,6 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
                 report[uuid_from_accession_id] = ProjectReport(uuid=uuid_from_accession_id,
                                                                accession=accession_id)
 
-    # ---
     logging.debug('Searching for spreadsheets ...')
     for file in get_target_spreadsheets():
         logging.debug('Checking: %s', file)
@@ -156,51 +153,44 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
                                          accession=accession_id,
                                          spreadsheet=file)
 
-    # ---
-    logging.debug('Reading cell_counts.json ...')
+    logging.debug('Fetching cell count ...')
     for accession_id, cell_count in CountCells.get_cached_cell_counts().items():
         uuid = UUID(generate_project_uuid(accession_id))
         try:
             report[uuid].cell_count = cell_count
         except KeyError:
-            logging.debug('New accession %s found in cell_counts.json, adding uuid %s',
+            logging.debug('New accession %s found, adding uuid %s',
                           accession_id, str(uuid))
             report[uuid] = ProjectReport(uuid=uuid,
                                          accession=accession_id,
                                          cell_count=cell_count)
 
-    # ---
     logging.debug('Counting geo files ...')
     for uuid in report:
         path = projects_path / str(uuid) / 'geo'
         report[uuid].geo_files = get_file_count(path, glob='**/*')
 
-    # ---
     logging.debug('Counting matrices ...')
     for uuid in report:
         path = projects_path / str(uuid) / 'matrices'
         report[uuid].num_matrices = get_file_count(path, glob='**/matrix.mtx.gz')
 
-    # ---
     logging.debug('Checking for zipped_matrix ...')
     for uuid in report:
         zipped_matrix = projects_path / str(uuid) / 'bundle' / 'matrix.mtx.zip'
         if zipped_matrix.is_file():
             report[uuid].zipped_matrix = zipped_matrix
 
-    # ---
     logging.debug('Checking for metadata_json_count ...')
     for uuid in report:
         path = projects_path / str(uuid) / 'bundle'
         report[uuid].num_metadata_files = get_file_count(path, glob='*.json')
 
-    # ---
     logging.debug('Checking for num_hca_metadata_files ...')
     for uuid in report:
         path = projects_path / str(uuid) / 'hca'
         report[uuid].num_hca_metadata_files = get_file_count(path, glob='*.json')
 
-    # ---
     logging.debug('Checking for zipped_matrix ...')
     for uuid in report:
         zipped_matrix = projects_path / str(uuid) / 'hca' / 'matrix.mtx.zip'

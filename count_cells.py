@@ -1,19 +1,17 @@
 import argparse
 import csv
-import json
 import logging
+import json
 from _pathlib import Path
 import sys
 from typing import (
-    Sequence,
-    Mapping,
+    MutableMapping,
     Union,
 )
-
 from util import (
-    generate_project_uuid,
     get_target_project_dirs,
     open_maybe_gz,
+    update_project_stats,
 )
 
 
@@ -29,9 +27,6 @@ class CountCells:
         group.add_argument('--write', '-w',
                            help='Write cell count files',
                            action='store_true')
-        parser.add_argument('--accession', '-a', type=str,
-                            help='Count cells for a single accession '
-                                 'instead of all')
         parser.add_argument('--verbose', '-v',
                             action='store_true',
                             help='Verbose debug output')
@@ -45,75 +40,52 @@ class CountCells:
         if self.args.verbose:
             logging.getLogger().setLevel(logging.DEBUG)
 
-        if self.args.accession:
-            accessions = [self.args.accession]
-        else:
-            accessions = [p.name for p in get_target_project_dirs()]
-
-        for accession in accessions:
-            cell_count = self.get_project_cell_count(accession)
+        for project_dir in get_target_project_dirs():
+            cell_count = self.get_project_cell_count(project_dir)
             if self.args.write:
-                self.write_cell_count(accession, cell_count)
+                self.write_cell_count(project_dir, cell_count)
 
     @classmethod
-    def get_cached_cell_count(cls, accession: str) -> int:
+    def get_cached_cell_count(cls, project_dir: Path) -> Union[int, None]:
         """
-        Return a cell count for the given accession
+        Return a cell count for the project with the given accession.
         """
-        stats_file = Path(f'projects/{accession}/stats.json')
+        stats_file = project_dir / 'stats.json'
         if stats_file.exists():
-            with open(stats_file, 'r') as f:
-                cell_count = json.loads(f.read()).get('cell_count', 0)
+            with open(str(stats_file), 'r') as f:
+                cell_count = json.load(f).get('cell_count', None)
             return cell_count
         else:
             return 0
 
     @classmethod
-    def get_cached_cell_counts(cls) -> Mapping[str, int]:
+    def get_cached_cell_counts(cls) -> MutableMapping[str, int]:
         """
-        Return a dict of accession id to cell count
+        Return a mapping from accessions to cell counts.
         """
-        cell_counts = {}
-        for accession in [p.name for p in get_target_project_dirs()]:
-            cell_counts[accession] = cls.get_cached_cell_count(accession)
-        return cell_counts
+
+        return {
+            p.name: cls.get_cached_cell_count(p)
+            for p in get_target_project_dirs()
+        }
 
     @classmethod
-    def write_cell_count(cls, accession: str, cell_count: int) -> bool:
+    def write_cell_count(cls, project_dir: Path, cell_count: int):
         """
-        Write the accession cell count to the project's stats json
+        Write the accession cell count to the project's stats JSON file.
+        """
 
-        :param accession: An accession id
-        :param cell_count: An int value to write to the json file
-        :return: Status of the write
-        """
-        stats_file = Path(f'projects/{accession}/stats.json')
-        if not stats_file.exists():
-            with open(stats_file, 'w') as f:
-                logging.info('Writing %s', stats_file)
-                stats = {
-                    'project_uuid': generate_project_uuid(accession),
-                    'cell_count': cell_count
-                }
-                f.write(json.dumps(stats, sort_keys=True, indent='    '))
-        else:
-            with open(stats_file, 'r+') as f:
-                logging.info('Updating %s', stats_file)
-                stats = json.loads(f.read())
-                stats['cell_count'] = cell_count
-                f.seek(0)
-                f.write(json.dumps(stats, sort_keys=True, indent='    '))
-        return True
+        with update_project_stats(project_dir) as stats:
+            stats['cell_count'] = cell_count
 
-    def get_project_cell_count(self, accession: str) -> Union[int, None]:
+    def get_project_cell_count(self, project_dir: Path) -> int:
         """
-        Count the number of cells in a project
+        Count the number of cells in a project.
+        """
 
-        :param accession: An accession id that has downloaded matrix file(s)
-        :return: A count of cells
-        """
         total_cell_count = 0
-        for mtx_file in Path(f'projects/{accession}/matrices').glob('**/matrix.mtx.gz'):
+        matrix_dir = project_dir / 'matrices'
+        for mtx_file in matrix_dir.glob('**/matrix.mtx.gz'):
             cell_count_from_matrix = self.count_cells(mtx_file)
             logging.info('Cell count in %s is %s', mtx_file, cell_count_from_matrix)
             if cell_count_from_matrix is not None:
@@ -123,16 +95,17 @@ class CountCells:
             if cell_count_from_matrix != cell_count_from_barcodes:
                 logging.warning('Cell count mismatch found for %s: %s vs %s',
                                 mtx_file.parent, cell_count_from_matrix, cell_count_from_barcodes)
-        logging.info('Total cell count in %s is %s', accession, total_cell_count)
+        logging.info('Total cell count in %s is %s', project_dir, total_cell_count)
         return total_cell_count
 
     def count_cells(self, matrix_file: Path) -> Union[int, None]:
         """
-        Count the number of cells in a matrix file
+        Count the number of cells in a matrix file.
 
-        :param matrix_file: A mtx file with tab/space/comma delimited data
-        :return: A count of cells found in the given file
+        :param matrix_file: A mtx file with tab/space/comma delimited data.
+        :return: A count of cells found in the given file.
         """
+
         with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
             first_line_length = len(csv_file.readline().strip())
             assert first_line_length > 0, f'File has no first line "{matrix_file}"'
