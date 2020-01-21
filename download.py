@@ -36,7 +36,7 @@ def download_supplementary_files(accession):
     """
     logging.info('---')
     project_uuid = generate_project_uuid([accession])
-    logging.info('Downloading files for project accession %s, UUID %s.', accession, project_uuid)
+    logging.info('Checking project with accession %s and UUID %s for files to download ...', accession, project_uuid)
 
     projects_path = Path('projects')
     geo_path = projects_path / project_uuid / 'geo'
