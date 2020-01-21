@@ -1,6 +1,5 @@
 from itertools import dropwhile
 import logging
-from pathlib import Path
 import re
 import tempfile
 from typing import (
@@ -14,6 +13,7 @@ import furl
 from more_itertools import one
 import requests
 
+from _pathlib import Path
 from create_project import (
     generate_project_uuid,
 )
@@ -28,22 +28,6 @@ def main():
     accessions = [p.name.split('.')[0] for p in get_target_spreadsheets()]
     for accession in accessions:
         download_supplementary_files(accession)
-
-
-# Work around https://bugs.python.org/issue30618, fixed on 3.7+
-
-if not hasattr(Path, 'readlink'):
-    def path_readlink(self):
-        """
-        Return the path to which the symbolic link points.
-        """
-        path = self._accessor.readlink(self)
-        obj = self._from_parts((path,), init=False)
-        obj._init(template=self)
-        return obj
-
-
-    Path.readlink = path_readlink
 
 
 def download_supplementary_files(accession):

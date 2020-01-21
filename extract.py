@@ -1,5 +1,5 @@
 from operator import methodcaller
-from pathlib import Path
+from _pathlib import Path
 import shutil
 from tarfile import TarFile
 

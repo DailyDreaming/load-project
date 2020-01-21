@@ -3,7 +3,7 @@ import csv
 import json
 import logging
 import os
-from pathlib import Path
+from _pathlib import Path
 import sys
 from typing import (
     Sequence,

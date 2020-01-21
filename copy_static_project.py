@@ -1,4 +1,4 @@
-from pathlib import Path
+from _pathlib import Path
 
 from util import get_target_project_dirs
 

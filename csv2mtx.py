@@ -8,7 +8,7 @@ import gzip
 import io
 import logging
 import os
-from pathlib import Path
+from _pathlib import Path
 from shutil import copyfileobj
 import sys
 from typing import (
