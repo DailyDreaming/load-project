@@ -642,7 +642,9 @@ class GSE110499(Converter):
     def _convert(self):
         self._convert_matrices(
             CSV('GSE110499_GEO_processed_MM_10X_raw_UMI_count_martix.txt.gz', sep='\t'),
-            CSV('GSE110499_GEO_processed_MM_raw_TPM_matrix.txt.gz', sep='\t'),
+
+            # The previous file has a column header for the genes but this one doesn't.
+            CSV('GSE110499_GEO_processed_MM_raw_TPM_matrix.txt.gz', sep='\t', row_filter=self._fix_short_rows(172)),
         )
 
 
