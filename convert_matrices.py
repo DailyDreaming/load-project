@@ -258,6 +258,55 @@ class PostponedImplementationError(NotImplementedError):
     """This project has been examined, but postponed for some reason"""
 
 
+def convert_matrices(project_dirs: List[Path]):
+    not_implemented: Set[Path] = set()
+    failed: Set[Path] = set()
+    succeeded: Set[Path] = set()
+    already_done: Set[Path] = set()
+    converter_classes = {k: v for k, v in globals().items()
+                         if isinstance(v, type) and v != Converter and issubclass(v, Converter)}
+
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+        for project_dir in sorted(project_dirs):
+            converter_class = converter_classes.pop(project_dir.name)
+            converter = converter_class(project_dir)
+            future = executor.submit(converter.convert)
+
+            def done_callback(future: Future, project_dir=project_dir):
+                e = future.exception()
+                if e is None:
+                    if future.result():
+                        s = succeeded
+                    else:
+                        s = already_done
+                else:
+                    if isinstance(e, NotImplementedError):
+                        s = not_implemented
+                    else:
+                        s = failed
+                        log.exception('Failed to process project %s', project_dir, exc_info=e)
+                s.add(project_dir)
+
+            future.add_done_callback(done_callback)
+
+    def print_projects(title, project_dirs: Iterable[Union[Path, str]], level=logging.INFO):
+        if project_dirs:
+            accessions = (p.name if isinstance(p, Path) else p for p in project_dirs)
+            log.log(level, 'Projects %s: %s\n', title, list(sorted(accessions)))
+
+    print_projects('not implemented', not_implemented)
+    print_projects('already done', already_done)
+    print_projects('succeeded', succeeded)
+    if not is_working_set_defined():
+        print_projects('without a project directory', converter_classes.keys(), level=logging.WARNING)
+    print_projects('failed', failed, level=logging.ERROR)
+
+
+def main():
+    convert_matrices(get_target_project_dirs())
+    populate_all_static_projects(file_pattern='*.mtx.zip')
+
+
 class GSE107909(Converter):
     """
     04ba7269-1301-5758-8f13-025565326f66
@@ -1960,52 +2009,7 @@ class GSE73727(Converter):
         raise PostponedImplementationError('Special case of https://github.com/DailyDreaming/load-project/issues/43')
 
 
-def main(project_dirs: List[Path]):
-    not_implemented: Set[Path] = set()
-    failed: Set[Path] = set()
-    succeeded: Set[Path] = set()
-    already_done: Set[Path] = set()
-    converter_classes = {k: v for k, v in globals().items()
-                         if isinstance(v, type) and v != Converter and issubclass(v, Converter)}
-
-    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
-        for project_dir in sorted(project_dirs):
-            converter_class = converter_classes.pop(project_dir.name)
-            converter = converter_class(project_dir)
-            future = executor.submit(converter.convert)
-
-            def done_callback(future: Future, project_dir=project_dir):
-                e = future.exception()
-                if e is None:
-                    if future.result():
-                        s = succeeded
-                    else:
-                        s = already_done
-                else:
-                    if isinstance(e, NotImplementedError):
-                        s = not_implemented
-                    else:
-                        s = failed
-                        log.exception('Failed to process project %s', project_dir, exc_info=e)
-                s.add(project_dir)
-
-            future.add_done_callback(done_callback)
-
-    def print_projects(title, project_dirs: Iterable[Union[Path, str]], level=logging.INFO):
-        if project_dirs:
-            accessions = (p.name if isinstance(p, Path) else p for p in project_dirs)
-            log.log(level, 'Projects %s: %s\n', title, list(sorted(accessions)))
-
-    print_projects('not implemented', not_implemented)
-    print_projects('already done', already_done)
-    print_projects('succeeded', succeeded)
-    if not is_working_set_defined():
-        print_projects('without a project directory', converter_classes.keys(), level=logging.WARNING)
-    print_projects('failed', failed, level=logging.ERROR)
-
-
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s %(threadName)s: %(message)s',
                         level=logging.INFO)
-    main(get_target_project_dirs())
-    populate_all_static_projects(file_pattern='*.mtx.zip')
+    main()
