@@ -209,8 +209,8 @@ def atomic_gzip_file(src: Path, dst: Path):
             with gzip.open(tmp, 'wb') as write_fh:
                 chunk = read_fh.read(1024 ** 2)
                 while chunk:
-                    chunk = read_fh.read(1024 ** 2)
                     write_fh.write(chunk)
+                    chunk = read_fh.read(1024 ** 2)
     except Exception:
         try:
             tmp.unlink()
