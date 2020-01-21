@@ -1,7 +1,6 @@
 all:
 	$(MAKE) download
 	$(MAKE) extract
-	$(MAKE) merge
 	$(MAKE) count
 	$(MAKE) metadata
 	$(MAKE) bundles
