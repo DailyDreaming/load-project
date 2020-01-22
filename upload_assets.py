@@ -37,15 +37,16 @@ class Main:
     }
 
     def upload_files_to_bucket(self, project_dir: Path):
-        project_uuid = project_dir.name
+        log.info('Checking %s for assets to upload ...', project_dir)
         bundle_dir = project_dir / 'bundle'
         file_extension = '.mtx.zip'
         matrix_file = bundle_dir / ('matrix' + file_extension)
         if matrix_file.exists():
             species_name = self.get_species(bundle_dir)
             if species_name is None:
-                log.warning('Could not determine species name, skipping project %s.', project_uuid)
+                log.warning('Could not determine species name, skipping %s.', project_dir)
             else:
+                project_uuid = project_dir.name
                 file_name = f'{project_uuid}.{species_name}{file_extension}'
                 key = self.key_prefix + file_name
                 obj = self.s3.Object(self.bucket_name, key)
@@ -69,19 +70,29 @@ class Main:
                 else:
                     log.info('%s is up to date.', matrix_file)
         else:
-            log.warning('Found no matrix asset for project %s.', project_uuid)
+            log.warning('Found no matrix asset for project %s.', project_dir)
 
     def get_species(self, bundle_dir: Path):
         donor_path = bundle_dir / 'donor_organism_0.json'
         try:
             with open(str(donor_path), 'r') as cs_json:
                 cell_suspension_json = json.load(cs_json)
-                # FIXME check other element in genus species array
+        except FileNotFoundError as e:
+            log.warning('Failed to load donor metadata: %s', e)
+            return None
+        else:
+            # FIXME: check other element in genus species array
+            try:
                 species_name = cell_suspension_json['genus_species'][0]['text']
-                species_name = unicodedata.normalize('NFKD', species_name)
-                return re.sub(r'[^\w,.@%&-_()\\[\]/{}]', '_', species_name).strip().lower()
-        except FileNotFoundError:
-            log.warning('Failed to load donor metadata', exc_info=True)
+            except KeyError:
+                pass
+            except IndexError:
+                pass
+            else:
+                if species_name is not None:
+                    species_name = unicodedata.normalize('NFKD', species_name)
+                    return re.sub(r'[^\w,.@%&-_()\\[\]/{}]', '_', species_name).strip().lower()
+            log.warning('Donor metadata does not specify species name')
             return None
 
     def run(self):
