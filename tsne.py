@@ -1,28 +1,28 @@
-#!/home/nadove/PycharmProjects/data-portal-summary-stats/.venv/bin/python
-from urllib.error import HTTPError
-
 import argparse
 from io import (
-    BytesIO
+    BytesIO,
 )
 import json
 import logging
-from more_itertools import (
-    one
-)
 import os
 from pathlib import Path
 import sys
 from typing import (
-    Dict, 
+    Dict,
+)
+from urllib.error import (
+    HTTPError,
 )
 from urllib.request import (
-    urlopen
+    urlopen,
 )
 
 import boto3
-import colorcet as cc
+import colorcet
 import matplotlib.pyplot as plt
+from more_itertools import (
+    one,
+)
 import numpy as np
 import pandas as pd
 
@@ -31,13 +31,20 @@ from util import (
     get_target_project_dirs,
 )
 
+# Note that while this script does use a local cache to avoid downloading the
+# same data from SCXA every time it's run, it is NOT idempotent since the
+# potential gains from implementing idempotence are currently not compelling.
+
+log = logging.getLogger(__name__)
+logging.basicConfig(stream=sys.stdout,
+                    level=logging.INFO)
+
 # Local output
 output_dir = Path('tSNE')
 cache_dir = output_dir / 'cache'
 
 
 class TSNE:
-
     base_url = 'https://www.ebi.ac.uk/gxa/sc/'
 
     @property
@@ -46,11 +53,13 @@ class TSNE:
 
     @property
     def clusters_url(self) -> str:
-        return f'{self.base_url}/experiment/{self.ax_acc}/download?fileType=cluster&accessKey='
+        return f'{self.base_url}/experiment/{self.ax_acc}/' \
+               f'download?fileType=cluster&accessKey='
 
     @property
     def points_url(self) -> str:
-        return f'{self.base_url}/json/experiments/{self.ax_acc}/tsneplot/{self.perplexity}/clusters/k/{self.k}'
+        return f'{self.base_url}/json/experiments/{self.ax_acc}/tsneplot/' \
+               f'{self.perplexity}/clusters/k/{self.k}'
 
     def __init__(self, geo_acc: str, perplexity: int):
         self.geo_acc = geo_acc
@@ -62,21 +71,21 @@ class TSNE:
 
     def get_default_k(self) -> int:
         """
-        Obtain the number of clusters SCXA uses by default when coloring by cluster.
+        Obtain the number of clusters SCXA uses by default when coloring by
+         cluster.
         """
         cluster_info = self._cache(
             'cluster_info.tsv',
             lambda f: pd.read_csv(f, sep='\t'),
-            lambda cluster_info, f: cluster_info.to_csv(f, sep='\t'),
+            lambda cluster_info_, f: cluster_info_.to_csv(f, sep='\t'),
             lambda: pd.read_csv(BytesIO(urlopen(self.clusters_url).read()), sep='\t')
         )
         return int(one(cluster_info['K'][cluster_info['sel.K']]))
 
     def get_clusters(self) -> Dict[str, np.ndarray]:
         """
-        Get X- and Y- coordiante vectors for tSNE plot points, grouped by cluster.
-        :return: clusters names mapped to 2xN arrays where each column is a point and the rows are 
-        X- and Y- coordinates.
+        Cluster names mapped to 2xN arrays where each column is a point and the
+        rows are X- and Y- coordinates.
         """
         points = self._cache(
             'points.json',
@@ -102,27 +111,27 @@ class TSNE:
 
         plt.title('Clusters', fontweight='bold')
         plt.margins(tight=True)
-        
+
         # Hide axes
         ax = fig.gca()
         ax.spines['bottom'].set_color('0.75')
-        for obj in [ax.get_xaxis(), 
+        for obj in [ax.get_xaxis(),
                     ax.get_yaxis(),
                     *[ax.spines[side] for side in ('top', 'left', 'right')]]:
             obj.set_visible(False)
 
         # Make point size shrink with more points
         n_points = np.hstack(list(self.clusters.values())).shape[1]
-        marker_size = 225/(n_points**0.65)
+        marker_size = 225 / (n_points ** 0.65)
 
         for color, (cluster_id, coords) in zip(colormap, self.clusters.items()):
             ax.scatter(x=coords[0],
-                       y=coords[1], 
+                       y=coords[1],
                        s=marker_size,
                        # Prevent matplotlib warning about ambiguous color format
                        c=np.array(color)[..., np.newaxis],
                        label=cluster_id)
-        
+
         legend = plt.legend(loc='upper center',
                             bbox_to_anchor=(0.5, 0),
                             frameon=False,
@@ -130,17 +139,30 @@ class TSNE:
                             columnspacing=2.0,
                             labelspacing=0.5)
 
-        # Make sure legened markers are akways the same size regardless of how the
-        # plotted points scale with number of points
+        # Make sure legend markers are always the same size regardless of how
+        # the plotted points scale with number of points.
         for handle in legend.legendHandles:
             handle.set_sizes([25])
 
-        fig.text(0.5, 0.0025, f'tSNE data imported from {self.tsne_url}', ha='center', va='bottom', fontsize='x-small')
+        fig.text(
+            x=0.5,
+            y=0.0025,
+            text=f'tSNE data imported from {self.tsne_url}',
+            ha='center',
+            va='bottom',
+            fontsize='x-small'
+        )
+
         plt.tight_layout()
         plt.savefig(output_dir / f'{self.geo_acc}.{save_format}', dpi=dpi)
 
     def upload(self, s3_client, bucket):
-        image_file = one(str(p) for p in output_dir.iterdir() if p.name.startswith(self.geo_acc))
+        image_file = one(
+            str(p)
+            for p
+            in output_dir.iterdir()
+            if p.name.startswith(self.geo_acc)
+        )
         image_format = image_file.rsplit('.', 1)[-1]
         key = f'project-assets/project-stats/{self.uuid}/tsne.{image_format}'
         log.info(f'Uploading {self.geo_acc} as {key}')
@@ -161,7 +183,7 @@ class TSNE:
             with open(path) as f:
                 value = reader(f)
         except FileNotFoundError:
-            log.info(f'Retreiving {name} (not found in cache)')
+            log.info(f'Retrieving {name} (not found in cache)')
             value = getter()
             with open(path, 'w') as f:
                 writer(value, f)
@@ -170,30 +192,9 @@ class TSNE:
         return value
 
 
-if __name__ == "__main__":
-    log = logging.getLogger(__name__)
-    logging.basicConfig(stream=sys.stdout,
-                        level=logging.INFO)
-
-    parser = argparse.ArgumentParser(description='generate tSNE plots from SCXA data and upload to S3', add_help=True)
-    # General behavior
-    parser.add_argument('-r', '--render-only', action='store_true')
-    parser.add_argument('-u', '--upload-only', action='store_true')
-    # Filter specific projects
-    parser.add_argument('projects', nargs='*')
-    # Image properties
-    parser.add_argument('--colormap', type=cc.__getattribute__, default='glasbey')
-    parser.add_argument('-f', '--image-format', default='png')
-    parser.add_argument('--dpi', type=int, default=100)
-    # tSNE parameter. Default used by SCXA. Used to generate URLs.
-    parser.add_argument('-p', '--perplexity', type=int, default=25)
-    # Upload properties
-    parser.add_argument('--bucket', default='ux-dev.project-assets.data.humancellatlas.org')
-    
-    args = parser.parse_args()
-
+def main(args):
     do_render = args.render_only or not args.upload_only
-    do_upload = args.upload_only_only or not not args.render_only
+    do_upload = args.upload_only or not not args.render_only
 
     client = boto3.client('s3')
 
@@ -204,9 +205,39 @@ if __name__ == "__main__":
         try:
             tsne = TSNE(project_dir.name, args.perplexity)
         except HTTPError:
-            log.info(f'Failed to retrieve tSNE data from SCXA for project {project_dir.name}')
+            log.info(f'Failed to retrieve tSNE data from SCXA for project'
+                     f' {project_dir.name}')
         else:
             if do_render:
                 tsne.make_image(args.colormap, args.image_format, args.dpi)
             if do_upload:
                 tsne.upload(client, args.bucket)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='generate tSNE plots from SCXA data and upload to S3',
+        add_help=True
+    )
+    # General behavior
+    parser.add_argument('-r', '--render-only', action='store_true')
+    parser.add_argument('-u', '--upload-only', action='store_true')
+    # Filter specific projects
+    parser.add_argument('projects', nargs='*')
+    # Image properties
+    parser.add_argument(
+        '--colormap',
+        type=colorcet.__getattribute__,  # Nice "type system" you got there...
+        default='glasbey'
+    )
+    parser.add_argument('-f', '--image-format', default='png')
+    parser.add_argument('--dpi', type=int, default=100)
+    # tSNE parameter. Default used by SCXA. Used to generate URLs.
+    parser.add_argument('-p', '--perplexity', type=int, default=25)
+    # Upload properties
+    parser.add_argument(
+        '--bucket',
+        default='ux-dev.project-assets.data.humancellatlas.org'
+    )
+
+    main(parser.parse_args())
