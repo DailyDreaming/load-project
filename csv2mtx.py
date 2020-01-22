@@ -141,7 +141,8 @@ class CSVPerCellConverter(AbstractCSVConverter):
     def get_rows(self) -> Iterable[List[str]]:
         first = True
         for path in self.filepaths:
-            cell = pd.read_csv(path, sep=self.delimiter, compression='infer', header=None, comment='#')
+            # String conversion needed since whitespace is handled in superclass
+            cell = pd.read_csv(path, sep=self.delimiter, compression='infer', header=None, comment='#').astype(str)
             if first:
                 first = False
                 # provide header (gene names) with empty first column

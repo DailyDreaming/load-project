@@ -78,11 +78,15 @@ class H5:
 @dataclass(frozen=True)
 class CSVPerCell:
     directory: str
-    name: str = 'cell_files'
+    cohort: Optional[str] = None
     path_filter: Optional[Callable[[Path], bool]] = None
     entry_filter: Optional[RowFilter] = None
     sep: str = ','
     expr_column: int = 1
+
+    @property
+    def name(self) -> str:
+        return self.directory if self.cohort is None else '.'.join([self.directory, self.cohort])
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
         paths = (
@@ -168,8 +172,6 @@ class Converter(metaclass=ABCMeta):
                     idempotent_link(src, dst)
 
     def _convert_matrices(self, *inputs: Union[CSV, H5, CSVPerCell]):
-        names = [input_.name for input_ in inputs]
-        assert len(names) == len(set(names))
         expected_files = {'matrix.mtx.gz', 'genes.tsv.gz', 'barcodes.tsv.gz'}
         for input_ in inputs:
             output_dir = self.matrix_dir(input_.name)
@@ -531,7 +533,6 @@ class GSE129798(Converter):
         # There are two matrices present but the smaller one has 100% barcode
         # overlap with the larger one. The larger one is also named "final" so
         # I'm only including the larger one.
-        # noinspection PyUnreachableCode
         prefix = 'GSE129798_Mouse_Adult_DGE_final/Mouse_Adult_DGE_final'
         self._copy_matrices(
             Matrix(
@@ -587,12 +588,8 @@ class GSE97104(Converter):
     """
 
     def _convert(self):
-        # NOTE: this file contains a comment (#) and multiple blank lines at the beginning,
-        # not sure if Daniel's script handles this
-
         # There are other files in RAW but the comments claims that this one is
         # the result of their concatenation
-        # noinspection PyUnreachableCode
         self._convert_matrices(
             CSV('GSE97104_all_umi.mtx.txt.gz', sep='\t', row_filter=self._fix_short_rows(35017))
         )
@@ -612,7 +609,6 @@ class GSE113197(Converter):
 
     def _convert(self):
         # row compatibility verified using ~/load-project.nadove/check_genes
-        # noinspection PyUnreachableCode
         self._convert_matrices(
             CSVPerCell(
                 'GSE113197_RAW',
@@ -1543,7 +1539,6 @@ class GSE81547(Converter):
         # https://data.humancellatlas.org/explore/projects/cddab57b-6868-4be4-806f-395ed9dd635a/expression-matrices
 
         # row compatibility verified using ~/load-project.nadove/check_genes
-        # noinspection PyUnreachableCode
         self._convert_matrices(
             CSVPerCell(
                 'GSE81547_RAW',
@@ -1630,7 +1625,7 @@ class GSE75659(Converter):
                 'GSE75659_RAW',
                 sep='\t',
                 expr_column=2,
-                name=name,
+                cohort=name,
                 path_filter=pf
             )
             for (name, pf)
