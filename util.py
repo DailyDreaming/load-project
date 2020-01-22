@@ -88,12 +88,18 @@ def get_target_project_dirs(uuids: bool = False, root_dir: Path = None) -> List[
         root_dir = Path('projects')
 
     accessions = get_skunk_accessions()
-    return [
+    acc_links = [
         path
         for path
         in root_dir.iterdir()
-        if (path.is_dir()
-            and (path.is_symlink() ^ uuids)
-            and (accessions is None
-                 or path.name in accessions))
+        if path.is_dir() and path.is_symlink() and (accessions is None or path.name in accessions)
     ]
+    if uuids:
+        uuids_dirs = []
+        for acc_link in acc_links:
+            project_uuid = os.readlink(str(acc_link)).rstrip('/')
+            assert project_uuid == generate_project_uuid([acc_link.name])
+            uuids_dirs.append(root_dir / project_uuid)
+        return uuids_dirs
+    else:
+        return acc_links
