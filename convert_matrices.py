@@ -86,7 +86,7 @@ class CSVPerCell:
 
     @property
     def name(self) -> str:
-        return self.directory if self.cohort is None else '.'.join([self.directory, self.cohort])
+        return self.directory if self.cohort is None else '__'.join([self.directory, self.cohort])
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
         paths = (
