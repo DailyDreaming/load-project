@@ -2,7 +2,6 @@ import argparse
 import csv
 import json
 import logging
-import os
 from _pathlib import Path
 import sys
 from typing import (
@@ -53,7 +52,6 @@ class CountCells:
         Count cells in one project
 
         :param accession_id: An accession id with a downloaded matrix file
-        :param save_to_file: If true write the cell count total(s) to a global cell count file
         """
         cell_count = self.get_project_cell_count(accession_id)
         if self.args.write:
@@ -75,7 +73,7 @@ class CountCells:
     @classmethod
     def get_cell_counts(cls):
         if cls.cell_counts_file.exists():
-            with open(cls.cell_counts_file, 'r') as f:
+            with open(str(cls.cell_counts_file), 'r') as f:
                 cell_counts = json.loads(f.read())
             return cell_counts
         else:
@@ -98,7 +96,7 @@ class CountCells:
         elif cell_count is None and accession_id in cell_counts:
             logging.info('Removing accession %s cell count.', accession_id)
             del cell_counts[accession_id]
-        with open(self.cell_counts_file, 'w') as f:
+        with open(str(self.cell_counts_file), 'w') as f:
             f.write(json.dumps(cell_counts, sort_keys=True, indent='    '))
         return True
 
@@ -109,18 +107,19 @@ class CountCells:
         :param accession_id: An accession id that has downloaded matrix file(s)
         :return: A count of cells
         """
-        if not os.path.isdir(f'projects/{accession_id}'):
-            logging.warning('Unable to find path %s', f'projects/{accession_id}')
-            return None
-        total_count = 0
-        for file in Path(f'projects/{accession_id}/matrices').glob('**/*'):
-            if file.is_file() and file.name.endswith(('.mtx', '.mtx.gz')):
-                cell_count = self.count_cells(file)
-                logging.info('Cell count in %s is %s', file, cell_count)
-                if cell_count is not None:
-                    total_count += cell_count
-        logging.info('Total cell count in %s is %s', accession_id, total_count)
-        return total_count
+        total_cell_count = 0
+        for mtx_file in Path(f'projects/{accession_id}/matrices').glob('**/matrix.mtx.gz'):
+            cell_count_from_matrix = self.count_cells(mtx_file)
+            logging.info('Cell count in %s is %s', mtx_file, cell_count_from_matrix)
+            if cell_count_from_matrix is not None:
+                total_cell_count += cell_count_from_matrix
+            barcodes_file = mtx_file.parent / 'barcodes.tsv.gz'
+            cell_count_from_barcodes = self.count_cells_from_barcodes(barcodes_file)
+            if cell_count_from_matrix != cell_count_from_barcodes:
+                logging.warning('Cell count mismatch found for %s: %s vs %s',
+                                mtx_file.parent, cell_count_from_matrix, cell_count_from_barcodes)
+        logging.info('Total cell count in %s is %s', accession_id, total_cell_count)
+        return total_cell_count
 
     def count_cells(self, matrix_file: Path) -> Union[int, None]:
         """
@@ -131,27 +130,31 @@ class CountCells:
         """
         with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
             first_line_length = len(csv_file.readline().strip())
+            assert first_line_length > 0, f'File has no first line "{matrix_file}"'
             csv_file.seek(0)
-            if first_line_length:
-                dialect = csv.Sniffer().sniff(csv_file.read(first_line_length))
-            else:
-                logging.error(f'File has no first line "{matrix_file}"')
-                return None
-        barcode_indexes = set()
+            dialect = csv.Sniffer().sniff(csv_file.read(first_line_length))
+        barcode_indexes = None
         with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
             csv_reader = csv.reader(csv_file, dialect)
-            for row in csv_reader:
+            for line_num, row in enumerate(csv_reader):
                 if not row[0].startswith('%'):  # skip comment lines in the csv
-                    assert len(row) == 3
-                    if not barcode_indexes:
+                    assert len(row) == 3, f'{matrix_file} has line {line_num} with {len(row)} columns instead of 3'
+                    if barcode_indexes is None:
                         # The first non-comment line contains the dimensions
                         # of the matrix and the number of non-zero cells in
                         # that matrix.
                         if self.args.fast:
                             return int(row[1])
+                        else:
+                            barcode_indexes = set()
                     else:
                         barcode_indexes.add(row[1])  # 2nd column is barcode
         return len(barcode_indexes)
+
+    def count_cells_from_barcodes(self, barcodes_file: Path) -> Union[int, None]:
+        with open_maybe_gz(barcodes_file,  'rt') as f:
+            next(f)  # skip header line
+            return sum(1 for _ in f)
 
 
 if __name__ == '__main__':
