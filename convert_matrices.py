@@ -614,7 +614,7 @@ class GSE113197(Converter):
                 'GSE113197_RAW',
                 path_filter=lambda p: not p.name.endswith('Matrix.txt.gz'),
                 sep=' ',
-                entry_filter=methodcaller('__delitem__', 0)
+                entry_filter=methodcaller('__delitem__', 1)
             ),
             *[
                 CSV('GSE113197_RAW/' + mat, sep='\t')
@@ -1762,7 +1762,7 @@ class GSE132566(Converter):
             CSVPerCell(
                 'GSE132566_RAW',
                 sep='\t',
-                entry_filter=methodcaller('__delitem__', 0)
+                entry_filter=methodcaller('__delitem__', 1)
             )
         )
 
