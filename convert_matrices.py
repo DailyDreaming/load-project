@@ -56,13 +56,15 @@ class CSV:
     sep: str = ','
     rows_are_genes: bool = True
     row_filter: Optional[RowFilter] = None
+    kwargs: Optional[dict] = None
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
         converter = CSVConverter(
             input_file=input_dir / self.name,
             delimiter=self.sep,
             rows_are_genes=self.rows_are_genes,
-            row_filter=self.row_filter)
+            row_filter=self.row_filter,
+            **self.kwargs)
         converter.convert(output_dir)
 
 
@@ -970,12 +972,17 @@ class GSE127969(Converter):
     """
 
     def _convert(self):
-        # Fails with a UnicodeError due to fancy quotation marks (0x93 0x94)
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/114')
-        # noinspection PyUnreachableCode
         self._convert_matrices(
-            CSV('GSE127969_counts_TPM_ALL.csv.gz', sep='\t')
+            CSV(
+                'GSE127969_counts_TPM_ALL.csv.gz',
+                sep='\t',
+                row_filter=self._filter,
+                kwargs=dict(encoding='latin-1'))
         )
+
+    def _filter(self, row: List[str]):
+        if row[0].startswith('\x93') or row[0].endswith('\x94'):
+            row[0] = row[0].replace('\x93', '').replace('\x94', '')
 
 
 class GSE75478(Converter):

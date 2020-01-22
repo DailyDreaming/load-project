@@ -108,7 +108,8 @@ class CSVConverter(AbstractCSVConverter):
                  input_file: Path,
                  delimiter: str = ',',
                  rows_are_genes: bool = True,
-                 row_filter: Optional[RowFilter] = None):
+                 row_filter: Optional[RowFilter] = None,
+                 **kwargs):
         """
         :param input_file: The input csv file
         :param delimiter: Delimiter character in csv
@@ -119,9 +120,10 @@ class CSVConverter(AbstractCSVConverter):
         super().__init__(rows_are_genes, row_filter)
         self.input_file = input_file
         self.delimiter = delimiter
+        self.kwargs = kwargs
 
     def get_rows(self) -> Iterable[List[str]]:
-        with open_maybe_gz(self.input_file, 'rt', newline='') as csv_file:
+        with open_maybe_gz(self.input_file, 'rt', newline='', **self.kwargs) as csv_file:
             for row in csv.reader(csv_file, delimiter=self.delimiter):
                 yield row
 
