@@ -7,3 +7,5 @@ pandas==0.25.3
 dataclasses==0.7
 h5py==2.10.0
 boto3==1.10.40
+matplotlib==3.0.3
+colorcet==2.0.2

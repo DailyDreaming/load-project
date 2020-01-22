@@ -4,6 +4,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Union,
 )
 import uuid
 
@@ -30,7 +31,7 @@ def open_maybe_gz(path, mode: str, **kwargs):
         raise ValueError("Unsupported mode (must be 'rb' or 'rt'):", mode)
 
 
-def generate_project_uuid(geo_accessions: Sequence[str]) -> str:
+def generate_project_uuid(geo_accessions: Union[str, Sequence[str]]) -> str:
     """
     Deterministically generate a project UUID based on one or more GEO accession ids.
     """
