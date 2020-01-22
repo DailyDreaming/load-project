@@ -5,6 +5,7 @@ import json
 import os
 import sys
 
+from more_itertools import one
 from openpyxl import load_workbook
 
 from count_cells import CountCells
@@ -808,15 +809,18 @@ def generate_analysis_protocol_json(output_dir, bundle_uuid):
 
 
 def generate_sequencing_protocol_json(wb, output_dir, bundle_uuid):
-    file_name = 'sequencing_protocol_0.json'
     sequencing_protocol_data = parse_sequencing_protocol_data_from_xlsx(wb)
-    sequencing_protocol_json = create_sequencing_protocol_json(
-        data=sequencing_protocol_data,
-        file_uuid=generate_file_uuid(bundle_uuid, file_name)
-    )
-    with open(f'{output_dir}/{file_name}', 'w') as f:
-        f.write(json.dumps(sequencing_protocol_json, indent=4))
-    print(f'"{output_dir}/{file_name}" successfully written.')
+    lengths = set(map(len, sequencing_protocol_data.values()))
+    for i in range(one(lengths)):
+        file_name = f'sequencing_protocol_{i}.json'
+        sequencing_protocol_json = create_sequencing_protocol_json(
+            data=sequencing_protocol_data,
+            file_uuid=generate_file_uuid(bundle_uuid, file_name),
+            i=i
+        )
+        with open(f'{output_dir}/{file_name}', 'w') as f:
+            json.dump(sequencing_protocol_json, f, indent=4)
+        print(f'"{output_dir}/{file_name}" successfully written.')
 
 
 def generate_analysis_json(bundle_uuid, output_dir):
