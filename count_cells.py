@@ -2,7 +2,6 @@ import argparse
 import csv
 import json
 import logging
-import os
 from _pathlib import Path
 import sys
 from typing import (
@@ -74,7 +73,7 @@ class CountCells:
     @classmethod
     def get_cell_counts(cls):
         if cls.cell_counts_file.exists():
-            with open(cls.cell_counts_file, 'r') as f:
+            with open(str(cls.cell_counts_file), 'r') as f:
                 cell_counts = json.loads(f.read())
             return cell_counts
         else:
@@ -97,7 +96,7 @@ class CountCells:
         elif cell_count is None and accession_id in cell_counts:
             logging.info('Removing accession %s cell count.', accession_id)
             del cell_counts[accession_id]
-        with open(self.cell_counts_file, 'w') as f:
+        with open(str(self.cell_counts_file), 'w') as f:
             f.write(json.dumps(cell_counts, sort_keys=True, indent='    '))
         return True
 
@@ -108,27 +107,19 @@ class CountCells:
         :param accession_id: An accession id that has downloaded matrix file(s)
         :return: A count of cells
         """
-        if not os.path.isdir(f'projects/{accession_id}'):
-            logging.warning('Unable to find path %s', f'projects/{accession_id}')
-            return None
-        cell_counts = {}
-        for file in Path(f'projects/{accession_id}/matrices').glob('**/*'):
-            if file.is_file():
-                if file.parent.name not in cell_counts:
-                    cell_counts[file.parent.name] = {'mtx': 0, 'barcodes': 0}
-                if file.name.endswith('.mtx.gz'):
-                    cell_count = self.count_cells(file)
-                    logging.info('Cell count in %s is %s', file, cell_count)
-                    if cell_count is not None:
-                        cell_counts[file.parent.name]['mtx'] += cell_count
-                elif file.name in ('barcodes.gz', 'barcodes.tsv.gz'):
-                    cell_counts[file.parent.name]['barcodes'] += self.count_cells_from_barcodes(file)
-        for key in cell_counts:
-            if cell_counts[key]['mtx'] != cell_counts[key]['barcodes']:
+        total_cell_count = 0
+        for mtx_file in Path(f'projects/{accession_id}/matrices').glob('**/matrix.mtx.gz'):
+            cell_count_from_matrix = self.count_cells(mtx_file)
+            logging.info('Cell count in %s is %s', mtx_file, cell_count_from_matrix)
+            if cell_count_from_matrix is not None:
+                total_cell_count += cell_count_from_matrix
+            barcodes_file = mtx_file.parent / 'barcodes.tsv.gz'
+            cell_count_from_barcodes = self.count_cells_from_barcodes(barcodes_file)
+            if cell_count_from_matrix != cell_count_from_barcodes:
                 logging.warning('Cell count mismatch found for %s: %s vs %s',
-                                key, cell_counts[key]['mtx'], cell_counts[key]['barcodes'])
-        logging.info('Total cell count in %s is %s', accession_id, sum([d['mtx'] for d in cell_counts.values()]))
-        return sum([d['mtx'] for d in cell_counts.values()])
+                                mtx_file.parent, cell_count_from_matrix, cell_count_from_barcodes)
+        logging.info('Total cell count in %s is %s', accession_id, total_cell_count)
+        return total_cell_count
 
     def count_cells(self, matrix_file: Path) -> Union[int, None]:
         """
