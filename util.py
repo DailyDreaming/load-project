@@ -83,23 +83,31 @@ def get_target_spreadsheets() -> List[Path]:
     return spreadsheet_paths
 
 
-def get_target_project_dirs(uuids: bool = False, root_dir: Path = None) -> List[Path]:
-    if root_dir is None:
-        root_dir = Path('projects')
+def get_target_project_dirs(follow_links: bool = False) -> List[Path]:
+    """
+    Return all or a subset of the project directories, if that subset is
+    configured.
 
+    :param follow_links: If True, follow the symbolic accession links and return
+                         Path instances referring to the physical, UUID-based
+                         project directories. Otherwise Path instances referring
+                         to the symbolic accession links will be returned.
+    """
+    projects_dir = Path('projects')
     accessions = get_skunk_accessions()
-    acc_links = [
-        path
-        for path
-        in root_dir.iterdir()
+    symlinks = [
+        path for path in projects_dir.iterdir()
         if path.is_dir() and path.is_symlink() and (accessions is None or path.name in accessions)
     ]
-    if uuids:
-        uuids_dirs = []
-        for acc_link in acc_links:
-            project_uuid = os.readlink(str(acc_link)).rstrip('/')
-            assert project_uuid == generate_project_uuid([acc_link.name])
-            uuids_dirs.append(root_dir / project_uuid)
-        return uuids_dirs
+    if follow_links:
+        project_dirs = []
+        for symlink in symlinks:
+            project_dir = symlink.follow()
+            assert project_dir.is_dir() and not project_dir.is_symlink()
+            accession = symlink.name
+            project_uuid = generate_project_uuid([accession])
+            assert project_dir.name == project_uuid
+            project_dirs.append(project_dir)
+        return project_dirs
     else:
-        return acc_links
+        return symlinks

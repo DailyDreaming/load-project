@@ -1,8 +1,6 @@
-import argparse
 import json
 import logging
 import re
-import sys
 import unicodedata
 
 import boto3
@@ -13,25 +11,44 @@ from util import get_target_project_dirs
 log = logging.getLogger(__name__)
 
 
-class ProjectMatrixUploader:
+class Main:
 
     def __init__(self):
         self.s3 = boto3.resource('s3')
 
-    def upload_files_to_bucket(self, bucket_name: str, project_dir: Path):
-        key_prefix = 'project-assets/project-matrices/'
+    bucket_name = 'ux-dev.project-assets.data.humancellatlas.org'
+
+    key_prefix = 'project-assets/project-matrices/'
+
+    object_acl = {
+        'Owner': {
+            'DisplayName': 'czi-aws-admins+humancellatlas',
+            'ID': '76fe35006be54bbb55cf619bf94684704f14362141f2422a19c3af23e080a148'
+        },
+        'Grants': [
+            {
+                'Grantee': {
+                    'URI': 'http://acs.amazonaws.com/groups/global/AllUsers',
+                    'Type': 'Group'
+                },
+                'Permission': 'READ'
+            }
+        ]
+    }
+
+    def upload_files_to_bucket(self, project_dir: Path):
         project_uuid = project_dir.name
         bundle_dir = project_dir / 'bundle'
-        # FIXME add later to check other donor_organism files
         file_extension = '.mtx.zip'
-        matrix_path = bundle_dir / ('matrix' + file_extension)
-        if matrix_path.exists():
+        matrix_file = bundle_dir / ('matrix' + file_extension)
+        if matrix_file.exists():
             species_name = self.get_species(bundle_dir)
             if species_name is None:
-                log.warning('Could not determine species name. Skipping project %s.', project_uuid)
+                log.warning('Could not determine species name, skipping project %s.', project_uuid)
             else:
-                key = f'{key_prefix}{project_uuid}.{species_name}{file_extension}'
-                obj = self.s3.Object(bucket_name, key)
+                file_name = f'{project_uuid}.{species_name}{file_extension}'
+                key = self.key_prefix + file_name
+                obj = self.s3.Object(self.bucket_name, key)
                 try:
                     last_modified = obj.last_modified.timestamp()
                 except self.s3.meta.client.exceptions.ClientError as e:
@@ -41,30 +58,16 @@ class ProjectMatrixUploader:
                         raise
                 # Timezone check unnecessary since S3 date-time is HTTP standards compliant,
                 # which uses GMT. Also note Unix time uses UTC as standard.
-                if int(matrix_path.stat().st_mtime) >= int(last_modified):
-                    content_disposition = f'attachment;filename="{project_uuid}.{species_name}{file_extension}"'
-                    log.info(f'Uploading %s to s3://%s/%s.', matrix_path, bucket_name, key)
-                    with open(str(matrix_path), 'rb') as mf:
-                        obj.put(Body=mf,
+                if int(matrix_file.stat().st_mtime) >= int(last_modified):
+                    content_disposition = f'attachment;filename="{file_name}"'
+                    log.info(f'Uploading %s to s3://%s/%s.', matrix_file, self.bucket_name, key)
+                    with open(str(matrix_file), 'rb') as f:
+                        obj.put(Body=f,
                                 ContentDisposition=content_disposition,
                                 ContentType='application/zip, application/octet-stream')
-                    obj.Acl().put(AccessControlPolicy={
-                        'Owner': {
-                            'DisplayName': 'czi-aws-admins+humancellatlas',
-                            'ID': '76fe35006be54bbb55cf619bf94684704f14362141f2422a19c3af23e080a148'
-                        },
-                        'Grants': [
-                            {
-                                'Grantee': {
-                                    'URI': 'http://acs.amazonaws.com/groups/global/AllUsers',
-                                    'Type': 'Group'
-                                },
-                                'Permission': 'READ'
-                            }
-                        ]
-                    })
+                    obj.Acl().put(AccessControlPolicy=self.object_acl)
                 else:
-                    log.info(f'%s is up to date.', matrix_path)
+                    log.info('%s is up to date.', matrix_file)
         else:
             log.warning('Found no matrix asset for project %s.', project_uuid)
 
@@ -81,17 +84,12 @@ class ProjectMatrixUploader:
             log.warning('Failed to load donor metadata', exc_info=True)
             return None
 
+    def run(self):
+        for project_dir in get_target_project_dirs(follow_links=True):
+            main.upload_files_to_bucket(project_dir)
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-
-    parser = argparse.ArgumentParser('Uploads all matrix files from a single directory to a S3 bucket.')
-    parser.add_argument('-b', '--bucket', default='ux-dev.project-assets.data.humancellatlas.org')
-    parser.add_argument('-d', '--directory', default='projects')
-    options = parser.parse_args(sys.argv[1:])
-    uploader = ProjectMatrixUploader()
-
-    projects = get_target_project_dirs(uuids=True, root_dir=Path(options.directory))
-
-    for project in projects:
-        uploader.upload_files_to_bucket(options.bucket, project)
+    main = Main()
+    main.run()

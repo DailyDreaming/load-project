@@ -20,7 +20,7 @@ def main():
     hca_config["DSSClient"].swagger_url = f"https://dss.dev.data.humancellatlas.org/v1/swagger.json"
     dss = DSSClient(config=hca_config)
 
-    projects = get_target_project_dirs(uuids=True)
+    projects = get_target_project_dirs(follow_links=True)
 
     for project in projects:
         log.info('Uploading %s', project)

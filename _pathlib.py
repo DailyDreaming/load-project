@@ -10,7 +10,7 @@ class Path(pathlib.PosixPath):
 
     # Work around https://bugs.python.org/issue30618, fixed on 3.7+
 
-    def readlink(self):
+    def readlink(self) -> 'Path':
         """
         Return the path to which the symbolic link points.
         """
@@ -18,6 +18,21 @@ class Path(pathlib.PosixPath):
         obj = self._from_parts((path,), init=False)
         obj._init(template=self)
         return obj
+
+    def follow(self) -> 'Path':
+        """
+        This methods performs one level of symbolic link resolution. For paths
+        representing a symbolic link with an absolute target, this methods is
+        equivalent to readlink(). For symbolic links with relative targets, this
+        method returns the result of appending the target to the parent of this
+        path. Unless you need the target of the symbolic link verbatim, you
+        should prefer this method over readlink().
+        """
+        target = self.readlink()
+        if target.is_absolute():
+            return target
+        else:
+            return self.parent / target
 
     # Sorely needed, added in 3.8
 
