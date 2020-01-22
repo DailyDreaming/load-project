@@ -622,11 +622,12 @@ def process_section(section, prefix='', verify=False):
     for i, row in enumerate(section.rows):
 
         if not header_section:
-            for j, field in enumerate(cells):
-                if field in project_data:
-                    project_data[field].append(row[j].value)
-                else:
-                    project_data[field] = [row[j].value]
+            if any(cell.value is not None for cell in row):
+                for j, field in enumerate(cells):
+                    if field in project_data:
+                        project_data[field].append(row[j].value)
+                    else:
+                        project_data[field] = [row[j].value]
 
         row_value = row[0].value or ''
         if header_section and row_value.startswith(prefix):
