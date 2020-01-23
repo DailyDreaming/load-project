@@ -812,7 +812,11 @@ class GSE128639(Converter):
         # Seems that the same samples are spread across 3 files with different genes in each?
         # On a second pass I (Jesse), noticed an expression file that seems usable
         self._convert_matrices(
-            CSV('GSE128639_RAW/GSM3681518_MNC_RNA_counts.tsv.gz', sep='\t')
+            CSV(
+                'GSE128639_RAW/GSM3681518_MNC_RNA_counts.tsv.gz',
+                sep='\t',
+                row_filter=self._fix_short_rows(33455)
+            )
         )
 
 
@@ -873,11 +877,12 @@ class GSE94820(Converter):
 
     def _convert(self):
         self._convert_matrices(*[
-            CSV(csv, sep='\t')
-            for csv in (
-                'GSE94820_raw.expMatrix_DCnMono.discovery.set.submission.txt.gz',
-                'GSE94820_raw.expMatrix_deeper.characterization.set.submission.txt.gz'
-            )
+            CSV(csv, sep='\t', row_filter=self._fix_short_rows(nrow))
+            for csv, nrow
+            in [
+                ('GSE94820_raw.expMatrix_DCnMono.discovery.set.submission.txt.gz', 1142),
+                ('GSE94820_raw.expMatrix_deeper.characterization.set.submission.txt.gz', 1245)
+            ]
         ])
 
 
@@ -964,7 +969,11 @@ class GSE93374(Converter):
 
     def _convert(self):
         self._convert_matrices(
-            CSV('GSE93374_Merged_all_020816_DGE.txt.gz', sep='\t')
+            CSV(
+                'GSE93374_Merged_all_020816_DGE.txt.gz',
+                sep='\t',
+                row_filter=self._fix_short_rows(21087)
+            )
         )
 
 
