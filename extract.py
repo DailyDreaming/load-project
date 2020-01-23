@@ -64,23 +64,34 @@ def extract_recursive(compressed_path: Path):
         # that could be itself be deleted and re-extracted from a tar file
         for file in sorted(compressed_path.iterdir(), key=methodcaller('is_dir')):
             extract_recursive(file)
-    elif compressed_path.name.endswith(('.tar', '.tar.gz')):
-        assert compressed_path.is_file()
-        logging.debug('Extracting file %s', compressed_path)
-        base_file_name = get_base_file_name(compressed_path.name)
-        assert 0 < len(base_file_name) < len(compressed_path.name)
-        dest_path = compressed_path.parent / base_file_name
-        extract_file(compressed_path, dest_path, compression='tar')  # Extract the tar file to a subfolder
-        extract_recursive(dest_path)  # Check subfolder for tar files and extract them
-    elif compressed_path.name in ('experiment-metadata.zip',
-                                  'experiment-metadata.zip',
-                                  'marker-genes.zip',
-                                  'normalised.zip',
-                                  'quantification-raw.zip'):
-        # This is a zip download from SCXA
-        base_file_name = get_base_file_name(compressed_path.name)
-        dest_path = compressed_path.parent / base_file_name
-        extract_file(compressed_path, dest_path, compression='zip')
+    else:
+        is_zip = compressed_path.name in (
+            'experiment-metadata.zip',
+            'marker-genes.zip',
+            'normalised.zip',
+            'quantification-raw.zip')
+        is_tar = compressed_path.name.endswith(('.tar', '.tar.gz'))
+        if is_tar or is_zip:
+            logging.debug('Examining file %s', compressed_path)
+            base_file_name = get_base_file_name(compressed_path.name)
+            assert 0 < len(base_file_name) < len(compressed_path.name)
+            dest_path = compressed_path.parent / base_file_name
+            assert compressed_path.is_file()
+            if is_tar:
+                extract_file(compressed_path, dest_path, compression='tar')  # Extract the tar file to a subfolder
+                extract_recursive(dest_path)  # Check subfolder for tar files and extract them
+            elif is_zip:
+                # This is a zip download from SCXA
+                extract_file(compressed_path, dest_path, compression='zip')
+            else:
+                assert False
+
+
+def temp(compressed_path):
+    base_file_name = get_base_file_name(compressed_path.name)
+    assert 0 < len(base_file_name) < len(compressed_path.name)
+    dest_path = compressed_path.parent / base_file_name
+    return dest_path
 
 
 def get_base_file_name(file_name: str) -> str:
