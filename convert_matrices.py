@@ -9,7 +9,7 @@ from concurrent.futures.process import ProcessPoolExecutor
 from functools import partial
 import gzip
 import logging
-from operator import methodcaller
+from operator import delitem
 import os
 from typing import (
     Callable,
@@ -78,11 +78,15 @@ class H5:
 @dataclass(frozen=True)
 class CSVPerCell:
     directory: str
-    name: str = 'cell_files'
+    cohort: Optional[str] = None
     path_filter: Optional[Callable[[Path], bool]] = None
-    entry_filter: Optional[RowFilter] = None
+    row_filter: Optional[RowFilter] = None
     sep: str = ','
     expr_column: int = 1
+
+    @property
+    def name(self) -> str:
+        return self.directory if self.cohort is None else (self.directory + '/' + self.cohort)
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
         paths = (
@@ -94,7 +98,7 @@ class CSVPerCell:
         converter = CSVPerCellConverter(
             input_files=paths,
             delimiter=self.sep,
-            entry_filter=self.entry_filter,
+            row_filter=self.row_filter,
             expr_column=self.expr_column
         )
         converter.convert(output_dir)
@@ -122,6 +126,7 @@ class Converter(metaclass=ABCMeta):
         return self.bundle_dir / 'matrix.mtx.zip'
 
     def matrix_dir(self, input_: str) -> Path:
+        assert '__' not in input_
         return self.matrices_dir / input_.replace('/', '__')
 
     def convert(self):
@@ -531,7 +536,6 @@ class GSE129798(Converter):
         # There are two matrices present but the smaller one has 100% barcode
         # overlap with the larger one. The larger one is also named "final" so
         # I'm only including the larger one.
-        # noinspection PyUnreachableCode
         prefix = 'GSE129798_Mouse_Adult_DGE_final/Mouse_Adult_DGE_final'
         self._copy_matrices(
             Matrix(
@@ -587,12 +591,8 @@ class GSE97104(Converter):
     """
 
     def _convert(self):
-        # NOTE: this file contains a comment (#) and multiple blank lines at the beginning,
-        # not sure if Daniel's script handles this
-
         # There are other files in RAW but the comments claims that this one is
         # the result of their concatenation
-        # noinspection PyUnreachableCode
         self._convert_matrices(
             CSV('GSE97104_all_umi.mtx.txt.gz', sep='\t', row_filter=self._fix_short_rows(35017))
         )
@@ -612,13 +612,15 @@ class GSE113197(Converter):
 
     def _convert(self):
         # row compatibility verified using ~/load-project.nadove/check_genes
-        # noinspection PyUnreachableCode
         self._convert_matrices(
             CSVPerCell(
                 'GSE113197_RAW',
                 path_filter=lambda p: not p.name.endswith('Matrix.txt.gz'),
                 sep=' ',
-                entry_filter=methodcaller('__delitem__', 0)
+                # CSVPerCellConverter inserts the filename as the first row
+                # entry to serve as a barcode. In order to remove headers from
+                # these files, we must therefore delete the 2ND entry.
+                row_filter=lambda row: delitem(row, 1)
             ),
             *[
                 CSV('GSE113197_RAW/' + mat, sep='\t')
@@ -1543,7 +1545,6 @@ class GSE81547(Converter):
         # https://data.humancellatlas.org/explore/projects/cddab57b-6868-4be4-806f-395ed9dd635a/expression-matrices
 
         # row compatibility verified using ~/load-project.nadove/check_genes
-        # noinspection PyUnreachableCode
         self._convert_matrices(
             CSVPerCell(
                 'GSE81547_RAW',
@@ -1630,7 +1631,7 @@ class GSE75659(Converter):
                 'GSE75659_RAW',
                 sep='\t',
                 expr_column=2,
-                name=name,
+                cohort=name,
                 path_filter=pf
             )
             for (name, pf)
@@ -1767,7 +1768,7 @@ class GSE132566(Converter):
             CSVPerCell(
                 'GSE132566_RAW',
                 sep='\t',
-                entry_filter=methodcaller('__delitem__', 0)
+                row_filter=lambda row: delitem(row, 1)
             )
         )
 

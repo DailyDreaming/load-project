@@ -131,17 +131,18 @@ class CSVPerCellConverter(AbstractCSVConverter):
     def __init__(self,
                  input_files: Iterable[Path],
                  delimiter: str = ',',
-                 entry_filter: Optional[RowFilter] = None,
+                 row_filter: Optional[RowFilter] = None,
                  expr_column: int = 1):
         self.filepaths = input_files
         self.delimiter = delimiter
         self.expr_column = expr_column
-        super().__init__(False, entry_filter)
+        super().__init__(False, row_filter)
 
     def get_rows(self) -> Iterable[List[str]]:
         first = True
         for path in self.filepaths:
-            cell = pd.read_csv(path, sep=self.delimiter, compression='infer', header=None, comment='#')
+            # String conversion needed since whitespace is handled in superclass
+            cell = pd.read_csv(path, sep=self.delimiter, compression='infer', header=None, comment='#').astype(str)
             if first:
                 first = False
                 # provide header (gene names) with empty first column
