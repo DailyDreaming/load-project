@@ -9,7 +9,7 @@ from concurrent.futures.process import ProcessPoolExecutor
 from functools import partial
 import gzip
 import logging
-from operator import methodcaller
+from operator import delitem
 import os
 from typing import (
     Callable,
@@ -80,13 +80,13 @@ class CSVPerCell:
     directory: str
     cohort: Optional[str] = None
     path_filter: Optional[Callable[[Path], bool]] = None
-    entry_filter: Optional[RowFilter] = None
+    row_filter: Optional[RowFilter] = None
     sep: str = ','
     expr_column: int = 1
 
     @property
     def name(self) -> str:
-        return self.directory if self.cohort is None else '__'.join([self.directory, self.cohort])
+        return self.directory if self.cohort is None else (self.directory + '/' + self.cohort)
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
         paths = (
@@ -98,7 +98,7 @@ class CSVPerCell:
         converter = CSVPerCellConverter(
             input_files=paths,
             delimiter=self.sep,
-            entry_filter=self.entry_filter,
+            row_filter=self.row_filter,
             expr_column=self.expr_column
         )
         converter.convert(output_dir)
@@ -126,6 +126,7 @@ class Converter(metaclass=ABCMeta):
         return self.bundle_dir / 'matrix.mtx.zip'
 
     def matrix_dir(self, input_: str) -> Path:
+        assert '__' not in input_
         return self.matrices_dir / input_.replace('/', '__')
 
     def convert(self):
@@ -172,6 +173,8 @@ class Converter(metaclass=ABCMeta):
                     idempotent_link(src, dst)
 
     def _convert_matrices(self, *inputs: Union[CSV, H5, CSVPerCell]):
+        names = [input_.name for input_ in inputs]
+        assert len(names) == len(set(names))
         expected_files = {'matrix.mtx.gz', 'genes.tsv.gz', 'barcodes.tsv.gz'}
         for input_ in inputs:
             output_dir = self.matrix_dir(input_.name)
@@ -614,7 +617,10 @@ class GSE113197(Converter):
                 'GSE113197_RAW',
                 path_filter=lambda p: not p.name.endswith('Matrix.txt.gz'),
                 sep=' ',
-                entry_filter=methodcaller('__delitem__', 1)
+                # CSVPerCellConverter inserts the filename as the first row
+                # entry to serve as a barcode. In order to remove headers from
+                # these files, we must therefore delete the 2ND entry.
+                row_filter=lambda row: delitem(row, 1)
             ),
             *[
                 CSV('GSE113197_RAW/' + mat, sep='\t')
@@ -1762,7 +1768,7 @@ class GSE132566(Converter):
             CSVPerCell(
                 'GSE132566_RAW',
                 sep='\t',
-                entry_filter=methodcaller('__delitem__', 1)
+                row_filter=lambda row: delitem(row, 1)
             )
         )
 
