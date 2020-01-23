@@ -9,7 +9,7 @@ from urllib.request import urlretrieve
 
 import requests
 
-from download import create_or_update_symlink
+from download import create_or_update_symlink, download_file
 
 log = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ class FileURL(NamedTuple):
         if not file_path.exists():
             log.info('Downloading new file `%s` from URL `%s`', file_path, self.to_url())
             try:
-                urlretrieve(self.to_url(), filename=file_path)
+                download_file(self.to_url(), file_path)
                 return True
             except Exception:
                 log.warning('Failed to download file `%s` from URL `%s`', exc_info=True)
