@@ -31,14 +31,14 @@ def open_maybe_gz(path, mode: str, **kwargs):
         raise ValueError("Unsupported mode (must be 'rb' or 'rt'):", mode)
 
 
-def generate_project_uuid(geo_accessions: Union[str, Sequence[str]]) -> str:
+def generate_project_uuid(accessions: Union[str, Sequence[str]]) -> str:
     """
     Deterministically generate a project UUID based on one or more GEO accession ids.
     """
-    if isinstance(geo_accessions, str):
-        geo_accessions = [geo_accessions]
+    if isinstance(accessions, str):
+        accessions = [accessions]
     namespace_uuid = uuid.UUID('296e1002-1c99-4877-bb7f-bb6a3b752638')
-    return str(uuid.uuid5(namespace_uuid, ''.join(sorted(geo_accessions))))
+    return str(uuid.uuid5(namespace_uuid, ''.join(sorted(accessions))))
 
 
 def generate_file_uuid(bundle_uuid: str, file_name: str) -> str:

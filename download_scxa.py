@@ -10,6 +10,7 @@ from urllib.request import urlretrieve
 import requests
 
 from download import create_or_update_symlink, download_file
+from util import generate_project_uuid
 
 log = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ def project_files(accession):
 
 
 def make_and_link_download_dir(accession, path):
-    uuid_ = uuid.uuid5(uuid.UUID(namespace_uuid), accession)
+    uuid_ = generate_project_uuid(accession)
     project_dir = path / str(uuid_)
     project_dir.mkdir(exist_ok=True)
     try:
