@@ -100,15 +100,19 @@ def get_target_project_dirs(follow_links: bool = False) -> List[Path]:
         path for path in projects_dir.iterdir()
         if path.is_dir() and path.is_symlink() and (accessions is None or path.name in accessions)
     ]
-    if follow_links:
-        project_dirs = []
-        for symlink in symlinks:
-            project_dir = symlink.follow()
-            assert project_dir.is_dir() and not project_dir.is_symlink()
-            accession = symlink.name
-            project_uuid = generate_project_uuid([accession])
-            assert project_dir.name == project_uuid
-            project_dirs.append(project_dir)
-        return project_dirs
-    else:
-        return symlinks
+
+    # Validate the links even though strictly speaking its only necessary to
+    # follow them when follow_links is on.
+    project_dirs = []
+    for symlink in symlinks:
+        project_dir = symlink.follow()
+        assert project_dir.is_dir()
+        assert not project_dir.is_symlink()
+        assert not project_dir.is_absolute()
+        assert project_dir.parent == projects_dir
+        accession = symlink.name
+        project_uuid = generate_project_uuid([accession])
+        assert project_dir.name == project_uuid
+        project_dirs.append(project_dir)
+
+    return project_dirs if follow_links else symlinks
