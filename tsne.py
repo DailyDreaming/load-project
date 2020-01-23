@@ -66,10 +66,16 @@ class TSNE:
         self.ax_acc = f'E-GEOD-{self.geo_acc[3:]}'
         self.uuid = generate_project_uuid(self.geo_acc)
         self.perplexity = perplexity
-        self.k = self.get_default_k()
-        self.clusters = self.get_clusters()
+        self.k = None
+        self.clusters = None
 
-    def get_default_k(self) -> int:
+    def load(self):
+        if self.k is None:
+            self.k = self._get_default_k()
+        if self.clusters is None:
+            self.clusters = self._get_clusters()
+
+    def _get_default_k(self) -> int:
         """
         Obtain the number of clusters SCXA uses by default when coloring by
          cluster.
@@ -82,7 +88,7 @@ class TSNE:
         )
         return int(one(cluster_info['K'][cluster_info['sel.K']]))
 
-    def get_clusters(self) -> Dict[str, np.ndarray]:
+    def _get_clusters(self) -> Dict[str, np.ndarray]:
         """
         Cluster names mapped to 2xN arrays where each column is a point and the
         rows are X- and Y- coordinates.
@@ -107,6 +113,9 @@ class TSNE:
         """
         Render tSNE using matplotlib.
         """
+        target = output_dir / f'{self.geo_acc}.{save_format}'
+        log.info(f'Rendering {target}')
+
         fig = plt.figure(figsize=[6, 6])
 
         plt.title('Clusters', fontweight='bold')
@@ -147,14 +156,15 @@ class TSNE:
         fig.text(
             x=0.5,
             y=0.0025,
-            text=f'tSNE data imported from {self.tsne_url}',
+            s=f'tSNE data imported from {self.tsne_url}',
             ha='center',
             va='bottom',
             fontsize='x-small'
         )
 
         plt.tight_layout()
-        plt.savefig(output_dir / f'{self.geo_acc}.{save_format}', dpi=dpi)
+        plt.savefig(target, dpi=dpi)
+        plt.close('all')
 
     def upload(self, s3_client, bucket):
         image_file = one(
@@ -165,7 +175,7 @@ class TSNE:
         )
         image_format = image_file.rsplit('.', 1)[-1]
         key = f'project-assets/project-stats/{self.uuid}/tsne.{image_format}'
-        log.info(f'Uploading {self.geo_acc} as {key}')
+        log.info(f'Uploading {image_file} as {key}')
         s3_client.upload_file(
             Bucket=bucket,
             Key=key,
@@ -183,18 +193,21 @@ class TSNE:
             with open(path) as f:
                 value = reader(f)
         except FileNotFoundError:
-            log.info(f'Retrieving {name} (not found in cache)')
-            value = getter()
-            with open(path, 'w') as f:
-                writer(value, f)
+            log.debug(f'Retrieving {name} (not found in cache)')
+            try:
+                value = getter()
+                with open(path, 'w') as f:
+                    writer(value, f)
+            except Exception as e:
+                raise e from None
         else:
-            log.info(f'Loaded {name} from cache')
+            log.debug(f'Loaded {name} from cache')
         return value
 
 
 def main(args):
     do_render = args.render_only or not args.upload_only
-    do_upload = args.upload_only or not not args.render_only
+    do_upload = args.upload_only or not args.render_only
 
     client = boto3.client('s3')
 
@@ -202,16 +215,23 @@ def main(args):
     os.makedirs(cache_dir, exist_ok=True)
 
     for project_dir in get_target_project_dirs():
-        try:
-            tsne = TSNE(project_dir.name, args.perplexity)
-        except HTTPError:
-            log.info(f'Failed to retrieve tSNE data from SCXA for project'
-                     f' {project_dir.name}')
-        else:
-            if do_render:
-                tsne.make_image(args.colormap, args.image_format, args.dpi)
-            if do_upload:
+        tsne = TSNE(project_dir.name, args.perplexity)
+
+        if do_render:
+            try:
+                tsne.load()
+            except HTTPError:
+                log.info(f'Failed to retrieve tSNE data from SCXA for project'
+                         f' {project_dir.name}')
+                continue
+            tsne.make_image(args.colormap, args.image_format, args.dpi)
+
+        if do_upload:
+            try:
                 tsne.upload(client, args.bucket)
+            except ValueError:
+                log.info(f'Nothing to upload for project {project_dir.name}')
+                continue
 
 
 if __name__ == "__main__":
