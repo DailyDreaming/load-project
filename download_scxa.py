@@ -3,7 +3,7 @@ import sys
 import uuid
 from collections import defaultdict
 from concurrent.futures.thread import ThreadPoolExecutor
-from pathlib import Path
+from _pathlib import Path
 from typing import NamedTuple, List
 from urllib.request import urlretrieve
 
