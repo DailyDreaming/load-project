@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 import uuid
 from collections import defaultdict
@@ -9,6 +8,8 @@ from typing import NamedTuple, List
 from urllib.request import urlretrieve
 
 import requests
+
+from download import create_or_update_symlink
 
 log = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ def make_and_link_download_dir(accession, path):
     project_dir = path / str(uuid_)
     project_dir.mkdir(exist_ok=True)
     try:
-        os.symlink(project_dir.absolute(), path / accession)
+        create_or_update_symlink(path / accession, project_dir.name)
     except FileExistsError:
         pass
     scxa_path = project_dir / 'scxa'
