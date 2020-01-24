@@ -651,7 +651,7 @@ class GSE110499(Converter):
                 'GSE110499_GEO_processed_MM_raw_TPM_matrix.txt.gz',
                 sep='\t',
                 # The previous file has a column header for the genes but this one doesn't:
-                row_filter=self._fix_short_rows(172)
+                row_filter=self._fix_short_rows(173)
             )
         )
 
@@ -891,7 +891,7 @@ class GSE94820(Converter):
             CSV(
                 'GSE94820_raw.expMatrix_DCnMono.discovery.set.submission.txt.gz',
                 sep='\t',
-                row_filter=self._fix_short_rows(1142)
+                row_filter=self._fix_short_rows(1141)
             ),
             CSV(
                 'GSE94820_raw.expMatrix_deeper.characterization.set.submission.txt.gz',
