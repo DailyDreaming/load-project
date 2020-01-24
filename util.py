@@ -139,12 +139,13 @@ def update_project_stats(project_dir: Path):
 
     yield stats
 
-    with NamedTemporaryFile(mode='w', dir=str(stats_file.parent), delete=False) as f:
-        try:
+    temporary_file = stats_file.with_suffix(stats_file.suffix + '.tmp')
+    try:
+        with open(str(temporary_file), 'w') as f:
             json.dump(stats, f, sort_keys=True, indent=4)
-        except:
-            Path(f.name).unlink()
-            raise
-        else:
-            logging.info('Writing to %s', stats_file)
-            Path(f.name).rename(stats_file)
+    except:
+        Path(f.name).unlink()
+        raise
+    else:
+        logging.info('Writing to %s', stats_file)
+        Path(f.name).rename(stats_file)
