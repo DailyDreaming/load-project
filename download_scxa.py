@@ -15,9 +15,6 @@ from util import generate_project_uuid
 log = logging.getLogger(__name__)
 
 
-namespace_uuid = '1edd6b61-fd3d-4dee-b911-958413871a5c'
-
-
 def download_projects(path: Path):
     accessions = all_accessions()
     for accession in accessions:
@@ -43,9 +40,10 @@ def download_projects_parallel(path: Path):
         if not all(future.result() for future in futures):
             failed_projects.append(accession)
 
-    print('Failed projects', file=sys.stderr)
-    for project in failed_projects:
-        print(project, file=sys.stderr)
+    if failed_projects:
+        print('Failed projects', file=sys.stderr)
+        for project in failed_projects:
+            print(project, file=sys.stderr)
 
 
 def download_project(accession: str, path: Path):
@@ -117,4 +115,3 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(message)s', level=logging.INFO)
 
     download_projects_parallel(Path('projects'))
-    # download_projects(Path('test'))

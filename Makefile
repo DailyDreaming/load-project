@@ -8,6 +8,7 @@ all:
 
 download:
 	python3 download.py
+	python3 download_scxa.py
 
 extract:
 	python3 extract.py
