@@ -56,7 +56,7 @@ class CSV:
     sep: str = ','
     rows_are_genes: bool = True
     row_filter: Optional[RowFilter] = None
-    kwargs: Optional[dict] = None
+    encoding: Optional[str] = 'utf-8'
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
         converter = CSVConverter(
@@ -64,7 +64,7 @@ class CSV:
             delimiter=self.sep,
             rows_are_genes=self.rows_are_genes,
             row_filter=self.row_filter,
-            **self.kwargs)
+            encoding=self.encoding)
         converter.convert(output_dir)
 
 
@@ -977,12 +977,14 @@ class GSE127969(Converter):
                 'GSE127969_counts_TPM_ALL.csv.gz',
                 sep='\t',
                 row_filter=self._filter,
-                kwargs=dict(encoding='latin-1'))
+                encoding='CP1252')
         )
 
     def _filter(self, row: List[str]):
-        if row[0].startswith('\x93') or row[0].endswith('\x94'):
-            row[0] = row[0].replace('\x93', '').replace('\x94', '')
+        cell = row[0]
+        if cell.startswith('\u201c'):
+            assert cell.endswith('\u201d')
+            row[0] = cell[1:-1]
 
 
 class GSE75478(Converter):
