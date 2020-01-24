@@ -5,6 +5,7 @@ from typing import (
     Optional,
     Sequence,
     Union,
+    MutableMapping,
 )
 import uuid
 
@@ -31,14 +32,14 @@ def open_maybe_gz(path, mode: str, **kwargs):
         raise ValueError("Unsupported mode (must be 'rb' or 'rt'):", mode)
 
 
-def generate_project_uuid(geo_accessions: Union[str, Sequence[str]]) -> str:
+def generate_project_uuid(accessions: Union[str, Sequence[str]]) -> str:
     """
     Deterministically generate a project UUID based on one or more GEO accession ids.
     """
-    if isinstance(geo_accessions, str):
-        geo_accessions = [geo_accessions]
+    if isinstance(accessions, str):
+        accessions = [accessions]
     namespace_uuid = uuid.UUID('296e1002-1c99-4877-bb7f-bb6a3b752638')
-    return str(uuid.uuid5(namespace_uuid, ''.join(sorted(geo_accessions))))
+    return str(uuid.uuid5(namespace_uuid, ''.join(sorted(accessions))))
 
 
 def generate_file_uuid(bundle_uuid: str, file_name: str) -> str:
@@ -65,23 +66,34 @@ def get_skunk_accessions() -> Optional[List[str]]:
         return [acc.strip() for acc in accessions.split(',') if acc.strip()]
 
 
-def get_target_spreadsheets() -> List[Path]:
+def get_target_spreadsheets() -> MutableMapping[str, Path]:
     accessions = get_skunk_accessions()
-    spreadsheet_paths = []
+    paths_by_accession = {}
     ext = '.0.xlsx'
+
+    def get_accession_from_path(path):
+        assert path.name.endswith(ext)
+        return path.name[:-len(ext)]
+
     for sub_dir in ('existing', 'new'):
         src_dir = Path('spreadsheets') / sub_dir
-        subdir_paths = [
+        paths = list(src_dir.iterdir())
+        paths = [
             path
-            for path
-            in src_dir.iterdir()
-            if (path.is_file()
-                and path.name.endswith(ext)
-                and (accessions is None
-                     or path.name.replace(ext, '') in accessions))
+            for path in paths
+            if path.is_file() and path.name.endswith(ext)
         ]
-        spreadsheet_paths.extend(subdir_paths)
-    return spreadsheet_paths
+        subdir_paths_by_accession = {
+            get_accession_from_path(path): path
+            for path in paths
+        }
+        assert len(paths) == len(subdir_paths_by_accession)
+        subdir_paths_by_accession = {
+            accession: path for accession, path in subdir_paths_by_accession.items()
+            if accessions is None or accession in accessions
+        }
+        paths_by_accession.update(subdir_paths_by_accession)
+    return paths_by_accession
 
 
 def get_target_project_dirs(follow_links: bool = False) -> List[Path]:

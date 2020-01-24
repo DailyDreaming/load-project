@@ -20,7 +20,7 @@ from create_project import (
 from util import get_target_spreadsheets
 
 
-xlsxs = get_target_spreadsheets()
+xlsxs = get_target_spreadsheets().values()
 
 for i, xlsx in enumerate(xlsxs):
     print(f'\n% Progress: {i + 1}/{len(xlsxs)} projects ({xlsx.name}).\n'

@@ -730,6 +730,9 @@ def parse_donor_organism_data_from_xlsx(wb):
 
 
 def write_project_json(project_json, output_dir):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
     with open(f'{output_dir}/project_0.json', 'w') as f:
         f.write(json.dumps(project_json, indent=4))
     print(f'"{output_dir}/project_0.json" successfully written.')
@@ -887,9 +890,6 @@ def run(xlsx, output_dir=None, clear=True):
 
     if clear and os.path.exists(output_dir):
         remove_previous_metadata(output_dir=output_dir)
-
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
 
     write_project_json(project_json, output_dir)
     bundle_uuid = copy.deepcopy(project_uuid)

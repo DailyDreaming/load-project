@@ -140,9 +140,8 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
 
     # ---
     logging.debug('Searching for spreadsheets ...')
-    for file in get_target_spreadsheets():
+    for accession_id, file in get_target_spreadsheets():
         logging.debug('Checking: %s', file)
-        accession_id = file.name[:-len('.0.xlsx')]
         uuid = UUID(generate_project_uuid(accession_id))
         try:
             report[uuid].spreadsheet = file
