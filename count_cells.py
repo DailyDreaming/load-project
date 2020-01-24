@@ -7,6 +7,7 @@ import sys
 from typing import (
     MutableMapping,
     Sequence,
+    Tuple,
     Union,
 )
 from util import (
@@ -58,9 +59,9 @@ class CountCells:
             count_method.append('fast')
 
         for project_dir in get_target_project_dirs():
-            cell_count = self.get_project_cell_count(project_dir, count_method)
+            cell_count, gene_count = self.get_project_contents_count(project_dir, count_method)
             if self.args.write:
-                self.write_cell_count(project_dir, cell_count)
+                self.write_cell_gene_count(project_dir, cell_count, gene_count)
 
     @classmethod
     def get_cached_cell_count(cls, project_dir: Path) -> Union[int, None]:
@@ -87,15 +88,16 @@ class CountCells:
         }
 
     @classmethod
-    def write_cell_count(cls, project_dir: Path, cell_count: int):
+    def write_cell_gene_count(cls, project_dir: Path, cell_count: int, gene_count: int):
         """
-        Write the accession cell count to the project's stats JSON file.
+        Write the accession cell and gene counts to the project's stats JSON file.
         """
 
         with update_project_stats(project_dir) as stats:
             stats['cell_count'] = cell_count
+            stats['gene_count'] = gene_count
 
-    def get_project_cell_count(self, project_dir: Path, count_method: Sequence[str]) -> int:
+    def get_project_contents_count(self, project_dir: Path, count_method: Sequence[str]) -> Tuple[int, int]:
         """
         Count the number of cells in a project.
 
@@ -104,35 +106,56 @@ class CountCells:
         """
 
         cell_counts = {key: 0 for key in count_method}
+        gene_counts = {key: 0 for key in count_method}
 
         matrix_dir = project_dir / 'matrices'
         for mtx_file in matrix_dir.glob('**/matrix.mtx.gz'):
             cell_count = {}
+            gene_count = {}
             if 'slow' in count_method:
-                cell_count['slow'] = self.count_cells_in_matrix(mtx_file)
-                logging.info('Slow cell count of %s is %s', mtx_file, cell_count['slow'])
+                cell_count['slow'] = self.count_unique_index_values(mtx_file, col=2)
                 cell_counts['slow'] += cell_count['slow']
+                gene_count['slow'] = self.count_unique_index_values(mtx_file, col=1)
+                gene_counts['slow'] += gene_count['slow']
             if 'medium' in count_method:
-                barcodes_file = mtx_file.parent / 'barcodes.tsv.gz'
-                cell_count['medium'] = self.count_cells_from_barcodes(barcodes_file)
-                logging.info('Medium cell count of %s is %s', barcodes_file, cell_count['medium'])
+                barcode_file = mtx_file.parent / 'barcodes.tsv.gz'
+                cell_count['medium'] = self.count_lines_in_file(barcode_file)
                 cell_counts['medium'] += cell_count['medium']
+                gene_file = mtx_file.parent / 'genes.tsv.gz'
+                gene_count['medium'] = self.count_lines_in_file(gene_file)
+                gene_counts['medium'] += gene_count['medium']
             if 'fast' in count_method:
-                cell_count['fast'] = self.count_cells_in_mtx_header(mtx_file)
-                logging.info('Fast cell count of %s is %s', mtx_file, cell_count['fast'])
+                cell_count['fast'] = self.get_count_from_mtx_header(mtx_file, col=2)
                 cell_counts['fast'] += cell_count['fast']
-            if len(cell_count) > 1 and len(set(cell_count.values())) > 1:
-                logging.warning('Count mismatch in %s: %s',
-                                mtx_file.parent, cell_count)
+                gene_count['fast'] = self.get_count_from_mtx_header(mtx_file, col=1)
+                gene_counts['fast'] += gene_count['fast']
 
-        total_count = max(cell_counts.values())  # TODO: prioritize value from one method over another?
-        logging.info('Total cell count in %s is %s', project_dir, total_count)
+            for speed in ('slow', 'medium', 'fast'):
+                if speed in count_method:
+                    logging.info('%s cell count of %s is %s',
+                                 speed.capitalize(), barcode_file if speed == 'medium' else mtx_file, cell_count[speed])
+            for speed in ('slow', 'medium', 'fast'):
+                if speed in count_method:
+                    logging.info('%s gene count of %s is %s',
+                                 speed.capitalize(), gene_file if speed == 'medium' else mtx_file, gene_count[speed])
+            if len(cell_count) > 1 and len(set(cell_count.values())) > 1:
+                logging.warning('Cell count mismatch in %s: %s', mtx_file.parent, cell_count)
+            if len(gene_count) > 1 and len(set(gene_count.values())) > 1:
+                logging.warning('Gene count mismatch in %s: %s', mtx_file.parent, gene_count)
+
+        total_cell_count = max(cell_counts.values())  # TODO: prioritize value from one method over another?
+        total_gene_count = max(gene_counts.values())
+        logging.info('Total cell count in %s is %s', project_dir, total_cell_count)
+        logging.info('Total gene count in %s is %s', project_dir, total_gene_count)
 
         # Compare counts between counting methods
-        if len(count_method) > 1 and len(set(cell_counts.values())) > 1:
-            logging.warning('Count mismatch in %s: %s', project_dir, cell_counts)
+        if len(count_method) > 1:
+            if len(set(cell_counts.values())) > 1:
+                logging.warning('Cell count mismatch in %s: %s', project_dir, cell_counts)
+            if len(set(gene_counts.values())) > 1:
+                logging.warning('Gene count mismatch in %s: %s', project_dir, gene_counts)
 
-        return total_count
+        return total_cell_count, total_gene_count
 
     @classmethod
     def sniff_for_dialect(cls, matrix_file: Path) -> csv.Sniffer:
@@ -142,21 +165,21 @@ class CountCells:
             csv_file.seek(0)
             return csv.Sniffer().sniff(csv_file.read(first_line_length))
 
-    def count_cells_in_matrix(self, matrix_file: Path) -> int:
-        barcode_indexes = None
+    def count_unique_index_values(self, matrix_file: Path, col: int) -> int:
+        indexes = None
         dialect = self.sniff_for_dialect(matrix_file)
         with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
             csv_reader = csv.reader(csv_file, dialect)
             for line_num, row in enumerate(csv_reader):
                 if not row[0].startswith('%'):  # skip comment lines in the csv
                     assert len(row) == 3, f'{matrix_file} has line {line_num} with {len(row)} columns instead of 3'
-                    if barcode_indexes is None:  # skip first non-comment line (a header line)
-                        barcode_indexes = set()
+                    if indexes is None:  # skip first non-comment line (a header line)
+                        indexes = set()
                     else:
-                        barcode_indexes.add(row[1])  # 2nd column is barcode
-        return len(barcode_indexes)
+                        indexes.add(row[col-1])
+        return len(indexes)
 
-    def count_cells_in_mtx_header(self, matrix_file: Path) -> int:
+    def get_count_from_mtx_header(self, matrix_file: Path, col: int) -> int:
         dialect = self.sniff_for_dialect(matrix_file)
         with open_maybe_gz(matrix_file, 'rt', newline='') as csv_file:
             csv_reader = csv.reader(csv_file, dialect)
@@ -165,10 +188,10 @@ class CountCells:
                     assert len(row) == 3, f'{matrix_file} has line {line_num} with {len(row)} columns instead of 3'
                     # The first non-comment line contains the dimensions of the
                     # matrix and the number of non-zero cells in that matrix.
-                    return int(row[1])
+                    return int(row[col-1])
 
-    def count_cells_from_barcodes(self, barcodes_file: Path) -> int:
-        with open_maybe_gz(barcodes_file,  'rt') as f:
+    def count_lines_in_file(self, file: Path) -> int:
+        with open_maybe_gz(file,  'rt') as f:
             next(f)  # skip header line
             return sum(1 for _ in f)
 
