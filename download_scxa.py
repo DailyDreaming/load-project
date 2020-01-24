@@ -10,7 +10,7 @@ from urllib.request import urlretrieve
 import requests
 
 from download import create_or_update_symlink, download_file
-from util import generate_project_uuid
+from util import generate_project_uuid, get_target_spreadsheets, get_skunk_accessions
 
 log = logging.getLogger(__name__)
 
@@ -23,13 +23,32 @@ def download_projects(path: Path):
 
 def all_accessions():
     projects = list_projects()
-    accessions = [p['experimentAccession'] for p in projects]
+    accessions = {p['experimentAccession'] for p in projects}
     return accessions
+
+
+def scxa_geo_accessions():
+    accessions = set()
+    for accession in (get_target_spreadsheets().keys()):
+        assert accession.startswith('GSE')
+        accessions.add('E-GEOD-' + accession[3:])
+    return accessions
+
+
+def accessions_to_download():
+    geo_accessions = scxa_geo_accessions()
+    hca_accessions = {'E-MTAB-5061', 'E-EHCA-2', 'E-MTAB-6701', 'E-ENAD-15'}
+    skunk_accessions = get_skunk_accessions() or set()
+    excluded_accessions = geo_accessions | hca_accessions | skunk_accessions
+    return {
+        accession for accession in all_accessions()
+        if accession not in excluded_accessions
+    }
 
 
 def download_projects_parallel(path: Path):
     with ThreadPoolExecutor() as executor:
-        for accession in all_accessions():
+        for accession in accessions_to_download():
             accessions_to_futures = defaultdict(set)
             scxa_path = make_and_link_download_dir(accession, path)
             files = project_files(accession)

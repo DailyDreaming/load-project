@@ -25,8 +25,7 @@ source_url_template = 'https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc='
 
 
 def main():
-    accessions = [p.name.split('.')[0] for p in get_target_spreadsheets()]
-    for accession in accessions:
+    for accession in get_target_spreadsheets().keys():
         download_supplementary_files(accession)
 
 

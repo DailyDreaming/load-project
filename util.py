@@ -5,6 +5,7 @@ from typing import (
     Optional,
     Sequence,
     Union,
+    MutableMapping,
 )
 import uuid
 
@@ -65,23 +66,34 @@ def get_skunk_accessions() -> Optional[List[str]]:
         return [acc.strip() for acc in accessions.split(',') if acc.strip()]
 
 
-def get_target_spreadsheets() -> List[Path]:
+def get_target_spreadsheets() -> MutableMapping[str, Path]:
     accessions = get_skunk_accessions()
-    spreadsheet_paths = []
+    paths_by_accession = {}
     ext = '.0.xlsx'
+
+    def get_accession_from_path(path):
+        assert path.name.endswith(ext)
+        return path.name[:-len(ext)]
+
     for sub_dir in ('existing', 'new'):
         src_dir = Path('spreadsheets') / sub_dir
-        subdir_paths = [
+        paths = list(src_dir.iterdir())
+        paths = [
             path
-            for path
-            in src_dir.iterdir()
-            if (path.is_file()
-                and path.name.endswith(ext)
-                and (accessions is None
-                     or path.name.replace(ext, '') in accessions))
+            for path in paths
+            if path.is_file() and path.name.endswith(ext)
         ]
-        spreadsheet_paths.extend(subdir_paths)
-    return spreadsheet_paths
+        subdir_paths_by_accession = {
+            get_accession_from_path(path): path
+            for path in paths
+        }
+        assert len(paths) == len(subdir_paths_by_accession)
+        subdir_paths_by_accession = {
+            accession: path for accession, path in subdir_paths_by_accession.items()
+            if accessions is None or accession in accessions
+        }
+        paths_by_accession.update(subdir_paths_by_accession)
+    return paths_by_accession
 
 
 def get_target_project_dirs(follow_links: bool = False) -> List[Path]:
