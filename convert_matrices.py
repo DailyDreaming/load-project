@@ -8,10 +8,13 @@ from concurrent.futures import (
 from concurrent.futures.process import ProcessPoolExecutor
 from functools import partial
 import gzip
+from inspect import isabstract
+from io import BytesIO
 import logging
 from operator import delitem
 import os
 from typing import (
+    BinaryIO,
     Callable,
     Iterable,
     List,
@@ -38,6 +41,7 @@ from h5_to_mtx import convert_h5_to_mtx
 from util import (
     get_target_project_dirs,
     is_working_set_defined,
+    open_maybe_gz,
 )
 
 log = logging.getLogger(__file__)
@@ -108,6 +112,10 @@ class CSVPerCell:
 
 class Converter(metaclass=ABCMeta):
 
+    @classmethod
+    def handles_accession(cls, accession):
+        return cls.__name__ == accession
+
     def __init__(self, project_dir: Path):
         self.project_dir = project_dir
 
@@ -116,8 +124,9 @@ class Converter(metaclass=ABCMeta):
         return self.project_dir / 'matrices'
 
     @property
-    def geo_dir(self) -> Path:
-        return self.project_dir / 'geo'
+    @abstractmethod
+    def download_dir(self) -> Path:
+        raise NotImplementedError
 
     @property
     def bundle_dir(self) -> Path:
@@ -155,24 +164,59 @@ class Converter(metaclass=ABCMeta):
         barcodes='barcodes.tsv.gz'
     )
 
-    def _copy_matrices(self, *matrices: Matrix):
+    std_matrix_headers = Matrix(
+        mtx='',
+        genes='genes',
+        barcodes='barcodes'
+    )
+
+    no_matrix_headers = Matrix(
+        mtx='',
+        genes='',
+        barcodes=''
+    )
+
+    def _copy_matrices(self, *matrices: Matrix, add_headers: bool = False):
         """
         Compress if necessary, otherwise just link
         :param matrices:
         :return:
         """
+
+        def expand_glob(glob: str) -> List[str]:
+            files = sorted(str(p.relative_to(self.download_dir))
+                           for p in self.download_dir.glob(glob))
+            assert files, f'No match for glob {glob}'
+            return files
+
+        globbed_matrices = []
         for matrix in matrices:
+            if '*' in matrix.mtx:
+                files = Matrix(*map(expand_glob, astuple(matrix)))
+                assert len(set(map(len, astuple(files)))) == 1, f'Unbalanced matches for globs {matrix}'
+                globbed_matrices.extend(Matrix(*m) for m in zip(*astuple(files)))
+            else:
+                globbed_matrices.append(matrix)
+
+        for matrix in globbed_matrices:
             dst_dir = self.matrix_dir(matrix.mtx)
             dst_dir.mkdir(parents=True, exist_ok=True)
-            for src_name, dst_name in zip(astuple(matrix), astuple(self.std_matrix)):
-                src = self.geo_dir / src_name
+            headers = self.std_matrix_headers if add_headers else self.no_matrix_headers
+            for src_name, dst_name, header in zip(*map(astuple, (matrix, self.std_matrix, headers))):
+                src = self.download_dir / src_name
                 dst = dst_dir / dst_name
-                if not src_name.endswith('.gz'):
+                if header:
                     if not dst.exists():
-                        log.warning('Matrix file `%s` was not gzipped. Compressing...', src_name)
-                        atomic_gzip_file(src, dst)
-                else:
+                        log.info('Matrix file `%s` needs header added. Rewriting ...', src_name)
+                        header = BytesIO((header + '\n').encode())
+                        with open_maybe_gz(str(src), 'rb') as read_fh:
+                            atomic_gzip_filobjs([header, read_fh], dst)
+                elif src_name.endswith('.gz'):
                     idempotent_link(src, dst)
+                else:
+                    if not dst.exists():
+                        log.info('Matrix file `%s` was not gzipped. Compressing...', src_name)
+                        atomic_gzip_file(src, dst)
 
     def _convert_matrices(self, *inputs: Union[CSV, H5, CSVPerCell]):
         names = [input_.name for input_ in inputs]
@@ -188,7 +232,7 @@ class Converter(metaclass=ABCMeta):
                     log.warning('Found partial conversion results. Missing files: %s',
                                 expected_files - actual_files)
                 log.info('Started conversion for `%s`', input_.name)
-                input_.to_mtx(input_dir=self.geo_dir, output_dir=output_dir)
+                input_.to_mtx(input_dir=self.download_dir, output_dir=output_dir)
 
     def _fix_short_rows(self, row_length: int) -> RowFilter:
         """
@@ -209,15 +253,48 @@ class Converter(metaclass=ABCMeta):
             assert False, len(row)
 
 
+class GEOConverter(Converter, metaclass=ABCMeta):
+
+    @property
+    def download_dir(self) -> Path:
+        return self.project_dir / 'geo'
+
+
+class SCXAConverter(Converter):
+
+    @classmethod
+    def handles_accession(cls, accession):
+        return accession.startswith('E-')
+
+    @property
+    def download_dir(self) -> Path:
+        return self.project_dir / 'scxa'
+
+    def _convert(self):
+        self._copy_matrices(
+            Matrix(
+                mtx='normalised/*.mtx',
+                genes='normalised/*.mtx_rows',
+                barcodes='normalised/*.mtx_cols'
+            ),
+            add_headers=True
+        )
+
+
 def atomic_gzip_file(src: Path, dst: Path):
+    with open(str(src), 'rb') as read_fh:
+        atomic_gzip_filobjs([read_fh], dst)
+
+
+def atomic_gzip_filobjs(srcs: Iterable[BinaryIO], dst: Path):
     tmp = dst.parent / (dst.name + '.tmp')
     try:
-        with open(str(src), 'rb') as read_fh:
-            with gzip.open(tmp, 'wb') as write_fh:
-                chunk = read_fh.read(1024 ** 2)
+        with gzip.open(tmp, 'wb') as write_fh:
+            for src in srcs:
+                chunk = src.read(1024 ** 2)
                 while chunk:
                     write_fh.write(chunk)
-                    chunk = read_fh.read(1024 ** 2)
+                    chunk = src.read(1024 ** 2)
     except Exception:
         try:
             tmp.unlink()
@@ -270,12 +347,26 @@ def convert_matrices(project_dirs: List[Path]):
     failed: Set[Path] = set()
     succeeded: Set[Path] = set()
     already_done: Set[Path] = set()
-    converter_classes = {k: v for k, v in globals().items()
-                         if isinstance(v, type) and v != Converter and issubclass(v, Converter)}
+
+    converter_classes, generic_converter_classes = {}, []
+    for name, cls in globals().items():
+        if isinstance(cls, type) and issubclass(cls, Converter) and not isabstract(cls):
+            if cls.handles_accession(name):
+                converter_classes[name] = cls
+            else:
+                generic_converter_classes.append(cls)
 
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         for project_dir in sorted(project_dirs):
-            converter_class = converter_classes.pop(project_dir.name)
+            try:
+                converter_class = converter_classes.pop(project_dir.name)
+            except KeyError:
+                for converter_class in generic_converter_classes:
+                    if converter_class.handles_accession(project_dir.name):
+                        break
+                else:
+                    raise RuntimeError('Cannot determine converter class', project_dir)
+
             converter = converter_class(project_dir)
             future = executor.submit(converter.convert)
 
@@ -314,7 +405,7 @@ def main():
     populate_all_static_projects(file_pattern='*.mtx.zip')
 
 
-class GSE107909(Converter):
+class GSE107909(GEOConverter):
     """
     04ba7269-1301-5758-8f13-025565326f66
     """
@@ -326,7 +417,7 @@ class GSE107909(Converter):
         )
 
 
-class GSE117089(Converter):
+class GSE117089(GEOConverter):
     """
     061ec9d5-9acf-54db-9eee-555136d5ce41
     """
@@ -356,7 +447,7 @@ class GSE117089(Converter):
         )
 
 
-class GSE114557(Converter):
+class GSE114557(GEOConverter):
     """
     06917f50-92aa-5e58-8376-aae1d888e8b7
     """
@@ -365,7 +456,7 @@ class GSE114557(Converter):
         raise PostponedImplementationError('No recognizable CSVs / MTXs.')
 
 
-class GSE131736(Converter):
+class GSE131736(GEOConverter):
     """
     069198f7-c2b5-5d39-988c-1cb12db4f28a
     """
@@ -391,7 +482,7 @@ class GSE131736(Converter):
         )
 
 
-class GSE67835(Converter):
+class GSE67835(GEOConverter):
     """
     06a318d9-54d8-5e41-aab5-f2d682fba690
     """
@@ -406,7 +497,7 @@ class GSE67835(Converter):
         )
 
 
-class GSE102580(Converter):
+class GSE102580(GEOConverter):
     """
     06f8848d-9c54-5829-92d3-d334809ad1e2
     """
@@ -438,7 +529,7 @@ class GSE102580(Converter):
             return super()._fix_short_rows_filter(row_length, row)
 
 
-class GSE107585(Converter):
+class GSE107585(GEOConverter):
     """
     096b7311-2bf7-5e61-9afb-d65c24a71243
     """
@@ -453,7 +544,7 @@ class GSE107585(Converter):
         )
 
 
-class GSE106273(Converter):
+class GSE106273(GEOConverter):
     """
     099c02da-23b2-5748-8618-92bc6770dc51
     """
@@ -468,7 +559,7 @@ class GSE106273(Converter):
         )
 
 
-class GSE130430(Converter):
+class GSE130430(GEOConverter):
     """
     0a8f2289-5862-5bf0-8c27-0885453de788
     """
@@ -518,7 +609,7 @@ class GSE130430(Converter):
         )
 
 
-class GSE86469(Converter):
+class GSE86469(GEOConverter):
     """
     0f4d7e06-5f77-5614-8cd6-123f555dc9b1
     """
@@ -529,7 +620,7 @@ class GSE86469(Converter):
         )
 
 
-class GSE129798(Converter):
+class GSE129798(GEOConverter):
     """
     11d48902-5824-5520-836b-7fc78ed02a61
     """
@@ -548,7 +639,7 @@ class GSE129798(Converter):
         )
 
 
-class GSE126836(Converter):
+class GSE126836(GEOConverter):
     """
     1a72144b-f4e8-5fd5-b46e-6a40eee8b6e6
     """
@@ -576,7 +667,7 @@ class GSE126836(Converter):
         ])
 
 
-class GSE81608(Converter):
+class GSE81608(GEOConverter):
     """
     1a7ccf4f-a500-5aa6-b31a-2fff80cf8f08
     """
@@ -587,7 +678,7 @@ class GSE81608(Converter):
         )
 
 
-class GSE97104(Converter):
+class GSE97104(GEOConverter):
     """
     1a85f2da-5aaa-5bc2-a6ea-9584742118e6
     """
@@ -607,7 +698,7 @@ class GSE97104(Converter):
             return super()._fix_short_rows_filter(row_length, row)
 
 
-class GSE113197(Converter):
+class GSE113197(GEOConverter):
     """
     1cafb09c-e0dc-536b-b166-5cb6debfc3cf
     """
@@ -636,7 +727,7 @@ class GSE113197(Converter):
             ])
 
 
-class GSE110499(Converter):
+class GSE110499(GEOConverter):
     """
     227f5c51-389c-576c-b4d3-e4da53b89f79
     """
@@ -656,7 +747,7 @@ class GSE110499(Converter):
         )
 
 
-class GSE36552(Converter):
+class GSE36552(GEOConverter):
     """
     2b4c411d-35b1-5f97-9d6a-c9331c7f679a
     """
@@ -665,7 +756,7 @@ class GSE36552(Converter):
         raise PostponedImplementationError('What are .bed files??? and .tdf?')
 
 
-class GSE132044(Converter):
+class GSE132044(GEOConverter):
     """
     2cdd0744-6422-57fd-8fdd-9ac2bb8bf257
     """
@@ -690,7 +781,7 @@ class GSE132044(Converter):
         )
 
 
-class GSE130636(Converter):
+class GSE130636(GEOConverter):
     """
     2ff83170-ec52-5b24-9962-161c558f52ba
     """
@@ -712,7 +803,7 @@ class GSE130636(Converter):
         del row[1]
 
 
-class GSE81383(Converter):
+class GSE81383(GEOConverter):
     """
     30fb622d-6629-527e-a681-6e2ba143af3d
     """
@@ -731,7 +822,7 @@ class GSE81383(Converter):
         )
 
 
-class GSE116237(Converter):
+class GSE116237(GEOConverter):
     """
     31d48835-7d9f-52ae-8cdc-ae227b63dd2c
     """
@@ -743,7 +834,7 @@ class GSE116237(Converter):
         )
 
 
-class GSE114802(Converter):
+class GSE114802(GEOConverter):
     """
     36a7d62a-57ae-59af-ae8d-7dd2a8f1422e
     """
@@ -762,7 +853,7 @@ class GSE114802(Converter):
         ])
 
 
-class GSE124472(Converter):
+class GSE124472(GEOConverter):
     """
     389ad9f9-4a14-5a3d-b971-45dc3baf95f1
     """
@@ -792,7 +883,7 @@ class GSE124472(Converter):
         ])
 
 
-class GSE84465(Converter):
+class GSE84465(GEOConverter):
     """
     39bfc05a-44ca-507a-bbf5-156bd35c5c74
     """
@@ -803,7 +894,7 @@ class GSE84465(Converter):
         )
 
 
-class GSE134881(Converter):
+class GSE134881(GEOConverter):
     """
     3fe16b18-e782-542b-b308-de9b26e7f69c
     """
@@ -814,7 +905,7 @@ class GSE134881(Converter):
         )
 
 
-class GSE128639(Converter):
+class GSE128639(GEOConverter):
     """
     427157c0-993f-56ae-9e40-8cfe40ef81c5
     """
@@ -831,7 +922,7 @@ class GSE128639(Converter):
         )
 
 
-class GSE118127(Converter):
+class GSE118127(GEOConverter):
     """
     458cbaeb-c4b7-5537-b1f3-a5d537478112
     """
@@ -872,7 +963,7 @@ class GSE118127(Converter):
         )
 
 
-class GSE81905(Converter):
+class GSE81905(GEOConverter):
     """
     4f5c0011-416d-5e8e-8eb6-f7cb5b0140a5
     """
@@ -881,7 +972,7 @@ class GSE81905(Converter):
         raise PostponedImplementationError('BAM files, (probably not expression data)')
 
 
-class GSE94820(Converter):
+class GSE94820(GEOConverter):
     """
     5016f45e-b86a-57ce-984e-a50605641d08
     """
@@ -901,7 +992,7 @@ class GSE94820(Converter):
         ])
 
 
-class GSE81904(Converter):
+class GSE81904(GEOConverter):
     """
     51a21599-a014-5c5a-9760-d5bdeb80f741
     """
@@ -912,7 +1003,7 @@ class GSE81904(Converter):
         )
 
 
-class GSE116470(Converter):
+class GSE116470(GEOConverter):
     """
     53fe8e51-1646-5f68-96ac-e4d4fde67b93
     """
@@ -923,7 +1014,7 @@ class GSE116470(Converter):
         raise PostponedImplementationError('Confusing data')
 
 
-class GSE124494(Converter):
+class GSE124494(GEOConverter):
     """
     56483fc6-ab20-5495-bb93-8cd2ce8a322a
     """
@@ -947,7 +1038,7 @@ class GSE124494(Converter):
         ])
 
 
-class GSE135889(Converter):
+class GSE135889(GEOConverter):
     """
     56d9146d-bc73-5327-9615-05931f1863f6
     """
@@ -957,7 +1048,7 @@ class GSE135889(Converter):
         raise NotImplementedError()
 
 
-class GSE111727(Converter):
+class GSE111727(GEOConverter):
     """
     57c9a7c8-5dc5-551b-b4af-7d37d8a87f64
     """
@@ -967,7 +1058,7 @@ class GSE111727(Converter):
         raise NotImplementedError()
 
 
-class GSE84147(Converter):
+class GSE84147(GEOConverter):
     """
     5cd871a3-96ab-52ed-a7c9-77e91278c13d
     """
@@ -977,7 +1068,7 @@ class GSE84147(Converter):
         raise NotImplementedError()
 
 
-class GSE93374(Converter):
+class GSE93374(GEOConverter):
     """
     60ec348b-ff28-5d47-b0d6-b787f1885c9c
     """
@@ -992,7 +1083,7 @@ class GSE93374(Converter):
         )
 
 
-class GSE127969(Converter):
+class GSE127969(GEOConverter):
     """
     62437ea1-3d06-5f22-b9de-a7d934138dd5
     """
@@ -1017,7 +1108,7 @@ class GSE127969(Converter):
             row[0] = cell[1:-1]
 
 
-class GSE75478(Converter):
+class GSE75478(GEOConverter):
     """
     682f2474-f875-5e0a-bf99-2b102c8c6193
     """
@@ -1032,7 +1123,7 @@ class GSE75478(Converter):
         ])
 
 
-class GSE100618(Converter):
+class GSE100618(GEOConverter):
     """
     6ae3cbfe-200e-5c03-a74a-edd266b8182b
     """
@@ -1041,7 +1132,7 @@ class GSE100618(Converter):
         self._convert_matrices(CSV('GSE100618_HTSeq_counts.txt.gz', sep=' '))
 
 
-class GSE75367(Converter):
+class GSE75367(GEOConverter):
     """
     6b892786-989c-5844-b191-6d420e328fdf
     """
@@ -1052,7 +1143,7 @@ class GSE75367(Converter):
         )
 
 
-class GSE70580(Converter):
+class GSE70580(GEOConverter):
     """
     6fb6d88c-7023-53fb-967b-ef95b2f6f5a0
     """
@@ -1068,7 +1159,7 @@ class GSE70580(Converter):
         )
 
 
-class GSE130606(Converter):
+class GSE130606(GEOConverter):
     """
     73fd591e-2310-5983-ba8a-8079c0d0b758
     """
@@ -1083,7 +1174,7 @@ class GSE130606(Converter):
         )
 
 
-class GSE75688(Converter):
+class GSE75688(GEOConverter):
     """
     789850ec-3540-5023-9767-fb8a4d2a21fc
     """
@@ -1101,7 +1192,7 @@ class GSE75688(Converter):
         del row[1:3]  # gene_type and gene name. We'll use gene_id (names are not unique)
 
 
-class GSE89232(Converter):
+class GSE89232(GEOConverter):
     """
     7acdc227-c543-5b0c-8bd8-c6fa4e30310a
     """
@@ -1112,7 +1203,7 @@ class GSE89232(Converter):
         )
 
 
-class GSE107618(Converter):
+class GSE107618(GEOConverter):
     """
     7dd4e06c-c889-511c-a4d4-45b74088caa8
     """
@@ -1128,7 +1219,7 @@ class GSE107618(Converter):
                 row[i] = '0'
 
 
-class GSE132802(Converter):
+class GSE132802(GEOConverter):
     """
     7eedae3a-b350-5a3a-ab2d-8dcebc4a37b2
     """
@@ -1152,7 +1243,7 @@ class GSE132802(Converter):
         )
 
 
-class GSE75140(Converter):
+class GSE75140(GEOConverter):
     """
     80ad934f-66ed-5c21-8f9a-7d3b0f58bcab
     """
@@ -1166,7 +1257,7 @@ class GSE75140(Converter):
         del row[-1]
 
 
-class GSE130473(Converter):
+class GSE130473(GEOConverter):
     """
     86963b4f-1e8e-5691-9ba3-465f3a789428
     """
@@ -1177,7 +1268,7 @@ class GSE130473(Converter):
         )
 
 
-class GSE96583(Converter):
+class GSE96583(GEOConverter):
     """
     88564eae-cceb-5eee-957d-5f0a251fb177
     """
@@ -1207,7 +1298,7 @@ class GSE96583(Converter):
         )
 
 
-class GSE90806(Converter):
+class GSE90806(GEOConverter):
     """
     8d1bf054-faad-5ee8-a67e-f9b8f379e6c3
     """
@@ -1218,7 +1309,7 @@ class GSE90806(Converter):
         )
 
 
-class GSE76312(Converter):
+class GSE76312(GEOConverter):
     """
     932ae148-c3c2-5b07-91c0-2083cafe0dc1
     """
@@ -1233,7 +1324,7 @@ class GSE76312(Converter):
         )
 
 
-class GSE93593(Converter):
+class GSE93593(GEOConverter):
     """
     99ab18ff-ca15-5d7d-9c2d-5c0b537fb1c2
     """
@@ -1248,7 +1339,7 @@ class GSE93593(Converter):
         )
 
 
-class GSE92280(Converter):
+class GSE92280(GEOConverter):
     """
     9d65c4d0-c048-5c4f-8278-85dac99ea2ae
     """
@@ -1257,7 +1348,7 @@ class GSE92280(Converter):
         raise PostponedImplementationError('No supplementary files')
 
 
-class GSE103354(Converter):
+class GSE103354(GEOConverter):
     """
     9fc2d285-804a-5989-956f-1843a0f11673
     """
@@ -1387,7 +1478,7 @@ class GSE103354(Converter):
         )
 
 
-class GSE102596(Converter):
+class GSE102596(GEOConverter):
     """
     a0b6322d-1da3-5481-8768-84227ad4dd1e
     """
@@ -1402,7 +1493,7 @@ class GSE102596(Converter):
         )
 
 
-class GSE44183(Converter):
+class GSE44183(GEOConverter):
     """
     aa372dea-8469-5b80-9007-18c16a21655d
     """
@@ -1419,7 +1510,7 @@ class GSE44183(Converter):
                 row[i] = '0'
 
 
-class GSE103275(Converter):
+class GSE103275(GEOConverter):
     """
     b0f40b69-943f-5959-9457-c8e53c2d480e
     """
@@ -1459,7 +1550,7 @@ class GSE103275(Converter):
         )
 
 
-class GSE110154(Converter):
+class GSE110154(GEOConverter):
     """
     b26137d3-a709-5492-aa74-0d783e6b628b
     """
@@ -1474,7 +1565,7 @@ class GSE110154(Converter):
         # can't be opened.
 
 
-class GSE86473(Converter):
+class GSE86473(GEOConverter):
     """
     b48f6f16-1b5a-5055-9e14-a8920e1bcaad
     """
@@ -1483,7 +1574,7 @@ class GSE86473(Converter):
         raise PostponedImplementationError('No supplementary files')
 
 
-class GSE114374(Converter):
+class GSE114374(GEOConverter):
     """
     b4b128d5-61e5-510e-9d91-a151b94fbb99
     """
@@ -1499,7 +1590,7 @@ class GSE114374(Converter):
         )
 
 
-class GSE89322(Converter):
+class GSE89322(GEOConverter):
     """
     b55c0638-d86b-5665-9ad1-0d45b937770a
     """
@@ -1511,7 +1602,7 @@ class GSE89322(Converter):
         )
 
 
-class GSE86146(Converter):
+class GSE86146(GEOConverter):
     """
     b5a0936b-a351-54ac-8d7d-0af6926e0bdc
     """
@@ -1564,7 +1655,7 @@ class GSE86146(Converter):
         )
 
 
-class GSE99795(Converter):
+class GSE99795(GEOConverter):
     """
     ba75d697-8712-5e75-b35b-fd3f2b66cae5
     """
@@ -1573,7 +1664,7 @@ class GSE99795(Converter):
         raise PostponedImplementationError('No gene by cell matrices.')
 
 
-class GSE81547(Converter):
+class GSE81547(GEOConverter):
     """
     bd4ebaac-7bcb-5069-b3ea-3a13887092e8
     """
@@ -1591,7 +1682,7 @@ class GSE81547(Converter):
         )
 
 
-class GSE115469(Converter):
+class GSE115469(GEOConverter):
     """
     bdfe2399-b8a6-5b6a-9f0a-a5fd81d08ff4
     """
@@ -1604,7 +1695,7 @@ class GSE115469(Converter):
         )
 
 
-class GSE111586(Converter):
+class GSE111586(GEOConverter):
     """
     bfddbefc-f2fd-5815-89a9-a94ed667be82
     """
@@ -1613,7 +1704,7 @@ class GSE111586(Converter):
         raise PostponedImplementationError('Similar, but not gene by cell matrices.')
 
 
-class GSE132040(Converter):
+class GSE132040(GEOConverter):
     """
     c2e2302f-4077-5394-9ee2-78a0ec94cbb7
     """
@@ -1624,7 +1715,7 @@ class GSE132040(Converter):
         )
 
 
-class GSE84133(Converter):
+class GSE84133(GEOConverter):
     """
     c366f1f5-27aa-5157-a142-110e492a3e52
     """
@@ -1647,7 +1738,7 @@ class GSE84133(Converter):
         del row[1]
 
 
-class GSE75659(Converter):
+class GSE75659(GEOConverter):
     """
     cac7f9f2-0592-5617-9530-f63803c49f8b
     """
@@ -1686,7 +1777,7 @@ class GSE75659(Converter):
         ])
 
 
-class GSE109822(Converter):
+class GSE109822(GEOConverter):
     """
     cc2112b7-9df1-5910-a7c6-6e41203130fa
     """
@@ -1702,7 +1793,7 @@ class GSE109822(Converter):
         ])
 
 
-class GSE109979(Converter):
+class GSE109979(GEOConverter):
     """
     d136eea6-03f9-5f02-86c7-c677b4c80164
     """
@@ -1718,7 +1809,7 @@ class GSE109979(Converter):
             return True
 
 
-class GSE131181(Converter):
+class GSE131181(GEOConverter):
     """
     d26d2ae7-4355-5ac1-8476-2e514973097e
     """
@@ -1733,7 +1824,7 @@ class GSE131181(Converter):
         )
 
 
-class GSE107746(Converter):
+class GSE107746(GEOConverter):
     """
     d36952f4-cfa7-5d03-b4b6-db2c31dd41c6
     """
@@ -1744,7 +1835,7 @@ class GSE107746(Converter):
         )
 
 
-class GSE131685(Converter):
+class GSE131685(GEOConverter):
     """
     d9117a4f-36e0-5912-b8cd-744a0c5306c7
     """
@@ -1769,7 +1860,7 @@ class GSE131685(Converter):
         )
 
 
-class GSE108041(Converter):
+class GSE108041(GEOConverter):
     """
     d9258dc7-985e-533a-9fc2-3ad9cc7e32ca
     """
@@ -1784,7 +1875,7 @@ class GSE108041(Converter):
         )
 
 
-class GSE106540(Converter):
+class GSE106540(GEOConverter):
     """
     dd761426-cc9c-5fbd-8bec-93a4cc4eb999
     """
@@ -1795,7 +1886,7 @@ class GSE106540(Converter):
         )
 
 
-class GSE132566(Converter):
+class GSE132566(GEOConverter):
     """
     df1875a9-1a6a-58e0-8fd2-dac0ebb3b1b2
     """
@@ -1811,7 +1902,7 @@ class GSE132566(Converter):
         )
 
 
-class GSE83139(Converter):
+class GSE83139(GEOConverter):
     """
     e8579e71-7472-5671-85b0-9841a4d06d5a
     """
@@ -1820,7 +1911,7 @@ class GSE83139(Converter):
         raise PostponedImplementationError('looks like a SAM file??')
 
 
-class GSE76381(Converter):
+class GSE76381(GEOConverter):
     """
     ebb8c1be-6739-57b8-9ce3-aa67caa900b4
     """
@@ -1887,7 +1978,7 @@ class GSE76381(Converter):
         return filter_func
 
 
-class GSE117498(Converter):
+class GSE117498(GEOConverter):
     """
     ed008b9b-0039-5ec2-a557-f082d4ba1810
     """
@@ -1911,7 +2002,7 @@ class GSE117498(Converter):
         ])
 
 
-class GSE114396(Converter):
+class GSE114396(GEOConverter):
     """
     ef6f570f-a991-5528-9649-fbf06e6eb896
     """
@@ -1922,7 +2013,7 @@ class GSE114396(Converter):
         )
 
 
-class GSE109488(Converter):
+class GSE109488(GEOConverter):
     """
     efddbf1e-a5cf-5e61-a38f-6a9f228e07c2
     """
@@ -2005,7 +2096,7 @@ class GSE109488(Converter):
         ])
 
 
-class GSE57872(Converter):
+class GSE57872(GEOConverter):
     """
     f0caef8c-f839-539d-aa17-61fe04e6d3dd
     """
@@ -2016,7 +2107,7 @@ class GSE57872(Converter):
         )
 
 
-class GSE108291(Converter):
+class GSE108291(GEOConverter):
     """
     f10b6bef-febb-58dd-83ee-1180d076e53f
     """
@@ -2039,7 +2130,7 @@ class GSE108291(Converter):
         )
 
 
-class GSE73727(Converter):
+class GSE73727(GEOConverter):
     """
     ff0a4d85-a1c7-571c-97ae-d964eee7ecad
     """
