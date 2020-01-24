@@ -56,7 +56,7 @@ class CSV:
     sep: str = ','
     rows_are_genes: bool = True
     row_filter: Optional[RowFilter] = None
-    encoding: Optional[str] = 'utf-8'
+    encoding: Optional[str] = None
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
         converter = CSVConverter(
@@ -976,8 +976,12 @@ class GSE127969(Converter):
             CSV(
                 'GSE127969_counts_TPM_ALL.csv.gz',
                 sep='\t',
+                # This file contains those MS Excel quotes in the 1252 code page
+                # of Latin-1. We'll need to read the file using that encoding
+                # and remove the quotes afterwards.
                 row_filter=self._filter,
-                encoding='CP1252')
+                encoding='CP1252'
+            )
         )
 
     def _filter(self, row: List[str]):

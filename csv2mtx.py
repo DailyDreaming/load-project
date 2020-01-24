@@ -109,7 +109,7 @@ class CSVConverter(AbstractCSVConverter):
                  delimiter: str = ',',
                  rows_are_genes: bool = True,
                  row_filter: Optional[RowFilter] = None,
-                 encoding: Optional[str] = 'utf-8'):
+                 encoding: Optional[str] = None):
         """
         :param input_file: The input csv file
         :param delimiter: Delimiter character in csv
