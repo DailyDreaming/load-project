@@ -140,7 +140,7 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
                                                                accession=accession_id)
 
     logging.debug('Searching for spreadsheets ...')
-    for accession_id, file in get_target_spreadsheets():
+    for accession_id, file in get_target_spreadsheets().items():
         logging.debug('Checking: %s', file)
         uuid = UUID(generate_project_uuid(accession_id))
         try:
