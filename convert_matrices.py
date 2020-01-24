@@ -641,10 +641,16 @@ class GSE110499(Converter):
 
     def _convert(self):
         self._convert_matrices(
-            CSV('GSE110499_GEO_processed_MM_10X_raw_UMI_count_martix.txt.gz', sep='\t'),
-
-            # The previous file has a column header for the genes but this one doesn't.
-            CSV('GSE110499_GEO_processed_MM_raw_TPM_matrix.txt.gz', sep='\t', row_filter=self._fix_short_rows(172)),
+            CSV(
+                'GSE110499_GEO_processed_MM_10X_raw_UMI_count_martix.txt.gz',
+                sep='\t'
+            ),
+            CSV(
+                'GSE110499_GEO_processed_MM_raw_TPM_matrix.txt.gz',
+                sep='\t',
+                # The previous file has a column header for the genes but this one doesn't:
+                row_filter=self._fix_short_rows(172)
+            )
         )
 
 
@@ -714,9 +720,12 @@ class GSE81383(Converter):
         # values. We use the unquoted one because the quotes contain spaces
         # that causes pandas to detect extra columns in the space-separated
         # mtx file.
-
         self._convert_matrices(
-            CSV('GSE81383_data_melanoma_scRNAseq_BT_Mel.txt.gz', sep='\t', row_filter=self._fix_short_rows(308))
+            CSV(
+                'GSE81383_data_melanoma_scRNAseq_BT_Mel.txt.gz',
+                sep='\t',
+                row_filter=self._fix_short_rows(308)
+            )
         )
 
 
@@ -877,12 +886,16 @@ class GSE94820(Converter):
 
     def _convert(self):
         self._convert_matrices(*[
-            CSV(csv, sep='\t', row_filter=self._fix_short_rows(nrow))
-            for csv, nrow
-            in [
-                ('GSE94820_raw.expMatrix_DCnMono.discovery.set.submission.txt.gz', 1142),
-                ('GSE94820_raw.expMatrix_deeper.characterization.set.submission.txt.gz', 1245)
-            ]
+            CSV(
+                'GSE94820_raw.expMatrix_DCnMono.discovery.set.submission.txt.gz',
+                sep='\t',
+                row_filter=self._fix_short_rows(1142)
+            ),
+            CSV(
+                'GSE94820_raw.expMatrix_deeper.characterization.set.submission.txt.gz',
+                sep='\t',
+                row_filter=self._fix_short_rows(1245)
+            )
         ])
 
 
