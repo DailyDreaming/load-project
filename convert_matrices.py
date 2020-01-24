@@ -56,13 +56,15 @@ class CSV:
     sep: str = ','
     rows_are_genes: bool = True
     row_filter: Optional[RowFilter] = None
+    encoding: Optional[str] = None
 
     def to_mtx(self, input_dir: Path, output_dir: Path):
         converter = CSVConverter(
             input_file=input_dir / self.name,
             delimiter=self.sep,
             rows_are_genes=self.rows_are_genes,
-            row_filter=self.row_filter)
+            row_filter=self.row_filter,
+            encoding=self.encoding)
         converter.convert(output_dir)
 
 
@@ -996,12 +998,23 @@ class GSE127969(Converter):
     """
 
     def _convert(self):
-        # Fails with a UnicodeError due to fancy quotation marks (0x93 0x94)
-        raise PostponedImplementationError('https://github.com/DailyDreaming/load-project/issues/114')
-        # noinspection PyUnreachableCode
         self._convert_matrices(
-            CSV('GSE127969_counts_TPM_ALL.csv.gz', sep='\t')
+            CSV(
+                'GSE127969_counts_TPM_ALL.csv.gz',
+                sep='\t',
+                # This file contains those MS Excel quotes in the 1252 code page
+                # of Latin-1. We'll need to read the file using that encoding
+                # and remove the quotes afterwards.
+                row_filter=self._filter,
+                encoding='CP1252'
+            )
         )
+
+    def _filter(self, row: List[str]):
+        cell = row[0]
+        if cell.startswith('\u201c'):
+            assert cell.endswith('\u201d')
+            row[0] = cell[1:-1]
 
 
 class GSE75478(Converter):
