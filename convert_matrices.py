@@ -13,6 +13,7 @@ from io import BytesIO
 import logging
 from operator import delitem
 import os
+import signal
 from typing import (
     BinaryIO,
     Callable,
@@ -355,6 +356,11 @@ def convert_matrices(project_dirs: List[Path]):
                 converter_classes[name] = cls
             else:
                 generic_converter_classes.append(cls)
+
+    # This prevents any kind of graceful shutdown on Ctrl-C but it does fix
+    # https://mail.python.org/pipermail/python-dev/2014-March/133697.html which,
+    # sadly, fell through the cracks.
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
         for project_dir in sorted(project_dirs):
