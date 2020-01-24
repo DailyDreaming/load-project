@@ -77,6 +77,19 @@ class CountCells:
             return 0
 
     @classmethod
+    def get_cached_gene_count(cls, project_dir: Path) -> Union[int, None]:
+        """
+        Return a gene count for the project with the given accession.
+        """
+        stats_file = project_dir / 'stats.json'
+        if stats_file.exists():
+            with open(str(stats_file), 'r') as f:
+                gene_count = json.load(f).get('gene_count', None)
+            return gene_count
+        else:
+            return 0
+
+    @classmethod
     def get_cached_cell_counts(cls) -> MutableMapping[str, int]:
         """
         Return a mapping from accessions to cell counts.
@@ -84,6 +97,17 @@ class CountCells:
 
         return {
             p.name: cls.get_cached_cell_count(p)
+            for p in get_target_project_dirs()
+        }
+
+    @classmethod
+    def get_cached_gene_counts(cls) -> MutableMapping[str, int]:
+        """
+        Return a mapping from accessions to gene counts.
+        """
+
+        return {
+            p.name: cls.get_cached_gene_count(p)
             for p in get_target_project_dirs()
         }
 

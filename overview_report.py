@@ -33,7 +33,8 @@ class ProjectReport:
     geo_files: int = 0  # number of downloaded geo files in projects/{uuid}/geo
     num_matrices: int = 0  # number of matrices in projects/{uuid}/matrices
     zipped_matrix: Path = None  # projects/{uuid}/bundle/matrix.mtx.zip
-    cell_count: int = 0  # number of cell counted
+    cell_count: int = 0  # number of cells counted
+    gene_count: int = 0  # number of genes counted
     num_metadata_files: int = 0  # number of metadata JSON files in projects/{uuid}/bundle
     num_hca_metadata_files: int = 0  # number of metadata JSON files in projects/{uuid}/hca
     zipped_hca_matrix = None  # projects/{uuid}/hca/matrix.mtx.zip
@@ -50,6 +51,7 @@ class ProjectReport:
             'num_matrices',
             'zipped_matrix',
             'cell_count',
+            'gene_count',
             'num_metadata_files',
             'num_hca_metadata_files',
             'zipped_hca_matrix',
@@ -66,6 +68,7 @@ class ProjectReport:
             self.num_matrices,
             self.zipped_matrix,
             self.cell_count,
+            self.gene_count,
             self.num_metadata_files,
             self.num_hca_metadata_files,
             self.zipped_hca_matrix
@@ -163,6 +166,18 @@ def overview_report() -> Mapping[UUID, ProjectReport]:
             report[uuid] = ProjectReport(uuid=uuid,
                                          accession=accession_id,
                                          cell_count=cell_count)
+
+    logging.debug('Fetching gene count ...')
+    for accession_id, gene_count in CountCells.get_cached_gene_counts().items():
+        uuid = UUID(generate_project_uuid(accession_id))
+        try:
+            report[uuid].gene_count = gene_count
+        except KeyError:
+            logging.debug('New accession %s found, adding uuid %s',
+                          accession_id, str(uuid))
+            report[uuid] = ProjectReport(uuid=uuid,
+                                         accession=accession_id,
+                                         gene_count=gene_count)
 
     logging.debug('Counting geo files ...')
     for uuid in report:
