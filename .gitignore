@@ -23,5 +23,3 @@ __pycache__/
 
 .~lock.*
 /projects
-
-/cell_counts.json
