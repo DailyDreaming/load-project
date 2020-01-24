@@ -1,5 +1,9 @@
+from contextlib import contextmanager
 import gzip
+import json
+import logging
 import os
+from tempfile import NamedTemporaryFile
 from typing import (
     List,
     Optional,
@@ -128,3 +132,32 @@ def get_target_project_dirs(follow_links: bool = False) -> List[Path]:
         project_dirs.append(project_dir)
 
     return project_dirs if follow_links else symlinks
+
+
+@contextmanager
+def update_project_stats(project_dir: Path):
+    """
+    Read a project's stats.json and yield contents as a dict
+    that will then be written back to the stats.json file.
+    """
+    stats_file = project_dir / 'stats.json'
+    try:
+        with open(str(stats_file), 'r') as f:
+            stats = json.load(f)
+    except FileNotFoundError:
+        stats = {
+            'project_uuid': generate_project_uuid(project_dir.name)
+        }
+
+    yield stats
+
+    temporary_file = stats_file.with_suffix(stats_file.suffix + '.tmp')
+    try:
+        with open(str(temporary_file), 'w') as f:
+            json.dump(stats, f, sort_keys=True, indent=4)
+    except:
+        Path(f.name).unlink()
+        raise
+    else:
+        logging.info('Writing to %s', stats_file)
+        Path(f.name).rename(stats_file)

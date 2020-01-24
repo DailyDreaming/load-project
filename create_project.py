@@ -897,11 +897,9 @@ def run(xlsx, output_dir=None, clear=True):
     if os.path.exists(matrix_file):
         generate_analysis_json(bundle_uuid=bundle_uuid, output_dir=output_dir)
 
-    cell_counts = CountCells.get_cell_counts()
     cell_count = 1  # the default if not found
     for accession in project_json['geo_series_accessions']:
-        if accession in cell_counts:
-            cell_count = cell_counts[accession]
+        cell_count = CountCells.get_cached_cell_count(accession)
 
     generate_cell_suspension_json(wb=wb,
                                   output_dir=output_dir,
