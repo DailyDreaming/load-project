@@ -13,6 +13,7 @@ from io import BytesIO
 import logging
 from operator import delitem
 import os
+from os.path import commonprefix
 import signal
 from typing import (
     BinaryIO,
@@ -21,6 +22,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Union,
     cast,
 )
@@ -159,29 +161,12 @@ class Converter(metaclass=ABCMeta):
     def _convert(self):
         raise NotImplementedError()
 
-    std_matrix = Matrix(
-        mtx='matrix.mtx.gz',
-        genes='genes.tsv.gz',
-        barcodes='barcodes.tsv.gz'
-    )
-
-    std_matrix_headers = Matrix(
-        mtx='',
-        genes='genes',
-        barcodes='barcodes'
-    )
-
-    no_matrix_headers = Matrix(
-        mtx='',
-        genes='',
-        barcodes=''
-    )
-
-    def _copy_matrices(self, *matrices: Matrix, add_headers: bool = False):
+    def _glob_matrix(self, globs: Matrix) -> List[Matrix]:
         """
-        Compress if necessary, otherwise just link
-        :param matrices:
-        :return:
+        Expand the wildcards in the members of the given matrix and return a
+        list of matrix instances representing the triplets of matrix files that
+        match those wildcards. The wildcards in each member must match the same
+        number of files.
         """
 
         def expand_glob(glob: str) -> List[str]:
@@ -190,33 +175,53 @@ class Converter(metaclass=ABCMeta):
             assert files, f'No match for glob {glob}'
             return files
 
-        globbed_matrices = []
-        for matrix in matrices:
-            if '*' in matrix.mtx:
-                files = Matrix(*map(expand_glob, astuple(matrix)))
-                assert len(set(map(len, astuple(files)))) == 1, f'Unbalanced matches for globs {matrix}'
-                globbed_matrices.extend(Matrix(*m) for m in zip(*astuple(files)))
-            else:
-                globbed_matrices.append(matrix)
+        # The order of the elements in the tuples below is consistent with that
+        # of the attributes of the Matrix class.
 
-        for matrix in globbed_matrices:
+        # Expand the wildcards in the argument
+        files: Tuple[List[str], ...] = tuple(map(expand_glob, astuple(globs)))
+        # Ensure that each glob matched the same number of files
+        assert len(set(map(len, files))) == 1, f'Unbalanced matches for globs {globs}'
+        matrices: List[Matrix] = [Matrix(*t) for t in zip(*files)]
+        # Ensure that the prefix shared by the members of each matrix is unique and non-empty
+        prefixes = set(map(commonprefix, map(astuple, matrices)))
+        assert "" not in prefixes, f'Some file names matching {globs} have no common prefix.'
+        assert len(prefixes) == len(matrices), f'No correlation among the file names matching {globs}'
+        return matrices
+
+    std_matrix = Matrix(
+        mtx='matrix.mtx.gz',
+        genes='genes.tsv.gz',
+        barcodes='barcodes.tsv.gz'
+    )
+
+    no_matrix_headers = Matrix(
+        mtx='',
+        genes='',
+        barcodes=''
+    )
+
+    def _copy_matrices(self, *matrices: Matrix, headers: Matrix = no_matrix_headers):
+        """
+        Compress if necessary, otherwise just link
+        """
+        for matrix in matrices:
             dst_dir = self.matrix_dir(matrix.mtx)
             dst_dir.mkdir(parents=True, exist_ok=True)
-            headers = self.std_matrix_headers if add_headers else self.no_matrix_headers
             for src_name, dst_name, header in zip(*map(astuple, (matrix, self.std_matrix, headers))):
                 src = self.download_dir / src_name
                 dst = dst_dir / dst_name
                 if header:
                     if not dst.exists():
-                        log.info('Matrix file `%s` needs header added. Rewriting ...', src_name)
-                        header = BytesIO((header + '\n').encode())
+                        log.info('Matrix file `%s` needs header added. Rewriting it ...', src_name)
+                        header = BytesIO(header.encode())
                         with open_maybe_gz(str(src), 'rb') as read_fh:
                             atomic_gzip_filobjs([header, read_fh], dst)
                 elif src_name.endswith('.gz'):
                     idempotent_link(src, dst)
                 else:
                     if not dst.exists():
-                        log.info('Matrix file `%s` was not gzipped. Compressing...', src_name)
+                        log.info('Matrix file `%s` was not gzipped. Compressing it...', src_name)
                         atomic_gzip_file(src, dst)
 
     def _convert_matrices(self, *inputs: Union[CSV, H5, CSVPerCell]):
@@ -273,12 +278,18 @@ class SCXAConverter(Converter):
 
     def _convert(self):
         self._copy_matrices(
-            Matrix(
-                mtx='normalised/*.mtx',
-                genes='normalised/*.mtx_rows',
-                barcodes='normalised/*.mtx_cols'
+            *self._glob_matrix(
+                Matrix(
+                    mtx='normalised/*.mtx',
+                    genes='normalised/*.mtx_rows',
+                    barcodes='normalised/*.mtx_cols'
+                )
             ),
-            add_headers=True
+            headers=Matrix(
+                mtx='',
+                genes='featurekey\tfeaturename\n',
+                barcodes='barcodes\n'
+            )
         )
 
 
