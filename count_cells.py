@@ -34,13 +34,13 @@ class CountCells:
                             help='Verbose debug output')
         parser.add_argument('--slow', '-s',
                             action='store_true',
-                            help='Get cell count by counting unique barcode indexes.')
+                            help='Get cell count by counting unique barcode/gene indexes.')
         parser.add_argument('--medium', '-m',
                             action='store_true',
-                            help='Get cell count by counting lines in the barcodes file.')
+                            help='Get cell count by counting lines in the barcode/gene file.')
         parser.add_argument('--fast', '-f',
                             action='store_true',
-                            help='Get cell count from the barcodes dimension in the MTX header.')
+                            help='Get cell count from the header of the matrix file.')
         self.args = parser.parse_args(argv)
 
         if not (self.args.slow or self.args.medium or self.args.fast):
@@ -136,6 +136,7 @@ class CountCells:
         for mtx_file in matrix_dir.glob('**/matrix.mtx.gz'):
             cell_count = {}
             gene_count = {}
+            logging.debug('Getting counts from %s', mtx_file.parent)
             if 'slow' in count_method:
                 cell_count['slow'] = self.count_unique_index_values(mtx_file, col=2)
                 cell_counts['slow'] += cell_count['slow']
