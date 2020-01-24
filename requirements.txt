@@ -1,4 +1,4 @@
-requests
+requests==2.22.0
 openpyxl==3.0.2
 git+git://github.com/HumanCellAtlas/dcp-cli@hannes/upload-with-file-uuids#egg=hca
 furl==2.1.0
