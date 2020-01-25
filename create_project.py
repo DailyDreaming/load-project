@@ -11,8 +11,9 @@ from openpyxl import load_workbook
 from count_cells import CountCells
 from util import (
     generate_file_uuid,
-    generate_project_uuid
+    generate_project_uuid,
 )
+
 
 # TODO: Consolidate similar functions and clean up code.
 
@@ -23,13 +24,13 @@ def timestamp():
 
 def create_project_json(data, version, verify=False):
     project_json = {
-      "describedBy": "https://schema.dev.data.humancellatlas.org/type/project/14.0.0/project",
-      "schema_type": "project",
-      "project_core": {
-        "project_short_name": data["project_core.project_short_name"][0],
-        "project_title": data["project_core.project_title"][0],
-        "project_description": data["project_core.project_description"][0]
-      }
+        "describedBy": "https://schema.dev.data.humancellatlas.org/type/project/14.0.0/project",
+        "schema_type": "project",
+        "project_core": {
+            "project_short_name": data["project_core.project_short_name"][0],
+            "project_title": data["project_core.project_title"][0],
+            "project_description": data["project_core.project_description"][0]
+        }
     }
     # Links and Accessions
     optional_includes = ["supplementary_links",
@@ -130,7 +131,7 @@ def create_project_json(data, version, verify=False):
         "document_id": project_uuid,
         "submission_date": version,
         "update_date": version
-        }
+    }
     if verify:
         print(json.dumps(project_json, indent=4))
     return project_json, project_uuid
@@ -480,10 +481,10 @@ def create_specimen_from_organism_json(data, file_uuid, i=0):
         )
     )
     specimen_from_organism_json["provenance"] = {
-            "document_id": file_uuid,
-            "submission_date": version,  # TODO: Fetch from DSS if it exists
-            "update_date": version
-        }
+        "document_id": file_uuid,
+        "submission_date": version,  # TODO: Fetch from DSS if it exists
+        "update_date": version
+    }
     return specimen_from_organism_json
 
 
@@ -600,10 +601,10 @@ def create_donor_organism_json(data, file_uuid, i=0):
     # if ethnicity:
     #     donor_organism_json.get('human_specific', {}).update(ethnicity)
     donor_organism_json["provenance"] = {
-            "document_id": file_uuid,
-            "submission_date": version,  # TODO: Fetch from DSS if it exists
-            "update_date": version
-        }
+        "document_id": file_uuid,
+        "submission_date": version,  # TODO: Fetch from DSS if it exists
+        "update_date": version
+    }
     return donor_organism_json
 
 

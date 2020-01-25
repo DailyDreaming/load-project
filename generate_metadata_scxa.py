@@ -94,8 +94,8 @@ def create_project_json(accession: str, project_dir: Path, project_uuid):
             "project_short_name": accession,
             "project_title": only(idf_metadata['Investigation Title']),
             **({
-                "project_description": only(idf_metadata['Experiment Description']),
-            } if 'Experiment Description' in idf_metadata else {})
+                   "project_description": only(idf_metadata['Experiment Description']),
+               } if 'Experiment Description' in idf_metadata else {})
         },
         "provenance": {
             "document_id": project_uuid,
