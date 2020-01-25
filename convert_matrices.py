@@ -201,6 +201,24 @@ class Converter(metaclass=ABCMeta):
         barcodes=''
     )
 
+    one_column_genes_headers = Matrix(
+        mtx='',
+        genes='featurekey\n',
+        barcodes='barcodes\n'
+    )
+
+    two_column_genes_headers = Matrix(
+        mtx='',
+        genes='featurekey\tfeaturename\n',
+        barcodes='barcodes\n'
+    )
+
+    three_column_genes_headers = Matrix(
+        mtx='',
+        genes='featurekey\tfeaturename\tunknown\n',
+        barcodes='barcodes\n'
+    )
+
     def _copy_matrices(self, *matrices: Matrix, headers: Matrix = no_matrix_headers):
         """
         Compress if necessary, otherwise just link
@@ -285,11 +303,7 @@ class SCXAConverter(Converter):
                     barcodes='normalised/*.mtx_cols'
                 )
             ),
-            headers=Matrix(
-                mtx='',
-                genes='featurekey\tfeaturename\n',
-                barcodes='barcodes\n'
-            )
+            headers=self.two_column_genes_headers
         )
 
 
@@ -573,6 +587,7 @@ class GSE106273(GEOConverter):
                 genes='GSE106273_combined_genes.tsv.gz',
                 barcodes='GSE106273_combined_barcodes.tsv.gz',
             ),
+            headers=self.two_column_genes_headers
         )
 
 
@@ -623,6 +638,7 @@ class GSE130430(GEOConverter):
                 genes='GSE130430_RAW/GSM3738543_26y_F_PB_genes.tsv.gz',
                 mtx='GSE130430_RAW/GSM3738543_26y_F_PB_matrix.mtx.gz',
             ),
+            headers=self.two_column_genes_headers
         )
 
 
@@ -652,7 +668,8 @@ class GSE129798(GEOConverter):
                 mtx=prefix + '/matrix.mtx',
                 genes=prefix + '/genes.tsv',
                 barcodes=prefix + '/barcodes.tsv'
-            )
+            ),
+            headers=self.one_column_genes_headers
         )
 
 
@@ -795,6 +812,7 @@ class GSE132044(GEOConverter):
                 genes='GSE132044_pbmc_hg38_gene.tsv.gz',
                 barcodes='GSE132044_pbmc_hg38_cell.tsv.gz',
             ),
+            headers=self.one_column_genes_headers
         )
 
 
@@ -857,17 +875,20 @@ class GSE114802(GEOConverter):
     """
 
     def _convert(self):
-        self._copy_matrices(*[
-            Matrix(
-                mtx=prefix + 'matrix.mtx.gz',
-                barcodes=prefix + 'barcodes.tsv.gz',
-                genes=prefix + 'genes.tsv.gz'
-            )
-            for prefix in (
-                'GSE114802_org4_',
-                'GSE114802_org_'
-            )
-        ])
+        self._copy_matrices(
+            *[
+                Matrix(
+                    mtx=prefix + 'matrix.mtx.gz',
+                    barcodes=prefix + 'barcodes.tsv.gz',
+                    genes=prefix + 'genes.tsv.gz'
+                )
+                for prefix in (
+                    'GSE114802_org4_',
+                    'GSE114802_org_'
+                )
+            ],
+            headers=self.two_column_genes_headers
+        )
 
 
 class GSE124472(GEOConverter):
@@ -876,28 +897,28 @@ class GSE124472(GEOConverter):
     """
 
     def _convert(self):
-        self._copy_matrices(*[
-            Matrix(
-                mtx=str(prefix / 'matrix.mtx'),
-                genes=str(prefix / 'genes.tsv'),
-                barcodes=str(prefix / 'barcodes.tsv')
-            )
-            for prefix
-            in [
-                Path('GSE124472_RAW') / p
-                for p
-                in [
-                    'GSM3534656_H17w_Z1_raw_counts',
-                    'GSM3534657_H17w_Z2_raw_counts',
-                    'GSM3534658_H15w_Z1_raw_counts',
-                    'GSM3534659_H15w_Z2_raw_counts',
-                    'GSM3534660_HuOrg_D16_1_raw_counts',
-                    'GSM3534661_HuOrg_D16_2_raw_counts',
-                    'GSM3534662_HuOrg_D28_1_raw_counts',
-                    'GSM3534663_HuOrg_D28_2_raw_counts'
+        self._copy_matrices(
+            *[
+                Matrix(
+                    mtx=str(prefix / 'matrix.mtx'),
+                    genes=str(prefix / 'genes.tsv'),
+                    barcodes=str(prefix / 'barcodes.tsv')
+                )
+                for prefix in [
+                    Path('GSE124472_RAW') / p for p in [
+                        'GSM3534656_H17w_Z1_raw_counts',
+                        'GSM3534657_H17w_Z2_raw_counts',
+                        'GSM3534658_H15w_Z1_raw_counts',
+                        'GSM3534659_H15w_Z2_raw_counts',
+                        'GSM3534660_HuOrg_D16_1_raw_counts',
+                        'GSM3534661_HuOrg_D16_2_raw_counts',
+                        'GSM3534662_HuOrg_D28_1_raw_counts',
+                        'GSM3534663_HuOrg_D28_2_raw_counts'
+                    ]
                 ]
-            ]
-        ])
+            ],
+            headers=self.two_column_genes_headers
+        )
 
 
 class GSE84465(GEOConverter):
@@ -1038,21 +1059,24 @@ class GSE124494(GEOConverter):
 
     def _convert(self):
         dir_ = 'GSE124494_RAW/'
-        self._copy_matrices(*[
-            Matrix(
-                mtx=dir_ + prefix + 'matrix.mtx.gz',
-                genes=dir_ + prefix + 'genes.tsv.gz',
-                barcodes=dir_ + prefix + 'barcodes.tsv.gz'
-            )
-            for prefix in [
-                'GSM3535276_AXLN1_',
-                'GSM3535277_AXLN2_',
-                'GSM3535278_AXLN3_',
-                'GSM3535279_AXLN4_',
-                'GSM3535280_HNLN1_',
-                'GSM3535281_HNLN2_'
-            ]
-        ])
+        self._copy_matrices(
+            *[
+                Matrix(
+                    mtx=dir_ + prefix + 'matrix.mtx.gz',
+                    genes=dir_ + prefix + 'genes.tsv.gz',
+                    barcodes=dir_ + prefix + 'barcodes.tsv.gz'
+                )
+                for prefix in [
+                    'GSM3535276_AXLN1_',
+                    'GSM3535277_AXLN2_',
+                    'GSM3535278_AXLN3_',
+                    'GSM3535279_AXLN4_',
+                    'GSM3535280_HNLN1_',
+                    'GSM3535281_HNLN2_'
+                ]
+            ],
+            headers=self.two_column_genes_headers
+        )
 
 
 class GSE135889(GEOConverter):
@@ -1187,7 +1211,8 @@ class GSE130606(GEOConverter):
                 mtx='GSE130606_matrix.mtx.gz',
                 genes='GSE130606_genes.tsv.gz',
                 barcodes='GSE130606_barcodes.tsv.gz'
-            )
+            ),
+            headers=self.two_column_genes_headers
         )
 
 
@@ -1295,23 +1320,29 @@ class GSE96583(GEOConverter):
             Matrix(
                 mtx='GSE96583_RAW/GSM2560245_A.mat.gz',
                 genes='GSE96583_batch1.genes.tsv.gz',
-                barcodes='GSE96583_RAW/GSM2560245_barcodes.tsv.gz'),
+                barcodes='GSE96583_RAW/GSM2560245_barcodes.tsv.gz'
+            ),
             Matrix(
                 mtx='GSE96583_RAW/GSM2560246_B.mat.gz',
                 genes='GSE96583_batch1.genes.tsv.gz',
-                barcodes='GSE96583_RAW/GSM2560246_barcodes.tsv.gz'),
+                barcodes='GSE96583_RAW/GSM2560246_barcodes.tsv.gz'
+            ),
             Matrix(
                 mtx='GSE96583_RAW/GSM2560247_C.mat.gz',
                 genes='GSE96583_batch1.genes.tsv.gz',
-                barcodes='GSE96583_RAW/GSM2560247_barcodes.tsv.gz'),
+                barcodes='GSE96583_RAW/GSM2560247_barcodes.tsv.gz'
+            ),
             Matrix(
                 mtx='GSE96583_RAW/GSM2560248_2.1.mtx.gz',
                 genes='GSE96583_batch2.genes.tsv.gz',
-                barcodes='GSE96583_RAW/GSM2560248_barcodes.tsv.gz'),
+                barcodes='GSE96583_RAW/GSM2560248_barcodes.tsv.gz'
+            ),
             Matrix(
                 mtx='GSE96583_RAW/GSM2560249_2.2.mtx.gz',
                 genes='GSE96583_batch2.genes.tsv.gz',
-                barcodes='GSE96583_RAW/GSM2560249_barcodes.tsv.gz'),
+                barcodes='GSE96583_RAW/GSM2560249_barcodes.tsv.gz'
+            ),
+            headers=self.two_column_genes_headers
         )
 
 
@@ -1491,7 +1522,8 @@ class GSE103354(GEOConverter):
                 barcodes='GSE103354_RAW/GSM3314353_M6_barcodes.tsv.gz',
                 genes='GSE103354_RAW/GSM3314353_M6_genes.tsv.gz',
                 mtx='GSE103354_RAW/GSM3314353_M6_matrix.mtx.gz',
-            )
+            ),
+            headers=self.two_column_genes_headers
         )
 
 
@@ -1564,6 +1596,7 @@ class GSE103275(GEOConverter):
                 genes='GSE103275_RAW/GSM2759557_P7E-genes.tsv.gz',
                 mtx='GSE103275_RAW/GSM2759557_P7E-matrix.mtx.gz',
             ),
+            headers=self.two_column_genes_headers
         )
 
 
@@ -1874,6 +1907,7 @@ class GSE131685(GEOConverter):
                 genes='GSE131685_RAW/GSM4145206_kidney3_features.tsv.gz',
                 mtx='GSE131685_RAW/GSM4145206_kidney3_matrix.mtx.gz',
             ),
+            headers=self.three_column_genes_headers
         )
 
 
@@ -2141,6 +2175,7 @@ class GSE108291(GEOConverter):
                 genes='GSE108291_org4_genes.tsv.gz',
                 mtx='GSE108291_org4_matrix.mtx.gz',
             ),
+            headers=self.two_column_genes_headers
         )
         self._convert_matrices(
             CSV('GSE108291_org_counts.csv.gz')
