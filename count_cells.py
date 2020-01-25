@@ -1,8 +1,7 @@
 import argparse
 import csv
-import logging
 import json
-from _pathlib import Path
+import logging
 import sys
 from typing import (
     MutableMapping,
@@ -10,6 +9,8 @@ from typing import (
     Tuple,
     Union,
 )
+
+from _pathlib import Path
 from util import (
     get_target_project_dirs,
     open_maybe_gz,
@@ -144,10 +145,10 @@ class CountCells:
                 gene_counts['slow'] += gene_count['slow']
             if 'medium' in count_method:
                 barcode_file = mtx_file.parent / 'barcodes.tsv.gz'
-                cell_count['medium'] = self.count_lines_in_file(barcode_file)
+                cell_count['medium'] = self.count_rows_in_tsv(barcode_file)
                 cell_counts['medium'] += cell_count['medium']
                 gene_file = mtx_file.parent / 'genes.tsv.gz'
-                gene_count['medium'] = self.count_lines_in_file(gene_file)
+                gene_count['medium'] = self.count_rows_in_tsv(gene_file)
                 gene_counts['medium'] += gene_count['medium']
             if 'fast' in count_method:
                 cell_count['fast'] = self.get_count_from_mtx_header(mtx_file, col=2)
@@ -201,7 +202,7 @@ class CountCells:
                     if indexes is None:  # skip first non-comment line (a header line)
                         indexes = set()
                     else:
-                        indexes.add(row[col-1])
+                        indexes.add(row[col - 1])
         return len(indexes)
 
     def get_count_from_mtx_header(self, matrix_file: Path, col: int) -> int:
@@ -213,12 +214,20 @@ class CountCells:
                     assert len(row) == 3, f'{matrix_file} has line {line_num} with {len(row)} columns instead of 3'
                     # The first non-comment line contains the dimensions of the
                     # matrix and the number of non-zero cells in that matrix.
-                    return int(row[col-1])
+                    return int(row[col - 1])
 
-    def count_lines_in_file(self, file: Path) -> int:
-        with open_maybe_gz(file,  'rt') as f:
-            next(f)  # skip header line
-            return sum(1 for _ in f)
+    def count_rows_in_tsv(self, file: Path) -> int:
+        # We're not using the `csv` module to save time, avoiding to split each
+        # row and create a list per row.
+        with open_maybe_gz(file, 'rt') as f:
+            header_row = next(f)
+            num_cols = header_row.count('\t') + 1
+            rows = 0
+            for row in f:
+                num_cells = row.count('\t') + 1
+                rows += 1  # increment before assert so that error message report the correct line number
+                assert num_cols == num_cells, f'{file} has line {rows} with {num_cells} column(s) instead of {num_cols}'
+            return rows
 
 
 if __name__ == '__main__':
