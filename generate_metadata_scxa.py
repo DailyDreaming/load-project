@@ -2,61 +2,55 @@ import json
 import logging
 from typing import List
 
-from _pathlib import Path
-
 from more_itertools import one
 
+from _pathlib import Path
 from count_cells import CountCells
 from create_project import (
-    timestamp,
-    write_project_json,
     generate_analysis_json,
     generate_links_json,
+    timestamp,
+    write_project_json,
 )
 from util import (
-    get_target_project_dirs,
-    generate_project_uuid,
     generate_file_uuid,
+    generate_project_uuid,
+    get_target_project_dirs,
 )
 
 log = logging.getLogger(__name__)
 
 
 def main():
-    project_dirs = get_target_project_dirs()
+    for project_dir in get_target_project_dirs():
+        accession = project_dir.name
+        if accession.startswith('E-'):
+            generate_metadata(accession, project_dir)
 
-    for project_dir in project_dirs:
-        generate_metadata(project_dir)
 
-
-def generate_metadata(project_dir: Path):
-    accession = accession_from_project_dir(project_dir)
+def generate_metadata(accession: str, project_dir: Path):
     project_uuid = generate_project_uuid(accession)
-    output_dir = bundle_dir(project_dir)
-
+    assert project_dir.readlink().name == project_uuid
+    bundle_dir = project_dir / 'bundle'
     project_json = create_project_json(accession, project_dir, project_uuid)
-    write_project_json(project_json, output_dir)
-    generate_analysis_json(project_uuid, output_dir)
-
+    write_project_json(project_json, bundle_dir)
+    generate_analysis_json(project_uuid, bundle_dir)
     cell_count = CountCells.get_cached_cell_count(project_dir)
-    generate_cell_suspension_json(output_dir, cell_count, project_uuid)
-
-    generate_links_json(output_dir)
-
-
-def bundle_dir(project_dir: Path):
-    return project_dir / 'bundle'
+    generate_cell_suspension_json(bundle_dir, cell_count, project_uuid)
+    generate_links_json(bundle_dir)
 
 
-def generate_cell_suspension_json(output_dir, cell_count, bundle_uuid):
+def generate_cell_suspension_json(bundle_dir, cell_count, bundle_uuid):
     file_name = 'cell_suspension_0.json'
-    cell_json = create_cell_suspension_jsons(cell_count, generate_file_uuid(bundle_uuid, file_name))
-    with open(f'{output_dir}/{file_name}', 'w') as f:
-        f.write(json.dumps(cell_json, indent=4))
-    print(f'"{output_dir}/{file_name}" successfully written.')
+    file_uuid = generate_file_uuid(bundle_uuid, file_name)
+    cell_json = create_cell_suspension_json(cell_count, file_uuid)
+    output_file = bundle_dir / file_name
+    with open(output_file, 'w') as f:
+        json.dump(cell_json, f, indent=4)
+    print(f'"{output_file}" successfully written.')
 
 
-def create_cell_suspension_jsons(cell_count, file_uuid):
+def create_cell_suspension_json(cell_count, file_uuid):
     version = timestamp()
     cell_suspension_json = {
         "describedBy": "https://schema.dev.data.humancellatlas.org/type/biomaterial/13.1.0/cell_suspension",
@@ -103,12 +97,6 @@ def create_project_json(accession: str, project_dir: Path, project_uuid):
             "update_date": version
         }
     }
-
-
-def accession_from_project_dir(project_dir):
-    accession = project_dir.name
-    assert accession.startswith('E-')
-    return accession
 
 
 def only(row: List[str]):

@@ -8,6 +8,7 @@ import sys
 from more_itertools import one
 from openpyxl import load_workbook
 
+from _pathlib import Path
 from count_cells import CountCells
 from util import (
     generate_file_uuid,
@@ -898,9 +899,7 @@ def run(xlsx, output_dir=None, clear=True):
     if os.path.exists(matrix_file):
         generate_analysis_json(bundle_uuid=bundle_uuid, output_dir=output_dir)
 
-    cell_count = 1  # the default if not found
-    for accession in project_json['geo_series_accessions']:
-        cell_count = CountCells.get_cached_cell_count(accession)
+    cell_count = CountCells.get_cached_cell_count(Path(output_dir))
 
     generate_cell_suspension_json(wb=wb,
                                   output_dir=output_dir,
