@@ -24,6 +24,7 @@ count:
 
 metadata:
 	python3 generate_metadata.py
+	python3 generate_metadata_scxa.py
 
 bundles:
 	python3 upload_bundles.py
